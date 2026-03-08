@@ -32,10 +32,13 @@ const DIATONIC_MAP_FLAT =  [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6]; // C,Db,D,Eb,E,
 const SHARP_PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const FLAT_PC_NAMES =  ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
-function midiToY(midi: number): number {
+function midiToY(midi: number, useFlats: boolean): number {
   const octave = Math.floor(midi / 12);
   const pc = midi % 12;
-  const diatonicPos = DIATONIC_MAP[pc] + (octave - 5) * 7; // C4 (midi 60, octave 5) = 0
+  const map = useFlats ? DIATONIC_MAP_FLAT : DIATONIC_MAP_SHARP;
+  const diatonicPos = map[pc] + (octave - 5) * 7;
+  return MIDDLE_C_Y - diatonicPos * STEP;
+}
   return MIDDLE_C_Y - diatonicPos * STEP;
 }
 
