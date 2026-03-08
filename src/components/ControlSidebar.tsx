@@ -80,23 +80,6 @@ export function ControlSidebar() {
         </div>
       </div>
 
-      {/* Dexterity Presets */}
-      <div className="space-y-2">
-        <h4 className="engineering-label">Spider-Walk Patterns</h4>
-        <div className="space-y-1">
-          {DEXTERITY_PRESETS.map(preset => (
-            <button
-              key={preset.name}
-              onClick={() => handleDexterityPreset(preset.pattern)}
-              className="w-full text-left px-2 py-1.5 text-xs font-mono rounded-sm border border-border 
-                bg-secondary/50 text-secondary-foreground hover:border-primary/50 transition-all"
-            >
-              <div>{preset.name}</div>
-              <div className="text-[9px] text-muted-foreground">{preset.description}</div>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Guitar Tuning */}
       <div className="space-y-2">
