@@ -160,7 +160,7 @@ export function StaffNotation() {
       <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
         {/* Treble Clef - curl intersection on G4 line (y=72) */}
         <text
-          x="10"
+          x="22"
           y={trebleClefY + 6}
           fontSize="54"
           fill="hsl(var(--foreground))"
@@ -178,7 +178,7 @@ export function StaffNotation() {
 
         {/* Bass Clef - dots around F3 line (y=120) */}
         <text
-          x="10"
+          x="22"
           y={bassClefY + 20}
           fontSize="48"
           fill="hsl(var(--foreground))"
