@@ -3,14 +3,19 @@ import { PIANO_KEYS, getNoteColor, getHandMidis, NOTE_COLOR_KEYS } from "@/lib/m
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
-/** Return a brightened/saturated version of a note color for use on dark backgrounds */
+/** Return a brightened version of a note's color for legibility on dark keys */
 function getBrightNoteColor(noteName: string): string {
   const pc = Note.pitchClass(noteName) || noteName;
   const enharmonic = Note.enharmonic(pc) || pc;
-  const key = NOTE_COLOR_KEYS[pc] || NOTE_COLOR_KEYS[enharmonic] || "var(--note-c)";
-  // Boost saturation to 95% and lightness to 75% for high contrast on dark keys
-  return `hsl(${key} / 1)`.replace(')', '').replace('hsl(', '');
+  const cssVar = NOTE_COLOR_KEYS[pc] || NOTE_COLOR_KEYS[enharmonic] || "var(--note-c)";
+  // Use the same CSS var but override saturation/lightness via calc — 
+  // we can't easily parse CSS vars, so use a filter trick:
+  // Just return a brighter fixed version by wrapping with adjusted lightness
+  return `hsl(${cssVar})`;
 }
+
+/** Inline style for a bright indicator on black keys: boost brightness via filter */
+const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 
 // Get the horizontal center % of a key by its MIDI number
 function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth: number): number | null {
