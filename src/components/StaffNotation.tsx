@@ -98,7 +98,7 @@ export function StaffNotation() {
   const bassClefY = 120; // F3 line
 
   return (
-    <div className="glass-panel p-4">
+    <div className="glass-panel p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
         {audiationMode && (
@@ -107,7 +107,7 @@ export function StaffNotation() {
           </span>
         )}
       </div>
-      <svg viewBox="0 0 400 200" className="w-full h-auto">
+      <svg viewBox="0 0 400 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
         {/* Grand staff brace - left bracket */}
         <path
           d={`M 32 ${TREBLE_TOP} Q 22 ${MIDDLE_C_Y} 32 ${BASS_BOTTOM}`}
