@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getPentascaleMidis } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo } from "react";
 
