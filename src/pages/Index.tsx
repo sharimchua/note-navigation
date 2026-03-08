@@ -9,7 +9,7 @@ const Index = () => {
     <HarmonicProvider>
       <div className="flex h-screen overflow-hidden">
         <ControlSidebar />
-        <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        <main className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
