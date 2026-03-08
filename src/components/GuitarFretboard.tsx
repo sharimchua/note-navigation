@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { STANDARD_TUNING, TOTAL_FRETS, getFretNote, getNoteColor, getNoteChroma } from "@/lib/music-engine";
+import { STANDARD_TUNING, TOTAL_FRETS, getFretNote, getNoteColor } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback } from "react";
 
