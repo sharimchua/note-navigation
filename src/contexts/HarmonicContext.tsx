@@ -37,6 +37,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedKey, setSelectedKey] = useState("C");
   const [selectedScale, setSelectedScale] = useState("major");
   const [isKeyLocked, setKeyLocked] = useState(false);
+  const [useFlats, setUseFlats] = useState(false);
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const synthRef = useRef<Tone.PolySynth | null>(null);
 
