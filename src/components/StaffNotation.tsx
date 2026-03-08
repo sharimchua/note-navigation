@@ -241,7 +241,41 @@ export function StaffNotation() {
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
-        {/* Middle C ledger line indicator */}
+        {/* Key Signature */}
+        {keySig.type === "sharp" && keySig.sharps > 0 && (
+          <>
+            {Array.from({ length: keySig.sharps }).map((_, i) => {
+              const trebleY = MIDDLE_C_Y - TREBLE_SHARP_POSITIONS[i] * STEP;
+              const bassY = MIDDLE_C_Y - BASS_SHARP_POSITIONS[i] * STEP;
+              const x = KEY_SIG_START_X + i * KEY_SIG_SPACING;
+              return (
+                <g key={`ks-${i}`}>
+                  <text x={x} y={trebleY + 4} fontSize="11" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif" fontWeight="bold">♯</text>
+                  <text x={x} y={bassY + 4} fontSize="11" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif" fontWeight="bold">♯</text>
+                </g>
+              );
+            })}
+          </>
+        )}
+        {keySig.type === "flat" && keySig.flats > 0 && (
+          <>
+            {Array.from({ length: keySig.flats }).map((_, i) => {
+              const trebleY = MIDDLE_C_Y - TREBLE_FLAT_POSITIONS[i] * STEP;
+              const bassY = MIDDLE_C_Y - BASS_FLAT_POSITIONS[i] * STEP;
+              const x = KEY_SIG_START_X + i * KEY_SIG_SPACING;
+              return (
+                <g key={`kf-${i}`}>
+                  <text x={x} y={trebleY + 4} fontSize="12" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif">♭</text>
+                  <text x={x} y={bassY + 4} fontSize="12" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif">♭</text>
+                </g>
+              );
+            })}
+          </>
+        )}
         {activeArray.length === 0 && (
           <line x1="108" y1={MIDDLE_C_Y} x2="132" y2={MIDDLE_C_Y}
             stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.3" />
