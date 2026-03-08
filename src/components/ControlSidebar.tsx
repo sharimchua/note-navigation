@@ -110,6 +110,44 @@ export function ControlSidebar() {
         </div>
       </div>
 
+      {/* Guitar Tuning */}
+      <div className="space-y-2">
+        <h4 className="engineering-label">Guitar Tuning</h4>
+        <select
+          value={selectedTuning.name}
+          onChange={e => {
+            const tuning = GUITAR_TUNINGS.find(t => t.name === e.target.value);
+            if (tuning) setTuning(tuning);
+          }}
+          className="w-full px-2 py-1.5 text-xs font-mono rounded-sm border border-border 
+            bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
+        >
+          <optgroup label="Standard">
+            {GUITAR_TUNINGS.filter(t => t.category === "standard").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Drop">
+            {GUITAR_TUNINGS.filter(t => t.category === "drop").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Open">
+            {GUITAR_TUNINGS.filter(t => t.category === "open").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Alternate">
+            {GUITAR_TUNINGS.filter(t => t.category === "alternate").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+        </select>
+        <div className="text-[9px] font-mono text-muted-foreground">
+          {selectedTuning.notes.join(" · ")}
+        </div>
+      </div>
+
       {/* Controls */}
       <div className="space-y-3">
         <h4 className="engineering-label">Harmonic Calibration</h4>
