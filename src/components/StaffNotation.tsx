@@ -163,6 +163,7 @@ export function StaffNotation() {
 
   const treblePositioned = getChordPositions(trebleNotes);
   const bassPositioned = getChordPositions(bassNotes);
+  const keySig = getKeySignature(selectedKey, selectedScale);
 
   // Render a note head with the note name inside
   function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
