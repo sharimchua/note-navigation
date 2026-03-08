@@ -84,7 +84,7 @@ export function GuitarFretboard() {
               const note = getFretNote(tuningNotes[originalStringIdx], fret);
               if (!note) return null;
 
-              const pc = Note.pitchClass(note);
+              const pc = getNotePitchClass(note, useFlats);
               const isActive = activeNotes.has(note);
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
