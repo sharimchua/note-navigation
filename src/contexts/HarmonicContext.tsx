@@ -9,7 +9,6 @@ interface HarmonicState {
   selectedScale: string;
   scaleNotes: string[];
   isKeyLocked: boolean;
-  audiationMode: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
   toggleNote: (note: string) => void;
@@ -18,7 +17,6 @@ interface HarmonicState {
   setKey: (key: string) => void;
   setScale: (scale: string) => void;
   setKeyLocked: (locked: boolean) => void;
-  setAudiationMode: (mode: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
@@ -37,7 +35,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedKey, setSelectedKey] = useState("C");
   const [selectedScale, setSelectedScale] = useState("major");
   const [isKeyLocked, setKeyLocked] = useState(false);
-  const [audiationMode, setAudiationMode] = useState(false);
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const synthRef = useRef<Tone.PolySynth | null>(null);
 
@@ -127,7 +124,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       selectedScale,
       scaleNotes,
       isKeyLocked,
-      audiationMode,
       midiState,
       selectedTuning,
       toggleNote,
@@ -136,7 +132,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setKey,
       setScale,
       setKeyLocked,
-      setAudiationMode,
       setTuning,
       playNote,
       isNoteInCurrentScale,

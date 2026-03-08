@@ -87,7 +87,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, audiationMode, selectedKey, selectedScale } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale } = useHarmonic();
 
   const activeArray = [...activeNotes].map(n => ({
     note: n,
@@ -193,11 +193,6 @@ export function StaffNotation() {
     <div className="glass-panel p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
-        {audiationMode && (
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/20 text-primary">
-            AUDIATION
-          </span>
-        )}
       </div>
       <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
         {/* Staff background */}
@@ -283,10 +278,10 @@ export function StaffNotation() {
         )}
 
         {/* Treble notes - chord form (stacked at same x) */}
-        {!audiationMode && treblePositioned.map(n => renderNote(n, "treble"))}
+        {treblePositioned.map(n => renderNote(n, "treble"))}
 
         {/* Bass notes - chord form (stacked at same x) */}
-        {!audiationMode && bassPositioned.map(n => renderNote(n, "bass"))}
+        {bassPositioned.map(n => renderNote(n, "bass"))}
 
       </svg>
     </div>

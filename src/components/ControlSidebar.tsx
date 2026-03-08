@@ -5,8 +5,8 @@ import { Note } from "tonal";
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, audiationMode, midiState, selectedTuning,
-    setKey, setScale, setKeyLocked, setAudiationMode, setTuning,
+    selectedKey, selectedScale, isKeyLocked, midiState, selectedTuning,
+    setKey, setScale, setKeyLocked, setTuning,
     setActiveNotes, clearNotes, playNote
   } = useHarmonic();
 
@@ -162,15 +162,6 @@ export function ControlSidebar() {
           <span className="text-xs font-mono text-secondary-foreground">One-Key Focus</span>
         </label>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={audiationMode}
-            onChange={e => setAudiationMode(e.target.checked)}
-            className="accent-primary"
-          />
-          <span className="text-xs font-mono text-secondary-foreground">Audiation Mode</span>
-        </label>
 
         <button
           onClick={clearNotes}
