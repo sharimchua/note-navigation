@@ -58,8 +58,6 @@ export function LinearNoteMap() {
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                onMouseEnter={() => setHoveredPitchClass(n.midi % 12)}
-                onMouseLeave={() => setHoveredPitchClass(null)}
                 className={`relative z-10 flex items-center justify-center shrink-0 transition-all duration-150 ${isActive ? 'note-active' : ''}`}
                 style={{
                   width: size,
