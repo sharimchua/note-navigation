@@ -8,7 +8,7 @@ const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
 
 export function LinearNoteMap() {
-  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
+  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote } = useHarmonic();
   const isMobile = useIsMobile();
 
   const CIRCLE_SIZE = isMobile ? 20 : 28;
