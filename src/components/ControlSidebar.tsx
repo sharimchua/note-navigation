@@ -1,6 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, GUITAR_TUNINGS, getNoteColor, getScaleNotes, getFretNote } from "@/lib/music-engine";
+import { NOTE_NAMES, SCALE_PRESETS, GUITAR_TUNINGS } from "@/lib/music-engine";
 import { Note } from "tonal";
 
 export function ControlSidebar() {
@@ -13,26 +13,6 @@ export function ControlSidebar() {
   const handleScalePreset = (scaleType: string) => {
     setScale(scaleType);
     setKeyLocked(true);
-    // Activate scale notes in octave 4
-    const notes = getScaleNotes(selectedKey, scaleType);
-    const fullNotes = new Set(notes.map(n => `${n}4`));
-    setActiveNotes(fullNotes);
-    fullNotes.forEach(n => playNote(n));
-  };
-
-  const handleDexterityPreset = (pattern: number[]) => {
-    // Start from the selected key on the guitar, 5th fret area
-    const startFret = 5;
-    const notes = new Set<string>();
-    pattern.forEach((finger, i) => {
-      const fret = startFret + finger - 1;
-      const note = getFretNote(selectedTuning.notes[4], fret); // 2nd string from top
-      if (note) {
-        notes.add(note);
-      }
-    });
-    setActiveNotes(notes);
-    notes.forEach(n => playNote(n));
   };
 
   return (
@@ -60,12 +40,6 @@ export function ControlSidebar() {
               key={note}
               onClick={() => {
                 setKey(note);
-                // Re-apply current scale with new key if locked
-                if (isKeyLocked && selectedScale) {
-                  const notes = getScaleNotes(note, selectedScale);
-                  const fullNotes = new Set(notes.map(n => `${n}4`));
-                  setActiveNotes(fullNotes);
-                }
               }}
               className={`px-1.5 py-1.5 text-xs font-mono rounded-sm border transition-all
                 ${selectedKey === note 
@@ -100,23 +74,6 @@ export function ControlSidebar() {
         </div>
       </div>
 
-      {/* Dexterity Presets */}
-      <div className="space-y-2">
-        <h4 className="engineering-label">Spider-Walk Patterns</h4>
-        <div className="space-y-1">
-          {DEXTERITY_PRESETS.map(preset => (
-            <button
-              key={preset.name}
-              onClick={() => handleDexterityPreset(preset.pattern)}
-              className="w-full text-left px-2 py-1.5 text-xs font-mono rounded-sm border border-border 
-                bg-secondary/50 text-secondary-foreground hover:border-primary/50 transition-all"
-            >
-              <div>{preset.name}</div>
-              <div className="text-[9px] text-muted-foreground">{preset.description}</div>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Guitar Tuning */}
       <div className="space-y-2">
