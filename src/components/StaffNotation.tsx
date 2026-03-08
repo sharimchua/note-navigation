@@ -41,7 +41,7 @@ function needsAccidental(midi: number): boolean {
 }
 
 // Chord x position - all notes stacked vertically at same x
-const CHORD_X = 200;
+const CHORD_X = 120;
 // Offset for seconds (adjacent notes) to avoid overlap
 const SECOND_OFFSET = 16;
 
@@ -157,19 +157,10 @@ export function StaffNotation() {
           </span>
         )}
       </div>
-      <svg viewBox="0 0 400 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
-        {/* Grand staff brace */}
-        <path
-          d={`M 32 ${TREBLE_TOP} Q 22 ${MIDDLE_C_Y} 32 ${BASS_BOTTOM}`}
-          fill="none"
-          stroke="hsl(var(--foreground))"
-          strokeWidth="1.5"
-          opacity="0.4"
-        />
-
+      <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
         {/* Treble Clef - curl intersection on G4 line (y=72) */}
         <text
-          x="36"
+          x="10"
           y={trebleClefY + 6}
           fontSize="54"
           fill="hsl(var(--foreground))"
@@ -181,13 +172,13 @@ export function StaffNotation() {
 
         {/* Treble staff lines */}
         {TREBLE_LINES.map((ly, i) => (
-          <line key={`t-${i}`} x1="55" y1={ly} x2="390" y2={ly}
+          <line key={`t-${i}`} x1="30" y1={ly} x2="190" y2={ly}
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
         {/* Bass Clef - dots around F3 line (y=120) */}
         <text
-          x="36"
+          x="10"
           y={bassClefY + 20}
           fontSize="48"
           fill="hsl(var(--foreground))"
@@ -199,13 +190,13 @@ export function StaffNotation() {
 
         {/* Bass staff lines */}
         {BASS_LINES.map((ly, i) => (
-          <line key={`b-${i}`} x1="55" y1={ly} x2="390" y2={ly}
+          <line key={`b-${i}`} x1="30" y1={ly} x2="190" y2={ly}
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
         {/* Middle C ledger line indicator */}
         {activeArray.length === 0 && (
-          <line x1="188" y1={MIDDLE_C_Y} x2="212" y2={MIDDLE_C_Y}
+          <line x1="108" y1={MIDDLE_C_Y} x2="132" y2={MIDDLE_C_Y}
             stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.3" />
         )}
 
@@ -217,9 +208,9 @@ export function StaffNotation() {
 
         {/* Empty state */}
         {activeArray.length === 0 && (
-          <text x="222" y={MIDDLE_C_Y + 4} fontSize="11" fill="hsl(var(--muted-foreground))"
+          <text x="110" y={MIDDLE_C_Y + 4} fontSize="9" fill="hsl(var(--muted-foreground))"
             textAnchor="middle" fontFamily="JetBrains Mono" opacity="0.5">
-            Select notes on any instrument
+            Select notes
           </text>
         )}
       </svg>
