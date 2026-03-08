@@ -85,7 +85,6 @@ export function GuitarFretboard() {
 
               const pc = Note.pitchClass(note);
               const isActive = activeNotes.has(note);
-              const isChromaActive = [...activeNotes].some(n => getNoteChroma(n) === getNoteChroma(note));
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
