@@ -51,7 +51,6 @@ export function LinearNoteMap() {
           {notes.map(n => {
             const color = getNoteColor(n.pc);
             const isActive = activeNotes.has(n.noteName);
-            const isHovered = hoveredPitchClass === (n.midi % 12);
             const deEmphasize = isKeyLocked && !n.inScale && !isActive;
             const size = deEmphasize ? SMALL_CIRCLE : CIRCLE_SIZE;
 
