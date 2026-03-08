@@ -40,8 +40,9 @@ export function ControlSidebar() {
       <div className="space-y-1">
         <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <span className="text-lg font-bold text-primary font-mono">Harmonic</span>
-          <span className="text-lg font-bold text-foreground font-mono">Mapper</span>
+          <img src={musoIcon} alt="Note Navigation" className="w-7 h-7 rounded" />
+          <span className="text-lg font-bold text-primary font-mono">Note</span>
+          <span className="text-lg font-bold text-foreground font-mono">Navigation</span>
         </a>
         <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
           className="text-[10px] text-muted-foreground font-mono hover:text-primary transition-colors">
