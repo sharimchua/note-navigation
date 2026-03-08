@@ -27,7 +27,7 @@ export function LinearNoteMap() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg p-2 pb-5 md:p-3 md:pb-6">
+    <div className="bg-card border border-border rounded-lg p-2 md:p-3">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">
           Linear Note Map

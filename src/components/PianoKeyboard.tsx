@@ -175,7 +175,7 @@ export function PianoKeyboard() {
   const containerHeight = containerRef.current?.clientHeight ?? 128;
 
   return (
-    <div className="glass-panel p-4 pb-6">
+    <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Piano · 88 Keys</h3>
       <div ref={scrollRef} className="overflow-x-auto">
         <div 
