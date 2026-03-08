@@ -167,14 +167,10 @@ export function StaffNotation() {
           opacity="0.4"
         />
 
-        {/* Treble Clef - curl center on G4 line (y=72) */}
-        {/* Unicode 𝄞: the visual center of the curl is roughly 60% from top of glyph */}
-        {/* For fontSize 50, glyph height ~50px, curl center ~30px from top */}
-        {/* So y should be: G4_line + 30 = 72 + 30 = 102, but we need baseline */}
-        {/* baseline ≈ bottom of glyph, curl at ~40% up from baseline */}
+        {/* Treble Clef - curl intersection on G4 line (y=72) */}
         <text
           x="36"
-          y={trebleClefY + 28}
+          y={trebleClefY + 18}
           fontSize="54"
           fill="hsl(var(--foreground))"
           opacity="0.6"
