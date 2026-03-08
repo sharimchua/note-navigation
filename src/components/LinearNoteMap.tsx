@@ -54,7 +54,7 @@ export function LinearNoteMap() {
                 opacity: n.isActive ? 1 : 0.6,
                 boxShadow: n.isActive
                   ? `0 0 12px ${color}`
-                  : n.inScale
+                  : (isKeyLocked && n.inScale)
                     ? '0 0 0 3px hsl(var(--foreground))'
                     : 'none',
               }}
