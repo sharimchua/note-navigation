@@ -67,13 +67,9 @@ export function LinearNoteMap() {
                   opacity: deEmphasize ? 0.25 : isActive ? 1 : 0.6,
                   boxShadow: isActive
                     ? `0 0 12px ${color}`
-                    : isHovered
-                      ? `0 0 10px ${color}`
-                      : (isKeyLocked && n.inScale)
-                        ? '0 0 0 3px hsl(var(--foreground))'
-                        : 'none',
-                  transform: isHovered && !isActive ? 'scale(1.15)' : undefined,
-                  filter: isHovered && !isActive ? 'brightness(1.4)' : undefined,
+                    : (isKeyLocked && n.inScale)
+                      ? '0 0 0 3px hsl(var(--foreground))'
+                      : 'none',
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >

@@ -135,14 +135,11 @@ export function PianoKeyboard() {
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
-                backgroundColor: isActive ? color : isHovered ? `${color}60` : "hsl(var(--background))",
+                backgroundColor: isActive ? color : "hsl(var(--background))",
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
-                boxShadow: isHovered && !isActive ? `inset 0 0 15px ${color}40` : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
-              onMouseEnter={() => setHoveredPitchClass(key.midi % 12)}
-              onMouseLeave={() => setHoveredPitchClass(null)}
             >
               {showScaleIndicator && (
                 <div 
