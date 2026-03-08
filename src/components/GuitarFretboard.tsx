@@ -94,20 +94,8 @@ export function GuitarFretboard() {
                 ? 30 
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
-              if (!isActive && !dimmed) {
-                // Show dots for scale notes when key is locked
-                if (isKeyLocked && inScale) {
-                  return (
-                    <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
-                      <circle cx={x} cy={y} r="8" fill={color} opacity="0.3" />
-                      <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize="7"
-                        fontFamily="JetBrains Mono" textAnchor="middle" opacity="0.7">
-                        {pc}
-                      </text>
-                    </g>
-                  );
-                }
-                // Invisible click target for non-scale notes
+              if (!isActive && dimmed) {
+                // Non-scale notes when key-locked: invisible click target only
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
@@ -115,14 +103,34 @@ export function GuitarFretboard() {
                 );
               }
 
+              if (!isActive && isKeyLocked && inScale) {
+                // Scale notes (not active): show subtle colored dots
+                return (
+                  <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
+                    <circle cx={x} cy={y} r="8" fill={color} opacity="0.3" />
+                    <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize="7"
+                      fontFamily="JetBrains Mono" textAnchor="middle" opacity="0.7">
+                      {pc}
+                    </text>
+                  </g>
+                );
+              }
+
+              if (!isActive) {
+                // No key lock: invisible click target
+                return (
+                  <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
+                    fill="transparent" className="cursor-pointer"
+                    onClick={() => handleFretClick(note)} />
+                );
+              }
+
+              // Active notes: full display
               return (
                 <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
-                  <circle cx={x} cy={y} r="9" fill={color} 
-                    opacity={dimmed ? 0.15 : (isActive ? 1 : 0.5)} 
-                    />
+                  <circle cx={x} cy={y} r="9" fill={color} />
                   <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize="7"
-                    fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold"
-                    opacity={dimmed ? 0.2 : 1}>
+                    fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold">
                     {pc}
                   </text>
                 </g>

@@ -30,13 +30,12 @@ export function PianoKeyboard() {
           const inScale = isNoteInCurrentScale(key.note);
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
-          const dimmed = isKeyLocked && !inScale;
+          const showScaleIndicator = isKeyLocked && inScale && !isActive;
 
           return (
             <div
               key={key.midi}
-              className={`absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm
-                ${dimmed ? 'opacity-20' : 'hover:opacity-90'}`}
+              className="absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm hover:opacity-90"
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
@@ -45,6 +44,13 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
+              {/* Scale indicator dot */}
+              {showScaleIndicator && (
+                <div 
+                  className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              )}
               <span 
                 className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
                 style={{ color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
@@ -60,7 +66,7 @@ export function PianoKeyboard() {
           const isActive = activeNotes.has(key.note);
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
-          const dimmed = isKeyLocked && !inScale;
+          const showScaleIndicator = isKeyLocked && inScale && !isActive;
 
           // Find position relative to white keys
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
@@ -70,8 +76,7 @@ export function PianoKeyboard() {
           return (
             <div
               key={key.midi}
-              className={`absolute top-0 cursor-pointer rounded-b-sm
-                ${dimmed ? 'opacity-20' : 'hover:opacity-90'}`}
+              className="absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90"
               style={{
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.6}%`,
@@ -81,7 +86,15 @@ export function PianoKeyboard() {
                 zIndex: 2,
               }}
               onClick={() => handleKeyClick(key.note)}
-            />
+            >
+              {/* Scale indicator dot */}
+              {showScaleIndicator && (
+                <div 
+                  className="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              )}
+            </div>
           );
         })}
       </div>
