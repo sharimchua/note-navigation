@@ -21,8 +21,12 @@ export function ControlSidebar() {
   } = useHarmonic();
 
   const handleScalePreset = (scaleType: string) => {
-    setScale(scaleType);
-    setKeyLocked(true);
+    if (selectedScale === scaleType && isKeyLocked) {
+      setKeyLocked(false);
+    } else {
+      setScale(scaleType);
+      setKeyLocked(true);
+    }
   };
 
   return (
