@@ -117,12 +117,11 @@ export function StaffNotation() {
           opacity="0.4"
         />
 
-        {/* Treble Clef - centered on G line (2nd from bottom, y=72) */}
-        {/* The unicode treble clef glyph baseline sits roughly at the G line */}
+        {/* Treble Clef - G clef centered on G4 line (y=72) */}
         <text
           x="36"
-          y={trebleClefY + 20}
-          fontSize="48"
+          y={trebleClefY + 24}
+          fontSize="52"
           fill="hsl(var(--foreground))"
           opacity="0.6"
           fontFamily="serif"
@@ -136,11 +135,11 @@ export function StaffNotation() {
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
-        {/* Bass Clef - dots surround F3 line (2nd from top, y=120) */}
+        {/* Bass Clef - F clef centered on F3 line (y=120) */}
         <text
           x="36"
-          y={bassClefY + 8}
-          fontSize="32"
+          y={bassClefY + 4}
+          fontSize="36"
           fill="hsl(var(--foreground))"
           opacity="0.6"
           fontFamily="serif"
