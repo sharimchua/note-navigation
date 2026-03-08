@@ -1,12 +1,12 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getHandMidis, NOTE_COLOR_KEYS } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis, getScaleDegree } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
 const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -18,7 +18,6 @@ export function PianoKeyboard() {
   const whiteKeys = PIANO_KEYS.filter(k => !k.isBlack);
   const whiteKeyWidth = 100 / whiteKeys.length;
 
-  // Build a map of MIDI -> { finger, hand } for fingering display
   const fingeringMap = useMemo(() => {
     const map = new Map<number, { finger: number; hand: 'left' | 'right' }>();
     if (leftHand.enabled) {
@@ -36,7 +35,6 @@ export function PianoKeyboard() {
     return map;
   }, [leftHand, rightHand, scaleNotes]);
 
-  // Scroll to C4 on mount
   useEffect(() => {
     const scrollEl = scrollRef.current;
     const innerEl = containerRef.current;
@@ -66,18 +64,23 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
+          const isHovered = hoveredPitchClass === (key.midi % 12);
+          const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
           return (
             <div
               key={key.midi}
-              className="absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm hover:opacity-90"
+              className={`absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm hover:opacity-90 ${isActive ? 'note-active' : ''}`}
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                backgroundColor: isActive ? color : "#f5f0e8",
+                backgroundColor: isActive ? color : isHovered ? `${color}40` : "#f5f0e8",
                 zIndex: 1,
+                boxShadow: isHovered && !isActive ? `inset 0 0 20px ${color}40` : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
+              onMouseEnter={() => setHoveredPitchClass(key.midi % 12)}
+              onMouseLeave={() => setHoveredPitchClass(null)}
             >
               {showScaleIndicator && (
                 <div 
@@ -87,18 +90,20 @@ export function PianoKeyboard() {
                     backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
                   }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>{pc}</span>
+                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>
+                    {degree || pc}
+                  </span>
                 </div>
               )}
               {fingering && (
                 <div 
                   className="absolute top-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
                   style={{ 
-                    backgroundColor: fingering.hand === 'left' ? 'rgba(59, 130, 246, 0.85)' : 'rgba(239, 68, 68, 0.85)',
+                    backgroundColor: fingering.hand === 'left' ? 'hsla(217, 91%, 60%, 0.85)' : 'hsla(0, 84%, 60%, 0.85)',
                     zIndex: 5,
                   }}
                 >
-                  <span className="text-[9px] font-mono font-bold text-white">{fingering.finger}</span>
+                  <span className="text-[9px] font-mono font-bold" style={{ color: 'hsl(var(--primary-foreground))' }}>{fingering.finger}</span>
                 </div>
               )}
               {pc === "C" && (
@@ -120,6 +125,8 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
+          const isHovered = hoveredPitchClass === (key.midi % 12);
+          const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
@@ -128,16 +135,19 @@ export function PianoKeyboard() {
           return (
             <div
               key={key.midi}
-              className="absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90"
+              className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${isActive ? 'note-active' : ''}`}
               style={{
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
-                backgroundColor: isActive ? color : "hsl(var(--background))",
+                backgroundColor: isActive ? color : isHovered ? `${color}60` : "hsl(var(--background))",
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
+                boxShadow: isHovered && !isActive ? `inset 0 0 15px ${color}40` : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
+              onMouseEnter={() => setHoveredPitchClass(key.midi % 12)}
+              onMouseLeave={() => setHoveredPitchClass(null)}
             >
               {showScaleIndicator && (
                 <div 
@@ -148,18 +158,20 @@ export function PianoKeyboard() {
                     filter: isActive ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER }}>{Note.pitchClass(key.note)}</span>
+                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER }}>
+                    {degree || Note.pitchClass(key.note)}
+                  </span>
                 </div>
               )}
               {fingering && (
                 <div 
                   className="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
                   style={{ 
-                    backgroundColor: fingering.hand === 'left' ? 'rgba(59, 130, 246, 0.85)' : 'rgba(239, 68, 68, 0.85)',
+                    backgroundColor: fingering.hand === 'left' ? 'hsla(217, 91%, 60%, 0.85)' : 'hsla(0, 84%, 60%, 0.85)',
                     zIndex: 5,
                   }}
                 >
-                  <span className="text-[9px] font-mono font-bold text-white">{fingering.finger}</span>
+                  <span className="text-[9px] font-mono font-bold" style={{ color: 'hsl(var(--primary-foreground))' }}>{fingering.finger}</span>
                 </div>
               )}
             </div>

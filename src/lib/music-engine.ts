@@ -88,22 +88,6 @@ export function getFretNote(openString: string, fret: number): string {
   return Note.fromMidi(midi + fret);
 }
 
-export function getAllFretboardPositions(noteName: string, tuning: string[] = STANDARD_TUNING): { string: number; fret: number }[] {
-  const targetChroma = getNoteChroma(noteName);
-  const positions: { string: number; fret: number }[] = [];
-  
-  tuning.forEach((openNote, stringIdx) => {
-    for (let fret = 0; fret <= TOTAL_FRETS; fret++) {
-      const fretNote = getFretNote(openNote, fret);
-      if (getNoteChroma(fretNote) === targetChroma) {
-        positions.push({ string: stringIdx, fret });
-      }
-    }
-  });
-  
-  return positions;
-}
-
 // Piano range: A0 to C8 (88 keys)
 export const PIANO_START_MIDI = 21; // A0
 export const PIANO_END_MIDI = 108; // C8
@@ -167,14 +151,13 @@ export function getHandMidis(
   }
 }
 
-export interface DexterityPreset {
-  name: string;
-  pattern: number[];
-  description: string;
+// Scale degree utility: returns 1-based degree (1-7) or null if not in scale
+export function getScaleDegree(noteName: string, scaleNotes: string[]): number | null {
+  const chroma = getNoteChroma(noteName);
+  for (let i = 0; i < scaleNotes.length; i++) {
+    if (getNoteChroma(scaleNotes[i]) === chroma) {
+      return i + 1;
+    }
+  }
+  return null;
 }
-
-export const DEXTERITY_PRESETS: DexterityPreset[] = [
-  { name: "Standard 1-2-3-4", pattern: [1, 2, 3, 4], description: "Linear chromatic movement" },
-  { name: "Alternate 1-3-2-4", pattern: [1, 3, 2, 4], description: "Independent finger control" },
-  { name: "Stretch 1-4-2-3", pattern: [1, 4, 2, 3], description: "Reach and flexibility" },
-];

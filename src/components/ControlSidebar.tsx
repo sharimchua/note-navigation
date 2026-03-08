@@ -1,7 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { NOTE_NAMES, SCALE_PRESETS, GUITAR_TUNINGS } from "@/lib/music-engine";
-import { Note } from "tonal";
+import { NOTE_NAMES, SCALE_PRESETS } from "@/lib/music-engine";
 
 // Generate piano note options for hand root selection (C2-C6)
 const HAND_ROOT_OPTIONS: string[] = [];
@@ -13,11 +12,11 @@ for (let octave = 2; octave <= 6; octave++) {
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, midiState, selectedTuning,
+    selectedKey, selectedScale, isKeyLocked, midiState,
     leftHand, rightHand,
-    setKey, setScale, setKeyLocked, setTuning,
+    setKey, setScale, setKeyLocked,
     setLeftHand, setRightHand,
-    setActiveNotes, clearNotes, playNote
+    clearNotes, playNote
   } = useHarmonic();
 
   const handleScalePreset = (scaleType: string) => {
@@ -89,43 +88,6 @@ export function ControlSidebar() {
       </div>
 
 
-      {/* Guitar Tuning */}
-      <div className="space-y-2">
-        <h4 className="engineering-label">Guitar Tuning</h4>
-        <select
-          value={selectedTuning.name}
-          onChange={e => {
-            const tuning = GUITAR_TUNINGS.find(t => t.name === e.target.value);
-            if (tuning) setTuning(tuning);
-          }}
-          className="w-full px-2 py-1.5 text-xs font-mono rounded-sm border border-border 
-            bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
-        >
-          <optgroup label="Standard">
-            {GUITAR_TUNINGS.filter(t => t.category === "standard").map(t => (
-              <option key={t.name} value={t.name}>{t.name}</option>
-            ))}
-          </optgroup>
-          <optgroup label="Drop">
-            {GUITAR_TUNINGS.filter(t => t.category === "drop").map(t => (
-              <option key={t.name} value={t.name}>{t.name}</option>
-            ))}
-          </optgroup>
-          <optgroup label="Open">
-            {GUITAR_TUNINGS.filter(t => t.category === "open").map(t => (
-              <option key={t.name} value={t.name}>{t.name}</option>
-            ))}
-          </optgroup>
-          <optgroup label="Alternate">
-            {GUITAR_TUNINGS.filter(t => t.category === "alternate").map(t => (
-              <option key={t.name} value={t.name}>{t.name}</option>
-            ))}
-          </optgroup>
-        </select>
-        <div className="text-[9px] font-mono text-muted-foreground">
-          {selectedTuning.notes.join(" · ")}
-        </div>
-      </div>
 
       {/* Controls */}
       <div className="space-y-3">
