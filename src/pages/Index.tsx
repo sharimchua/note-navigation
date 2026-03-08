@@ -66,7 +66,7 @@ const Index = () => {
           {/* Tri-View: Staff left, instruments right */}
           <div className="flex flex-col xl:flex-row gap-3 md:gap-4 flex-1 min-h-0">
             {/* Grand Staff - full vertical height */}
-            <div className="xl:flex-1 xl:min-w-[340px] min-h-[360px] md:min-h-[420px] xl:min-h-0">
+            <div className="xl:flex-1 xl:min-w-[340px] min-h-[480px] md:min-h-[520px] xl:min-h-0">
               <StaffNotation />
             </div>
             
