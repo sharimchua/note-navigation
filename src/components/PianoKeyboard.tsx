@@ -89,12 +89,14 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
-              {/* Scale indicator dot */}
+              {/* Scale indicator circle with note name */}
               {showScaleIndicator && (
                 <div 
-                  className="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
+                  className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center"
+                  style={{ borderColor: color }}
+                >
+                  <span className="text-[6px] font-mono font-bold" style={{ color }}>{Note.pitchClass(key.note)}</span>
+                </div>
               )}
             </div>
           );
