@@ -4,6 +4,7 @@ import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
 const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
+const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
@@ -14,9 +15,7 @@ export function PianoKeyboard() {
     playNote(note);
     toggleNote(note);
   }, [playNote, toggleNote]);
-
-  const whiteKeys = PIANO_KEYS.filter(k => !k.isBlack);
-  const whiteKeyWidth = 100 / whiteKeys.length;
+  const whiteKeyWidth = 100 / WHITE_KEYS.length;
 
   const fingeringMap = useMemo(() => {
     const map = new Map<number, { finger: number; hand: 'left' | 'right' }>();
@@ -39,13 +38,13 @@ export function PianoKeyboard() {
     const scrollEl = scrollRef.current;
     const innerEl = containerRef.current;
     if (!scrollEl || !innerEl) return;
-    const c4Idx = whiteKeys.findIndex(k => k.midi === 60);
+    const c4Idx = WHITE_KEYS.findIndex(k => k.midi === 60);
     if (c4Idx < 0) return;
     const innerWidth = innerEl.scrollWidth;
     const visibleWidth = scrollEl.clientWidth;
-    const c4Pos = (c4Idx / whiteKeys.length) * innerWidth;
+    const c4Pos = (c4Idx / WHITE_KEYS.length) * innerWidth;
     scrollEl.scrollLeft = Math.max(0, c4Pos - visibleWidth / 2);
-  }, [whiteKeys]);
+  }, []);
 
   return (
     <div className="glass-panel p-4">
@@ -57,7 +56,7 @@ export function PianoKeyboard() {
           style={{ minWidth: "1600px", height: "200px" }}
         >
         {/* White keys */}
-        {whiteKeys.map((key, i) => {
+        {WHITE_KEYS.map((key, i) => {
           const isActive = activeNotes.has(key.note);
           const inScale = isNoteInCurrentScale(key.note);
           const pc = Note.pitchClass(key.note);
@@ -123,7 +122,7 @@ export function PianoKeyboard() {
           const fingering = fingeringMap.get(key.midi);
           const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
-          const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
+          const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
           const leftPos = (prevWhiteIdx + 0.55) * whiteKeyWidth;
 

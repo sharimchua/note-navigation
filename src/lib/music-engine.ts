@@ -1,5 +1,5 @@
 // Music theory utilities and shared state types
-import { Note, Scale, Interval } from "tonal";
+import { Note, Scale } from "tonal";
 
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as const;
 export const NOTE_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"] as const;
@@ -48,7 +48,7 @@ export function isNoteInScale(noteName: string, scaleNotes: string[]): boolean {
 }
 
 // Guitar tunings
-export const STANDARD_TUNING = ["E2", "A2", "D3", "G3", "B3", "E4"];
+
 export const TOTAL_FRETS = 22;
 
 export interface GuitarTuning {
