@@ -1,6 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { KEY_NAMES_COF, SCALE_PRESETS } from "@/lib/music-engine";
+import { KEY_NAMES_COF, NOTE_NAMES, SCALE_PRESETS } from "@/lib/music-engine";
 
 // Generate piano note options for hand root selection (C2-C6)
 const HAND_ROOT_OPTIONS: string[] = [];
