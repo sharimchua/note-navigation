@@ -27,6 +27,8 @@ const BASS_TOP = 108;
 const BASS_BOTTOM = 156;
 
 const DIATONIC_MAP = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
+// Sharp-based pitch class names matching the DIATONIC_MAP positioning
+const SHARP_PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 function midiToY(midi: number): number {
   const octave = Math.floor(midi / 12);
@@ -89,13 +91,17 @@ const SECOND_OFFSET = 16;
 export function StaffNotation() {
   const { activeNotes, selectedKey, selectedScale } = useHarmonic();
 
-  const activeArray = [...activeNotes].map(n => ({
-    note: n,
-    midi: Note.midi(n) || 60,
-    pc: Note.pitchClass(n),
-    color: getNoteColor(n),
-    isSharp: needsAccidental(Note.midi(n) || 60),
-  }));
+  const activeArray = [...activeNotes].map(n => {
+    const midi = Note.midi(n) || 60;
+    const pc = midi % 12;
+    return {
+      note: n,
+      midi,
+      pc: SHARP_PC_NAMES[pc], // Always use sharp-based names to match staff positioning
+      color: getNoteColor(n),
+      isSharp: needsAccidental(midi),
+    };
+  });
 
   // Sort by MIDI for consistent display
   activeArray.sort((a, b) => a.midi - b.midi);
