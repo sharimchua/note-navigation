@@ -98,7 +98,7 @@ export function StaffNotation() {
   const bassClefY = 120; // F3 line
 
   return (
-    <div className="glass-panel p-4">
+    <div className="glass-panel p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
         {audiationMode && (
