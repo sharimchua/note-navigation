@@ -92,6 +92,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
+  const [useFlats, setUseFlats] = useState(false);
   const { activeNotes, selectedKey, selectedScale } = useHarmonic();
 
   const activeArray = [...activeNotes].map(n => {
