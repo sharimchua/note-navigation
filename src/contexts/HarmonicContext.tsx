@@ -3,6 +3,11 @@ import * as Tone from "tone";
 import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
 
+export interface HandPosition {
+  enabled: boolean;
+  rootNote: string; // e.g. "C4"
+}
+
 interface HarmonicState {
   activeNotes: Set<string>; // full note names like "C4"
   selectedKey: string;
@@ -12,6 +17,8 @@ interface HarmonicState {
   useFlats: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
+  leftHand: HandPosition;
+  rightHand: HandPosition;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
@@ -20,6 +27,8 @@ interface HarmonicState {
   setKeyLocked: (locked: boolean) => void;
   setUseFlats: (useFlats: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
+  setLeftHand: (hand: HandPosition) => void;
+  setRightHand: (hand: HandPosition) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
 }
@@ -39,6 +48,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [isKeyLocked, setKeyLocked] = useState(false);
   const [useFlats, setUseFlats] = useState(false);
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
+  const [leftHand, setLeftHand] = useState<HandPosition>({ enabled: false, rootNote: "C3" });
+  const [rightHand, setRightHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
   const synthRef = useRef<Tone.PolySynth | null>(null);
 
   const getSynth = useCallback(() => {
@@ -119,6 +130,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
   const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
+  const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
+  const setRightHandCb = useCallback((hand: HandPosition) => setRightHand(hand), []);
 
   return React.createElement(HarmonicContext.Provider, {
     value: {
@@ -130,6 +143,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       useFlats,
       midiState,
       selectedTuning,
+      leftHand,
+      rightHand,
       toggleNote,
       setActiveNotes,
       clearNotes,
@@ -138,6 +153,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setKeyLocked,
       setUseFlats,
       setTuning,
+      setLeftHand: setLeftHandCb,
+      setRightHand: setRightHandCb,
       playNote,
       isNoteInCurrentScale,
     }
