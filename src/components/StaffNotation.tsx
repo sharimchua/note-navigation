@@ -214,7 +214,7 @@ export function StaffNotation() {
     const ledgers = getLedgerLines(y, x, clef);
 
     return (
-      <g key={n.note}>
+      <g key={n.note} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); playNote(n.note); toggleNote(n.note); }}>
         {ledgers.map((l, li) => (
           <line key={`ledger-${li}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
             stroke="hsl(var(--border))" strokeWidth="0.8" />
@@ -222,7 +222,7 @@ export function StaffNotation() {
         <ellipse cx={x} cy={y} rx="8" ry="5.5" fill={n.color}
           transform={`rotate(-15 ${x} ${y})`} />
         <text x={x} y={y + 3} fontSize="6" fill="hsl(var(--background))"
-          textAnchor="middle" fontFamily="JetBrains Mono" fontWeight="bold">
+          textAnchor="middle" fontFamily="JetBrains Mono" fontWeight="bold" style={{ pointerEvents: "none" }}>
           {n.pc}
         </text>
       </g>
