@@ -121,7 +121,6 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const isHovered = hoveredPitchClass === (key.midi % 12);
           const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
