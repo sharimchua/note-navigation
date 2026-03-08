@@ -193,13 +193,6 @@ export function ControlSidebar() {
         )}
       </div>
 
-      {/* Active Notes Display */}
-      <div className="space-y-2">
-        <h4 className="engineering-label">Active Signal</h4>
-        <div className="text-xs font-mono text-muted-foreground">
-          Key: {selectedKey} {selectedScale}
-        </div>
-      </div>
 
       {/* Links */}
       <div className="space-y-2 pt-4 border-t border-sidebar-border">
