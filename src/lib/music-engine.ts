@@ -151,14 +151,13 @@ export function getHandMidis(
   }
 }
 
-export interface DexterityPreset {
-  name: string;
-  pattern: number[];
-  description: string;
+// Scale degree utility: returns 1-based degree (1-7) or null if not in scale
+export function getScaleDegree(noteName: string, scaleNotes: string[]): number | null {
+  const chroma = getNoteChroma(noteName);
+  for (let i = 0; i < scaleNotes.length; i++) {
+    if (getNoteChroma(scaleNotes[i]) === chroma) {
+      return i + 1;
+    }
+  }
+  return null;
 }
-
-export const DEXTERITY_PRESETS: DexterityPreset[] = [
-  { name: "Standard 1-2-3-4", pattern: [1, 2, 3, 4], description: "Linear chromatic movement" },
-  { name: "Alternate 1-3-2-4", pattern: [1, 3, 2, 4], description: "Independent finger control" },
-  { name: "Stretch 1-4-2-3", pattern: [1, 4, 2, 3], description: "Reach and flexibility" },
-];
