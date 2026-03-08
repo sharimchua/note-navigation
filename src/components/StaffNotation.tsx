@@ -240,7 +240,7 @@ export function StaffNotation() {
           {useFlats ? "♭ Flats" : "♯ Sharps"}
         </button>
       </div>
-      <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
+      <svg ref={svgRef} viewBox="0 0 200 200" className="w-full flex-1 cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleSvgClick}>
         {/* Staff background */}
         <rect x="28" y={TREBLE_TOP - 4} width="164" height={TREBLE_BOTTOM - TREBLE_TOP + 8} rx="2"
           fill="hsl(var(--card))" opacity="0.6" />
