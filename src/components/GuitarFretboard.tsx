@@ -1,7 +1,7 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass } from "@/lib/music-engine";
 import { Note } from "tonal";
-import { useCallback } from "react";
+import { useCallback, useRef, useEffect } from "react";
 
 export function GuitarFretboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning, useFlats } = useHarmonic();
@@ -20,11 +20,22 @@ export function GuitarFretboard() {
   const markerFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21];
   const doubleMarkerFrets = [12];
 
+  const fretScrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to show frets 1-4 on mount (slight offset from left)
+  useEffect(() => {
+    const el = fretScrollRef.current;
+    if (!el) return;
+    // Frets 1-4 are near the start, so just reset to 0
+    el.scrollLeft = 0;
+  }, []);
+
   return (
     <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Fretboard · {selectedTuning.name} · {TOTAL_FRETS} Frets</h3>
-      <div className="relative overflow-x-auto" style={{ minWidth: "900px" }}>
-        <svg viewBox="0 0 1100 160" className="w-full h-auto">
+      <div ref={fretScrollRef} className="overflow-x-auto">
+        <div style={{ minWidth: "900px" }}>
+          <svg viewBox="0 0 1100 160" className="w-full h-auto">
           {/* Nut */}
           <rect x="44" y="10" width="4" height="140" fill="hsl(var(--foreground))" opacity="0.6" rx="1" />
 
@@ -151,7 +162,8 @@ export function GuitarFretboard() {
               </text>
             );
           })}
-        </svg>
+          </svg>
+        </div>
       </div>
     </div>
   );
