@@ -1,12 +1,12 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, getNoteColor, getScaleNotes, getFretNote, STANDARD_TUNING } from "@/lib/music-engine";
+import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, GUITAR_TUNINGS, getNoteColor, getScaleNotes, getFretNote } from "@/lib/music-engine";
 import { Note } from "tonal";
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, audiationMode, midiState,
-    setKey, setScale, setKeyLocked, setAudiationMode, 
+    selectedKey, selectedScale, isKeyLocked, audiationMode, midiState, selectedTuning,
+    setKey, setScale, setKeyLocked, setAudiationMode, setTuning,
     setActiveNotes, clearNotes, playNote
   } = useHarmonic();
 
