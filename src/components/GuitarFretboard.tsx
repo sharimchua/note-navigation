@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { STANDARD_TUNING, TOTAL_FRETS, getFretNote, getNoteColor, getNoteChroma } from "@/lib/music-engine";
+import { STANDARD_TUNING, TOTAL_FRETS, getFretNote, getNoteColor } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback } from "react";
 
@@ -85,7 +85,6 @@ export function GuitarFretboard() {
 
               const pc = Note.pitchClass(note);
               const isActive = activeNotes.has(note);
-              const isChromaActive = [...activeNotes].some(n => getNoteChroma(n) === getNoteChroma(note));
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
@@ -94,7 +93,7 @@ export function GuitarFretboard() {
                 ? 30 
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
-              if (!isActive && !isChromaActive && !dimmed) {
+              if (!isActive && !dimmed) {
                 // Show dots for scale notes when key is locked
                 if (isKeyLocked && inScale) {
                   return (
