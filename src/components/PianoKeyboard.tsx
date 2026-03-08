@@ -15,7 +15,7 @@ export function PianoKeyboard() {
     playNote(note);
     toggleNote(note);
   }, [playNote, toggleNote]);
-  const whiteKeyWidth = 100 / whiteKeys.length;
+  const whiteKeyWidth = 100 / WHITE_KEYS.length;
 
   const fingeringMap = useMemo(() => {
     const map = new Map<number, { finger: number; hand: 'left' | 'right' }>();
