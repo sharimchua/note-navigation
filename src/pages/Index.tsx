@@ -28,6 +28,7 @@ const Index = () => {
             
             {/* Piano + Fretboard stacked in right column */}
             <div className="xl:w-[55%] 2xl:w-[60%] flex flex-col gap-4 shrink-0">
+              <LinearNoteMap />
               <PianoKeyboard />
               <GuitarFretboard />
             </div>
