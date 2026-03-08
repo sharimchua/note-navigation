@@ -32,7 +32,7 @@ function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth:
   }
 }
 
-// SVG hand shape: fingers extend upward from a palm base, mirrored for left hand
+// Realistic hand overlay with organic finger shapes, knuckle joints, and a natural palm
 function HandOverlaySVG({ 
   fingerPositions, 
   isLeft, 
@@ -46,26 +46,46 @@ function HandOverlaySVG({
 }) {
   if (fingerPositions.length === 0) return null;
 
-  // Sort by x position
   const sorted = [...fingerPositions].sort((a, b) => a.x - b.x);
-  
-  // Convert % to px
   const points = sorted.map(p => ({
     xPx: (p.x / 100) * containerWidth,
     finger: p.finger,
     isBlack: p.isBlack,
   }));
 
-  const palmCenterX = (points[0].xPx + points[points.length - 1].xPx) / 2;
-  const palmY = containerHeight + 30; // palm is below the keyboard
-  const fingerTipY = (f: { isBlack: boolean }) => f.isBlack ? containerHeight * 0.45 : containerHeight * 0.7;
+  const keyW = (containerWidth / 52); // approximate white key width in px
   
-  // Finger widths based on key width
-  const fingerW = (containerWidth * (100 / 52) / 100) * 0.7; // ~70% of white key width
-  
-  const color = isLeft ? "rgba(59, 130, 246, 0.35)" : "rgba(239, 68, 68, 0.35)";
-  const strokeColor = isLeft ? "rgba(59, 130, 246, 0.6)" : "rgba(239, 68, 68, 0.6)";
-  const badgeColor = isLeft ? "rgba(59, 130, 246, 0.85)" : "rgba(239, 68, 68, 0.85)";
+  // Skin-tone colors with hand tint
+  const skinBase = isLeft ? "rgba(59, 130, 246, 0.18)" : "rgba(239, 68, 68, 0.18)";
+  const skinFill = isLeft ? "rgba(59, 130, 246, 0.12)" : "rgba(239, 68, 68, 0.12)";
+  const skinStroke = isLeft ? "rgba(59, 130, 246, 0.4)" : "rgba(239, 68, 68, 0.4)";
+  const nailColor = isLeft ? "rgba(59, 130, 246, 0.08)" : "rgba(239, 68, 68, 0.08)";
+  const knuckleColor = isLeft ? "rgba(59, 130, 246, 0.25)" : "rgba(239, 68, 68, 0.25)";
+  const badgeColor = isLeft ? "rgba(59, 130, 246, 0.8)" : "rgba(239, 68, 68, 0.8)";
+  const badgeText = "white";
+
+  // Finger proportions: [thumb, index, middle, ring, pinky] widths relative to key
+  const fingerWidthRatios = [0.75, 0.58, 0.56, 0.54, 0.48];
+  // Finger lengths vary naturally
+  const fingerLengthRatios = [0.38, 0.52, 0.58, 0.52, 0.42];
+
+  // Palm geometry
+  const palmLeft = points[0].xPx - keyW * 0.6;
+  const palmRight = points[points.length - 1].xPx + keyW * 0.6;
+  const palmTop = containerHeight * 0.82;
+  const palmBottom = containerHeight + 35;
+  const palmCX = (palmLeft + palmRight) / 2;
+
+  // Build a smooth palm outline path
+  const palmPath = `
+    M ${palmLeft + 8} ${palmTop}
+    Q ${palmLeft - 4} ${palmTop + 15} ${palmLeft} ${(palmTop + palmBottom) / 2}
+    Q ${palmLeft - 2} ${palmBottom - 8} ${palmCX - (palmRight - palmLeft) * 0.15} ${palmBottom}
+    Q ${palmCX} ${palmBottom + 6} ${palmCX + (palmRight - palmLeft) * 0.15} ${palmBottom}
+    Q ${palmRight + 2} ${palmBottom - 8} ${palmRight} ${(palmTop + palmBottom) / 2}
+    Q ${palmRight + 4} ${palmTop + 15} ${palmRight - 8} ${palmTop}
+    Z
+  `;
 
   return (
     <svg 
@@ -74,60 +94,111 @@ function HandOverlaySVG({
       width={containerWidth} 
       height={containerHeight}
     >
-      {/* Palm area */}
-      <ellipse
-        cx={palmCenterX}
-        cy={palmY}
-        rx={(points[points.length - 1].xPx - points[0].xPx) / 2 + fingerW}
-        ry={40}
-        fill={color}
-        stroke={strokeColor}
-        strokeWidth={1.5}
-      />
-      
-      {/* Fingers as rounded rectangles connected to palm */}
-      {points.map((pt, i) => {
-        const tipY = fingerTipY(sorted[i]);
-        const baseY = containerHeight + 5;
-        const height = baseY - tipY;
-        const radius = fingerW / 2;
+      <defs>
+        <filter id={`hand-shadow-${isLeft ? 'l' : 'r'}`}>
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={isLeft ? "rgba(59,130,246,0.2)" : "rgba(239,68,68,0.2)"} />
+        </filter>
+      </defs>
+
+      <g filter={`url(#hand-shadow-${isLeft ? 'l' : 'r'})`}>
+        {/* Palm */}
+        <path d={palmPath} fill={skinBase} stroke={skinStroke} strokeWidth={1.2} />
         
-        return (
-          <g key={i}>
-            {/* Finger body */}
-            <rect
-              x={pt.xPx - fingerW / 2}
-              y={tipY}
-              width={fingerW}
-              height={height}
-              rx={radius}
-              ry={radius}
-              fill={color}
-              stroke={strokeColor}
-              strokeWidth={1.5}
-            />
-            {/* Fingertip circle with number */}
-            <circle
-              cx={pt.xPx}
-              cy={tipY + radius}
-              r={radius - 1}
-              fill={badgeColor}
-            />
-            <text
-              x={pt.xPx}
-              y={tipY + radius + 1}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="white"
-              fontSize={Math.max(9, fingerW * 0.55)}
-              fontFamily="monospace"
-              fontWeight="bold"
-            >
-              {pt.finger}
-            </text>
-          </g>
-        );
-      })}
+        {/* Fingers */}
+        {points.map((pt, i) => {
+          // Map sorted index to finger type (for left hand reversed)
+          const fingerIdx = isLeft ? (4 - sorted[i].finger + 1) : (sorted[i].finger - 1);
+          const clampedIdx = Math.max(0, Math.min(4, fingerIdx));
+          
+          const fw = keyW * fingerWidthRatios[clampedIdx];
+          const fingerLen = containerHeight * fingerLengthRatios[clampedIdx];
+          const tipY = pt.isBlack ? containerHeight * 0.38 : containerHeight * 0.62;
+          const baseY = palmTop + 2;
+          
+          // Knuckle position
+          const knuckleY = baseY - fingerLen * 0.15;
+          
+          // Slight natural splay: outer fingers angle outward
+          const centerIdx = 2;
+          const splayAmount = (i - (points.length - 1) / 2) * 1.2;
+          const tipX = pt.xPx + splayAmount;
+          
+          // Tapered finger: wider at base, narrower at tip
+          const baseW = fw * 1.05;
+          const tipW = fw * 0.8;
+          const nailW = tipW * 0.7;
+          
+          // Organic finger path with slight curvature
+          const fingerPath = `
+            M ${pt.xPx - baseW / 2} ${baseY}
+            Q ${tipX - baseW / 2 - 1} ${knuckleY + (baseY - knuckleY) * 0.5} ${tipX - tipW / 2} ${tipY + tipW * 0.6}
+            Q ${tipX - tipW / 2} ${tipY} ${tipX} ${tipY - 1}
+            Q ${tipX + tipW / 2} ${tipY} ${tipX + tipW / 2} ${tipY + tipW * 0.6}
+            Q ${tipX + baseW / 2 + 1} ${knuckleY + (baseY - knuckleY) * 0.5} ${pt.xPx + baseW / 2} ${baseY}
+            Z
+          `;
+
+          return (
+            <g key={i}>
+              {/* Finger body */}
+              <path d={fingerPath} fill={skinBase} stroke={skinStroke} strokeWidth={1} />
+              
+              {/* Fingernail */}
+              <ellipse
+                cx={tipX}
+                cy={tipY + tipW * 0.15}
+                rx={nailW / 2}
+                ry={tipW * 0.28}
+                fill={nailColor}
+                stroke={skinStroke}
+                strokeWidth={0.5}
+              />
+              
+              {/* Knuckle crease */}
+              <line
+                x1={tipX - fw * 0.3}
+                y1={knuckleY + (baseY - knuckleY) * 0.45}
+                x2={tipX + fw * 0.3}
+                y2={knuckleY + (baseY - knuckleY) * 0.45}
+                stroke={knuckleColor}
+                strokeWidth={0.8}
+                strokeLinecap="round"
+              />
+              
+              {/* Second joint crease */}
+              <line
+                x1={tipX - fw * 0.25}
+                y1={tipY + fingerLen * 0.35}
+                x2={tipX + fw * 0.25}
+                y2={tipY + fingerLen * 0.35}
+                stroke={knuckleColor}
+                strokeWidth={0.6}
+                strokeLinecap="round"
+              />
+              
+              {/* Finger number badge */}
+              <circle
+                cx={tipX}
+                cy={tipY + tipW * 0.6 + 8}
+                r={Math.max(6, fw * 0.38)}
+                fill={badgeColor}
+              />
+              <text
+                x={tipX}
+                y={tipY + tipW * 0.6 + 9}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill={badgeText}
+                fontSize={Math.max(8, fw * 0.45)}
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                {sorted[i].finger}
+              </text>
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 }
