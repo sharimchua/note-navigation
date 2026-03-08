@@ -188,7 +188,7 @@ export function StaffNotation() {
         {/* Bass Clef - dots around F3 line (y=120) */}
         <text
           x="36"
-          y={bassClefY + 16}
+          y={bassClefY + 20}
           fontSize="48"
           fill="hsl(var(--foreground))"
           opacity="0.6"
