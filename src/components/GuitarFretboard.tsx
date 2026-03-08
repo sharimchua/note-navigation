@@ -81,7 +81,7 @@ export function GuitarFretboard() {
             const originalStringIdx = strings.length - 1 - stringIdx;
 
             return Array.from({ length: TOTAL_FRETS + 1 }, (_, fret) => {
-              const note = getFretNote(STANDARD_TUNING[originalStringIdx], fret);
+              const note = getFretNote(tuningNotes[originalStringIdx], fret);
               if (!note) return null;
 
               const pc = Note.pitchClass(note);
