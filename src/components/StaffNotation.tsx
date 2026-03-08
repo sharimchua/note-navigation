@@ -182,9 +182,6 @@ export function StaffNotation() {
           textAnchor="middle" fontFamily="JetBrains Mono" fontWeight="bold">
           {n.pc}
         </text>
-        {n.isSharp && (
-          <text x={x - 14} y={y + 4} fontSize="10" fill={n.color} fontWeight="bold">#</text>
-        )}
       </g>
     );
   }
