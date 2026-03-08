@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNoteColor, getNoteChroma } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
@@ -26,14 +27,16 @@ const BASS_LINES = [108, 120, 132, 144, 156]; // A3, F3, D3, B2, G2 (top to bott
 const BASS_TOP = 108;
 const BASS_BOTTOM = 156;
 
-const DIATONIC_MAP = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
-// Sharp-based pitch class names matching the DIATONIC_MAP positioning
+const DIATONIC_MAP_SHARP = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
+const DIATONIC_MAP_FLAT =  [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6]; // C,Db,D,Eb,E,F,Gb,G,Ab,A,Bb,B
 const SHARP_PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const FLAT_PC_NAMES =  ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
-function midiToY(midi: number): number {
+function midiToY(midi: number, useFlats: boolean): number {
   const octave = Math.floor(midi / 12);
   const pc = midi % 12;
-  const diatonicPos = DIATONIC_MAP[pc] + (octave - 5) * 7; // C4 (midi 60, octave 5) = 0
+  const map = useFlats ? DIATONIC_MAP_FLAT : DIATONIC_MAP_SHARP;
+  const diatonicPos = map[pc] + (octave - 5) * 7;
   return MIDDLE_C_Y - diatonicPos * STEP;
 }
 
@@ -89,15 +92,17 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
+  const [useFlats, setUseFlats] = useState(false);
   const { activeNotes, selectedKey, selectedScale } = useHarmonic();
 
   const activeArray = [...activeNotes].map(n => {
     const midi = Note.midi(n) || 60;
     const pc = midi % 12;
+    const pcNames = useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES;
     return {
       note: n,
       midi,
-      pc: SHARP_PC_NAMES[pc], // Always use sharp-based names to match staff positioning
+      pc: pcNames[pc],
       color: getNoteColor(n),
       isSharp: needsAccidental(midi),
     };
@@ -114,7 +119,7 @@ export function StaffNotation() {
   function getChordPositions(notes: typeof activeArray) {
     const positioned = notes.map(n => ({
       ...n,
-      y: midiToY(n.midi),
+      y: midiToY(n.midi, useFlats),
       x: CHORD_X,
       offsetRight: false,
     }));
@@ -196,6 +201,12 @@ export function StaffNotation() {
     <div className="glass-panel p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
+        <button
+          onClick={() => setUseFlats(!useFlats)}
+          className="px-2 py-0.5 text-[10px] font-mono rounded border border-border bg-secondary/50 text-secondary-foreground hover:border-primary/50 transition-all"
+        >
+          {useFlats ? "♭ Flats" : "♯ Sharps"}
+        </button>
       </div>
       <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
         {/* Staff background */}
