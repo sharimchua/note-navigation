@@ -5,36 +5,27 @@ import { Note } from "tonal";
 // Simple staff rendering - treble and bass clef
 // Maps MIDI notes to staff positions
 function midiToStaffY(midi: number, clef: "treble" | "bass"): number {
-  // Treble clef: middle C (60) is at ledger line below staff
-  // Bass clef: middle C (60) is at ledger line above staff
-  const notePositions: Record<number, number> = {};
-  
+  // Convert MIDI to diatonic position (C4=0 as reference)
+  const diatonicMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
+  const octave = Math.floor(midi / 12);
+  const pc = midi % 12;
+  // Absolute diatonic position where C4 (midi 60, octave 5) = 0
+  const diatonicPos = diatonicMap[pc] + (octave - 5) * 7;
+
+  const step = 6; // pixels per half-step on staff (one line/space)
+
   if (clef === "treble") {
-    // Staff lines from bottom: E4(64), G4(67), B4(71), D5(74), F5(77)
-    // Each semitone doesn't map linearly, use chromatic-to-diatonic
-    const baseY = 100; // Bottom of treble staff
-    const step = 6; // pixels per staff position
-    
-    // Map diatonic positions relative to C4 (midi 60)
-    const c4Pos = 10; // positions below bottom line
-    const diatonicMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
-    
-    const octave = Math.floor(midi / 12) - 5; // relative to C4's octave
-    const pc = midi % 12;
-    const diatonicPos = diatonicMap[pc] + octave * 7;
-    
-    return baseY - (diatonicPos - c4Pos + 6) * step;
+    // Treble staff lines (bottom to top): E4, G4, B4, D5, F5
+    // E4 = diatonic +2, bottom line at y=88
+    // Each diatonic step up = -step in y
+    // E4 (pos 2) is at y=88, so y = 88 - (pos - 2) * step
+    return 88 - (diatonicPos - 2) * step;
   } else {
-    const baseY = 100;
-    const step = 6;
-    const c3Pos = 10;
-    const diatonicMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
-    
-    const octave = Math.floor(midi / 12) - 4;
-    const pc = midi % 12;
-    const diatonicPos = diatonicMap[pc] + octave * 7;
-    
-    return baseY - (diatonicPos - c3Pos + 6) * step;
+    // Bass staff lines (bottom to top): G2, B2, D3, F3, A3
+    // G2 = diatonic -12, bottom line at y=188
+    // A3 = diatonic -2, top line at y=140
+    // G2 (pos -12) at y=188, so y = 188 - (pos - (-12)) * step = 188 - (pos+12)*step
+    return 188 - (diatonicPos + 12) * step;
   }
 }
 
