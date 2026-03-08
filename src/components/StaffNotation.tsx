@@ -40,6 +40,11 @@ function needsAccidental(midi: number): boolean {
   return [1, 3, 6, 8, 10].includes(pc); // C#, D#, F#, G#, A#
 }
 
+// Chord x position - all notes stacked vertically at same x
+const CHORD_X = 200;
+// Offset for seconds (adjacent notes) to avoid overlap
+const SECOND_OFFSET = 16;
+
 export function StaffNotation() {
   const { activeNotes, audiationMode } = useHarmonic();
 
@@ -58,31 +63,51 @@ export function StaffNotation() {
   const trebleNotes = activeArray.filter(n => n.midi >= 60);
   const bassNotes = activeArray.filter(n => n.midi < 60);
 
+  // Detect seconds (adjacent diatonic positions) and offset them
+  function getChordPositions(notes: typeof activeArray) {
+    const positioned = notes.map(n => ({
+      ...n,
+      y: midiToY(n.midi),
+      x: CHORD_X,
+      offsetRight: false,
+    }));
+
+    // Check for seconds - notes that are only 1 diatonic step apart
+    for (let i = 1; i < positioned.length; i++) {
+      const prevY = positioned[i - 1].y;
+      const currY = positioned[i].y;
+      // If within one STEP, offset to the right
+      if (Math.abs(prevY - currY) <= STEP) {
+        if (!positioned[i - 1].offsetRight) {
+          positioned[i].offsetRight = true;
+          positioned[i].x = CHORD_X + SECOND_OFFSET;
+        }
+      }
+    }
+    return positioned;
+  }
+
   // Generate ledger lines for a note
   function getLedgerLines(y: number, x: number, clef: "treble" | "bass") {
     const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
 
     if (clef === "treble") {
-      // Ledger lines below treble staff (including middle C)
       if (y > TREBLE_BOTTOM) {
         for (let ly = TREBLE_BOTTOM + 12; ly <= y; ly += 12) {
           lines.push({ x1: x - 12, y1: ly, x2: x + 12, y2: ly });
         }
       }
-      // Ledger lines above treble staff
       if (y < TREBLE_TOP) {
         for (let ly = TREBLE_TOP - 12; ly >= y; ly -= 12) {
           lines.push({ x1: x - 12, y1: ly, x2: x + 12, y2: ly });
         }
       }
     } else {
-      // Ledger lines above bass staff (including middle C area)
       if (y < BASS_TOP) {
         for (let ly = BASS_TOP - 12; ly >= y; ly -= 12) {
           lines.push({ x1: x - 12, y1: ly, x2: x + 12, y2: ly });
         }
       }
-      // Ledger lines below bass staff
       if (y > BASS_BOTTOM) {
         for (let ly = BASS_BOTTOM + 12; ly <= y; ly += 12) {
           lines.push({ x1: x - 12, y1: ly, x2: x + 12, y2: ly });
@@ -92,10 +117,35 @@ export function StaffNotation() {
     return lines;
   }
 
-  // Treble clef: the curl centers on G4 line (2nd from bottom = y=72)
-  // Bass clef: the two dots surround F3 line (2nd from top = y=120)
   const trebleClefY = 72; // G4 line
   const bassClefY = 120; // F3 line
+
+  const treblePositioned = getChordPositions(trebleNotes);
+  const bassPositioned = getChordPositions(bassNotes);
+
+  // Render a note head with the note name inside
+  function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
+    const { x, y } = n;
+    const ledgers = getLedgerLines(y, x, clef);
+
+    return (
+      <g key={n.note}>
+        {ledgers.map((l, li) => (
+          <line key={`ledger-${li}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+            stroke="hsl(var(--border))" strokeWidth="0.8" />
+        ))}
+        <ellipse cx={x} cy={y} rx="8" ry="5.5" fill={n.color}
+          transform={`rotate(-15 ${x} ${y})`} />
+        <text x={x} y={y + 3} fontSize="6" fill="hsl(var(--background))"
+          textAnchor="middle" fontFamily="JetBrains Mono" fontWeight="bold">
+          {n.pc}
+        </text>
+        {n.isSharp && (
+          <text x={x - 14} y={y + 4} fontSize="10" fill={n.color} fontWeight="bold">#</text>
+        )}
+      </g>
+    );
+  }
 
   return (
     <div className="glass-panel p-4 h-full flex flex-col">
@@ -108,7 +158,7 @@ export function StaffNotation() {
         )}
       </div>
       <svg viewBox="0 0 400 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
-        {/* Grand staff brace - left bracket */}
+        {/* Grand staff brace */}
         <path
           d={`M 32 ${TREBLE_TOP} Q 22 ${MIDDLE_C_Y} 32 ${BASS_BOTTOM}`}
           fill="none"
@@ -117,14 +167,18 @@ export function StaffNotation() {
           opacity="0.4"
         />
 
-        {/* Treble Clef - G clef centered on G4 line (y=72) */}
+        {/* Treble Clef - curl center on G4 line (y=72) */}
+        {/* Unicode 𝄞: the visual center of the curl is roughly 60% from top of glyph */}
+        {/* For fontSize 50, glyph height ~50px, curl center ~30px from top */}
+        {/* So y should be: G4_line + 30 = 72 + 30 = 102, but we need baseline */}
+        {/* baseline ≈ bottom of glyph, curl at ~40% up from baseline */}
         <text
           x="36"
-          y={trebleClefY + 24}
-          fontSize="52"
+          y={trebleClefY + 28}
+          fontSize="54"
           fill="hsl(var(--foreground))"
           opacity="0.6"
-          fontFamily="serif"
+          fontFamily="'Noto Music', 'Bravura', serif"
         >
           𝄞
         </text>
@@ -135,14 +189,14 @@ export function StaffNotation() {
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
-        {/* Bass Clef - F clef centered on F3 line (y=120) */}
+        {/* Bass Clef - dots around F3 line (y=120) */}
         <text
           x="36"
           y={bassClefY + 4}
           fontSize="36"
           fill="hsl(var(--foreground))"
           opacity="0.6"
-          fontFamily="serif"
+          fontFamily="'Noto Music', 'Bravura', serif"
         >
           𝄢
         </text>
@@ -153,61 +207,17 @@ export function StaffNotation() {
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
-        {/* Middle C ledger line indicator (subtle dashed) */}
+        {/* Middle C ledger line indicator */}
         {activeArray.length === 0 && (
-          <line x1="100" y1={MIDDLE_C_Y} x2="130" y2={MIDDLE_C_Y}
+          <line x1="188" y1={MIDDLE_C_Y} x2="212" y2={MIDDLE_C_Y}
             stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.3" />
         )}
 
-        {/* Treble notes */}
-        {!audiationMode && trebleNotes.map((n, i) => {
-          const y = midiToY(n.midi);
-          const x = 120 + i * 35;
-          const ledgers = getLedgerLines(y, x, "treble");
+        {/* Treble notes - chord form (stacked at same x) */}
+        {!audiationMode && treblePositioned.map(n => renderNote(n, "treble"))}
 
-          return (
-            <g key={n.note}>
-              {ledgers.map((l, li) => (
-                <line key={`ledger-${li}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-                  stroke="hsl(var(--border))" strokeWidth="0.8" />
-              ))}
-              <ellipse cx={x} cy={y} rx="7" ry="5" fill={n.color}
-                transform={`rotate(-15 ${x} ${y})`} />
-              {n.isSharp && (
-                <text x={x - 14} y={y + 4} fontSize="10" fill={n.color} fontWeight="bold">#</text>
-              )}
-              <text x={x} y={y + 18} fontSize="8" fill="hsl(var(--muted-foreground))"
-                textAnchor="middle" fontFamily="JetBrains Mono">
-                {n.pc}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Bass notes */}
-        {!audiationMode && bassNotes.map((n, i) => {
-          const y = midiToY(n.midi);
-          const x = 120 + i * 35;
-          const ledgers = getLedgerLines(y, x, "bass");
-
-          return (
-            <g key={n.note}>
-              {ledgers.map((l, li) => (
-                <line key={`ledger-${li}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-                  stroke="hsl(var(--border))" strokeWidth="0.8" />
-              ))}
-              <ellipse cx={x} cy={y} rx="7" ry="5" fill={n.color}
-                transform={`rotate(-15 ${x} ${y})`} />
-              {n.isSharp && (
-                <text x={x - 14} y={y + 4} fontSize="10" fill={n.color} fontWeight="bold">#</text>
-              )}
-              <text x={x} y={y + 18} fontSize="8" fill="hsl(var(--muted-foreground))"
-                textAnchor="middle" fontFamily="JetBrains Mono">
-                {n.pc}
-              </text>
-            </g>
-          );
-        })}
+        {/* Bass notes - chord form (stacked at same x) */}
+        {!audiationMode && bassPositioned.map(n => renderNote(n, "bass"))}
 
         {/* Empty state */}
         {activeArray.length === 0 && (
