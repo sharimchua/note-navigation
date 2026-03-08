@@ -5,6 +5,7 @@ import { Note } from "tonal";
 const CENTER_MIDI = 60;
 const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
+const CIRCLE_SIZE = 28;
 
 export function LinearNoteMap() {
   const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote } = useHarmonic();
@@ -32,7 +33,16 @@ export function LinearNoteMap() {
         <span className="text-[9px] text-muted-foreground">C3 ← C4 → C5</span>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="relative flex items-center justify-between">
+        {/* Connecting line behind circles */}
+        <div
+          className="absolute top-1/2 left-0 right-0 -translate-y-1/2"
+          style={{
+            height: 2,
+            background: 'hsl(var(--border))',
+          }}
+        />
+
         {notes.map(n => {
           const dimmed = isKeyLocked && !n.inScale;
           const color = getNoteColor(n.pc);
@@ -41,31 +51,26 @@ export function LinearNoteMap() {
             <button
               key={n.midi}
               onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-              className="flex flex-col items-center gap-1 group"
+              className="relative z-10 flex items-center justify-center shrink-0 transition-all duration-150 group"
+              style={{
+                width: CIRCLE_SIZE,
+                height: CIRCLE_SIZE,
+                borderRadius: '50%',
+                backgroundColor: dimmed ? 'hsl(var(--muted))' : color,
+                opacity: n.isActive ? 1 : dimmed ? 0.15 : n.inScale ? 0.7 : 0.35,
+                boxShadow: n.isActive ? `0 0 12px ${color}` : 'none',
+                border: n.isCenter ? '2px solid hsl(var(--primary-foreground))' : 'none',
+              }}
               title={`${n.pc}${Note.octave(n.noteName)}`}
             >
-              <div
-                className="rounded-full transition-all duration-150"
+              <span
+                className="text-[8px] font-bold leading-none select-none"
                 style={{
-                  width: 18,
-                  height: 18,
-                  backgroundColor: n.isActive ? color : 'transparent',
-                  border: `2px solid ${dimmed ? 'hsl(var(--muted))' : color}`,
-                  opacity: n.isActive ? 1 : dimmed ? 0.15 : n.inScale ? 0.7 : 0.3,
-                  boxShadow: n.isActive ? `0 0 10px ${color}` : 'none',
+                  color: dimmed ? 'hsl(var(--muted-foreground))' : 'hsl(var(--primary-foreground))',
                 }}
-              />
-              {(n.isCenter || n.midi === LOW_MIDI || n.midi === HIGH_MIDI || (!n.isBlack && n.inScale)) && (
-                <span
-                  className="text-[7px] leading-none"
-                  style={{
-                    color: n.isCenter ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
-                    fontWeight: n.isCenter ? 700 : 400,
-                  }}
-                >
-                  {n.pc}
-                </span>
-              )}
+              >
+                {n.pc}
+              </span>
             </button>
           );
         })}
