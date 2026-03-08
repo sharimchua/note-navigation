@@ -1,30 +1,36 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNoteColor, getNotePitchClass } from "@/lib/music-engine";
+import { getNoteColor, getNotePitchClass, getScaleDegree } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMemo } from "react";
 
-const CENTER_MIDI = 60;
 const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
 
 export function LinearNoteMap() {
-  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote } = useHarmonic();
+  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
   const isMobile = useIsMobile();
 
   const CIRCLE_SIZE = isMobile ? 20 : 28;
+  const SMALL_CIRCLE = isMobile ? 12 : 16;
 
-  const scaleChromas = new Set(scaleNotes.map(n => Note.chroma(n)).filter((c): c is number => c !== undefined));
+  const scaleChromas = useMemo(
+    () => new Set(scaleNotes.map(n => Note.chroma(n)).filter((c): c is number => c !== undefined)),
+    [scaleNotes]
+  );
 
-  const notes = [];
-  for (let midi = LOW_MIDI; midi <= HIGH_MIDI; midi++) {
-    const noteName = Note.fromMidi(midi);
-    const pc = getNotePitchClass(noteName, useFlats);
-    const inScale = scaleChromas.has(midi % 12);
-    const isActive = activeNotes.has(noteName);
-    const isCenter = midi === CENTER_MIDI;
+  const notes = useMemo(() => {
+    const result = [];
+    for (let midi = LOW_MIDI; midi <= HIGH_MIDI; midi++) {
+      const noteName = Note.fromMidi(midi);
+      const pc = getNotePitchClass(noteName, useFlats);
+      const inScale = scaleChromas.has(midi % 12);
+      const degree = getScaleDegree(noteName, scaleNotes);
 
-    notes.push({ midi, noteName, pc, inScale, isActive, isCenter });
-  }
+      result.push({ midi, noteName, pc, inScale, degree });
+    }
+    return result;
+  }, [useFlats, scaleChromas, scaleNotes]);
 
   return (
     <div className="glass-panel p-4">
@@ -44,32 +50,44 @@ export function LinearNoteMap() {
 
           {notes.map(n => {
             const color = getNoteColor(n.pc);
+            const isActive = activeNotes.has(n.noteName);
+            const isHovered = hoveredPitchClass === (n.midi % 12);
+            const deEmphasize = isKeyLocked && !n.inScale && !isActive;
+            const size = deEmphasize ? SMALL_CIRCLE : CIRCLE_SIZE;
 
             return (
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                className="relative z-10 flex items-center justify-center shrink-0 transition-all duration-150"
+                onMouseEnter={() => setHoveredPitchClass(n.midi % 12)}
+                onMouseLeave={() => setHoveredPitchClass(null)}
+                className={`relative z-10 flex items-center justify-center shrink-0 transition-all duration-150 ${isActive ? 'note-active' : ''}`}
                 style={{
-                  width: CIRCLE_SIZE,
-                  height: CIRCLE_SIZE,
+                  width: size,
+                  height: size,
                   borderRadius: '50%',
                   backgroundColor: color,
-                  opacity: n.isActive ? 1 : 0.6,
-                  boxShadow: n.isActive
+                  opacity: deEmphasize ? 0.25 : isActive ? 1 : 0.6,
+                  boxShadow: isActive
                     ? `0 0 12px ${color}`
-                    : (isKeyLocked && n.inScale)
-                      ? '0 0 0 3px hsl(var(--foreground))'
-                      : 'none',
+                    : isHovered
+                      ? `0 0 10px ${color}`
+                      : (isKeyLocked && n.inScale)
+                        ? '0 0 0 3px hsl(var(--foreground))'
+                        : 'none',
+                  transform: isHovered && !isActive ? 'scale(1.15)' : undefined,
+                  filter: isHovered && !isActive ? 'brightness(1.4)' : undefined,
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >
-                <span
-                  className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : 'text-[8px]'}`}
-                  style={{ color: 'hsl(var(--primary-foreground))' }}
-                >
-                  {n.pc}
-                </span>
+                {!deEmphasize && (
+                  <span
+                    className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : 'text-[8px]'}`}
+                    style={{ color: 'hsl(var(--primary-foreground))' }}
+                  >
+                    {isKeyLocked && n.degree ? n.degree : n.pc}
+                  </span>
+                )}
               </button>
             );
           })}
