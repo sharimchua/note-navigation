@@ -8,7 +8,7 @@ const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
 
 export function LinearNoteMap() {
-  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
+  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote } = useHarmonic();
   const isMobile = useIsMobile();
 
   const CIRCLE_SIZE = isMobile ? 20 : 28;
@@ -51,7 +51,6 @@ export function LinearNoteMap() {
           {notes.map(n => {
             const color = getNoteColor(n.pc);
             const isActive = activeNotes.has(n.noteName);
-            const isHovered = hoveredPitchClass === (n.midi % 12);
             const deEmphasize = isKeyLocked && !n.inScale && !isActive;
             const size = deEmphasize ? SMALL_CIRCLE : CIRCLE_SIZE;
 
@@ -59,8 +58,6 @@ export function LinearNoteMap() {
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                onMouseEnter={() => setHoveredPitchClass(n.midi % 12)}
-                onMouseLeave={() => setHoveredPitchClass(null)}
                 className={`relative z-10 flex items-center justify-center shrink-0 transition-all duration-150 ${isActive ? 'note-active' : ''}`}
                 style={{
                   width: size,
@@ -70,13 +67,9 @@ export function LinearNoteMap() {
                   opacity: deEmphasize ? 0.25 : isActive ? 1 : 0.6,
                   boxShadow: isActive
                     ? `0 0 12px ${color}`
-                    : isHovered
-                      ? `0 0 10px ${color}`
-                      : (isKeyLocked && n.inScale)
-                        ? '0 0 0 3px hsl(var(--foreground))'
-                        : 'none',
-                  transform: isHovered && !isActive ? 'scale(1.15)' : undefined,
-                  filter: isHovered && !isActive ? 'brightness(1.4)' : undefined,
+                    : (isKeyLocked && n.inScale)
+                      ? '0 0 0 3px hsl(var(--foreground))'
+                      : 'none',
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >

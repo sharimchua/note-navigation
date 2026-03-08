@@ -4,7 +4,7 @@ import { Note } from "tonal";
 import { useCallback, useRef, useEffect, useState } from "react";
 
 export function GuitarFretboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning, setTuning, useFlats, scaleNotes, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning, setTuning, useFlats, scaleNotes } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
   const tuningRef = useRef<HTMLDivElement>(null);
 
@@ -157,7 +157,6 @@ export function GuitarFretboard() {
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
-              const isHovered = hoveredPitchClass === (Note.midi(note)! % 12);
               const degree = isKeyLocked ? getScaleDegree(note, scaleNotes) : null;
 
               const x = fret === 0 
@@ -165,39 +164,19 @@ export function GuitarFretboard() {
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
               if (!isActive && dimmed) {
-                if (isHovered) {
-                  return (
-                    <g key={`${stringIdx}-${fret}`} className="cursor-pointer"
-                      onClick={() => handleFretClick(note)}
-                      onMouseEnter={() => setHoveredPitchClass(Note.midi(note)! % 12)}
-                      onMouseLeave={() => setHoveredPitchClass(null)}
-                    >
-                      <circle cx={x} cy={y} r="8" fill={color} opacity="0.4" />
-                      <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize="7"
-                        fontFamily="JetBrains Mono" textAnchor="middle" opacity="0.6">
-                        {pc}
-                      </text>
-                    </g>
-                  );
-                }
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
-                    onClick={() => handleFretClick(note)}
-                    onMouseEnter={() => setHoveredPitchClass(Note.midi(note)! % 12)}
-                    onMouseLeave={() => setHoveredPitchClass(null)} />
+                    onClick={() => handleFretClick(note)} />
                 );
               }
 
               if (!isActive && isKeyLocked && inScale) {
                 return (
-                  <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}
-                    onMouseEnter={() => setHoveredPitchClass(Note.midi(note)! % 12)}
-                    onMouseLeave={() => setHoveredPitchClass(null)}
-                  >
-                    <circle cx={x} cy={y} r="8" fill={color} opacity={isHovered ? 0.6 : 0.3} />
+                  <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
+                    <circle cx={x} cy={y} r="8" fill={color} opacity={0.3} />
                     <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize="7"
-                      fontFamily="JetBrains Mono" textAnchor="middle" opacity={isHovered ? 1 : 0.7}>
+                      fontFamily="JetBrains Mono" textAnchor="middle" opacity={0.7}>
                       {degree || pc}
                     </text>
                   </g>
@@ -205,36 +184,16 @@ export function GuitarFretboard() {
               }
 
               if (!isActive) {
-                if (isHovered) {
-                  return (
-                    <g key={`${stringIdx}-${fret}`} className="cursor-pointer"
-                      onClick={() => handleFretClick(note)}
-                      onMouseEnter={() => setHoveredPitchClass(Note.midi(note)! % 12)}
-                      onMouseLeave={() => setHoveredPitchClass(null)}
-                    >
-                      <circle cx={x} cy={y} r="8" fill={color} opacity="0.4" />
-                      <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize="7"
-                        fontFamily="JetBrains Mono" textAnchor="middle" opacity="0.6">
-                        {pc}
-                      </text>
-                    </g>
-                  );
-                }
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
-                    onClick={() => handleFretClick(note)}
-                    onMouseEnter={() => setHoveredPitchClass(Note.midi(note)! % 12)}
-                    onMouseLeave={() => setHoveredPitchClass(null)} />
+                    onClick={() => handleFretClick(note)} />
                 );
               }
 
               // Active notes
               return (
-                <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}
-                  onMouseEnter={() => setHoveredPitchClass(Note.midi(note)! % 12)}
-                  onMouseLeave={() => setHoveredPitchClass(null)}
-                >
+                <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                   <circle cx={x} cy={y} r="9" fill={color} className="note-active" />
                   <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize="7"
                     fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold">

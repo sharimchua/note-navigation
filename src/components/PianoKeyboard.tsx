@@ -6,7 +6,7 @@ import { useCallback, useRef, useMemo, useEffect } from "react";
 const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +64,6 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const isHovered = hoveredPitchClass === (key.midi % 12);
           const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
           return (
@@ -74,13 +73,10 @@ export function PianoKeyboard() {
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                backgroundColor: isActive ? color : isHovered ? `${color}40` : "#f5f0e8",
+                backgroundColor: isActive ? color : "#f5f0e8",
                 zIndex: 1,
-                boxShadow: isHovered && !isActive ? `inset 0 0 20px ${color}40` : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
-              onMouseEnter={() => setHoveredPitchClass(key.midi % 12)}
-              onMouseLeave={() => setHoveredPitchClass(null)}
             >
               {showScaleIndicator && (
                 <div 
@@ -125,7 +121,6 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const isHovered = hoveredPitchClass === (key.midi % 12);
           const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
@@ -140,14 +135,11 @@ export function PianoKeyboard() {
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
-                backgroundColor: isActive ? color : isHovered ? `${color}60` : "hsl(var(--background))",
+                backgroundColor: isActive ? color : "hsl(var(--background))",
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
-                boxShadow: isHovered && !isActive ? `inset 0 0 15px ${color}40` : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
-              onMouseEnter={() => setHoveredPitchClass(key.midi % 12)}
-              onMouseLeave={() => setHoveredPitchClass(null)}
             >
               {showScaleIndicator && (
                 <div 
