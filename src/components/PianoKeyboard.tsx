@@ -1,10 +1,10 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getPentascaleMidis } from "@/lib/music-engine";
 import { Note } from "tonal";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useMemo } from "react";
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand } = useHarmonic();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyClick = useCallback((note: string) => {
@@ -12,7 +12,25 @@ export function PianoKeyboard() {
     toggleNote(note);
   }, [playNote, toggleNote]);
 
-  // Group keys into octaves for rendering
+  // Compute hand overlay MIDI sets with finger numbers
+  const leftHandMap = useMemo(() => {
+    if (!leftHand.enabled) return new Map<number, number>();
+    const midis = getPentascaleMidis(leftHand.rootNote);
+    // Left hand: finger 5 on lowest note, finger 1 on highest
+    const map = new Map<number, number>();
+    midis.forEach((midi, i) => map.set(midi, 5 - i));
+    return map;
+  }, [leftHand]);
+
+  const rightHandMap = useMemo(() => {
+    if (!rightHand.enabled) return new Map<number, number>();
+    const midis = getPentascaleMidis(rightHand.rootNote);
+    // Right hand: finger 1 on lowest (thumb), finger 5 on highest
+    const map = new Map<number, number>();
+    midis.forEach((midi, i) => map.set(midi, i + 1));
+    return map;
+  }, [rightHand]);
+
   const whiteKeys = PIANO_KEYS.filter(k => !k.isBlack);
   const whiteKeyWidth = 100 / whiteKeys.length;
 
@@ -31,6 +49,8 @@ export function PianoKeyboard() {
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale && !isActive;
+          const lhFinger = leftHandMap.get(key.midi);
+          const rhFinger = rightHandMap.get(key.midi);
 
           return (
             <div
@@ -44,6 +64,25 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
+              {/* Hand overlay indicators */}
+              {lhFinger && (
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-[3] pointer-events-none">
+                  <div className="w-5 h-5 rounded-full bg-blue-500/80 flex items-center justify-center shadow-sm">
+                    <span className="text-[9px] font-mono font-bold text-white">{lhFinger}</span>
+                  </div>
+                  <span className="text-[7px] font-mono text-blue-600 font-semibold">L</span>
+                </div>
+              )}
+              {rhFinger && (
+                <div className="absolute top-1 right-1/2 translate-x-1/2 flex flex-col items-center gap-0.5 z-[3] pointer-events-none"
+                  style={{ left: lhFinger ? '70%' : '50%', transform: lhFinger ? 'translateX(-50%)' : 'translateX(-50%)' }}
+                >
+                  <div className="w-5 h-5 rounded-full bg-red-500/80 flex items-center justify-center shadow-sm">
+                    <span className="text-[9px] font-mono font-bold text-white">{rhFinger}</span>
+                  </div>
+                  <span className="text-[7px] font-mono text-red-600 font-semibold">R</span>
+                </div>
+              )}
               {/* Scale indicator circle */}
               {showScaleIndicator && (
                 <div 
@@ -71,8 +110,9 @@ export function PianoKeyboard() {
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale && !isActive;
+          const lhFinger = leftHandMap.get(key.midi);
+          const rhFinger = rightHandMap.get(key.midi);
 
-          // Find position relative to white keys
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
           const leftPos = (prevWhiteIdx + 0.65) * whiteKeyWidth;
@@ -91,6 +131,23 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
+              {/* Hand overlay for black keys */}
+              {lhFinger && (
+                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-[3] pointer-events-none">
+                  <div className="w-4 h-4 rounded-full bg-blue-500/80 flex items-center justify-center shadow-sm">
+                    <span className="text-[7px] font-mono font-bold text-white">{lhFinger}</span>
+                  </div>
+                </div>
+              )}
+              {rhFinger && (
+                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-[3] pointer-events-none"
+                  style={{ bottom: lhFinger ? '20px' : '4px' }}
+                >
+                  <div className="w-4 h-4 rounded-full bg-red-500/80 flex items-center justify-center shadow-sm">
+                    <span className="text-[7px] font-mono font-bold text-white">{rhFinger}</span>
+                  </div>
+                </div>
+              )}
               {/* Scale indicator circle with note name */}
               {showScaleIndicator && (
                 <div 

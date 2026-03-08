@@ -130,6 +130,24 @@ export const SCALE_PRESETS: ScalePreset[] = [
   { name: "Blues", type: "blues", category: "blues" },
 ];
 
+// Pentascale: 5 notes spanning a perfect 5th from root
+// Major pentascale intervals: 0, 2, 4, 5, 7 semitones (W W H W)
+// Minor pentascale intervals: 0, 2, 3, 5, 7 semitones (W H W W)
+export function getPentascaleNotes(rootNote: string, mode: "major" | "minor" = "major"): string[] {
+  const rootMidi = Note.midi(rootNote);
+  if (rootMidi === null) return [];
+  const intervals = mode === "major" ? [0, 2, 4, 5, 7] : [0, 2, 3, 5, 7];
+  return intervals.map(i => Note.fromMidi(rootMidi + i));
+}
+
+// Get all MIDI values for a pentascale hand position
+export function getPentascaleMidis(rootNote: string, mode: "major" | "minor" = "major"): number[] {
+  const rootMidi = Note.midi(rootNote);
+  if (rootMidi === null) return [];
+  const intervals = mode === "major" ? [0, 2, 4, 5, 7] : [0, 2, 3, 5, 7];
+  return intervals.map(i => rootMidi + i);
+}
+
 export interface DexterityPreset {
   name: string;
   pattern: number[];

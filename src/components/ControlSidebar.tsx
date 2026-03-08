@@ -3,10 +3,20 @@ import musoIcon from "@/assets/midlife_muso_icon.webp";
 import { NOTE_NAMES, SCALE_PRESETS, GUITAR_TUNINGS } from "@/lib/music-engine";
 import { Note } from "tonal";
 
+// Generate piano note options for hand root selection (C2-C6)
+const HAND_ROOT_OPTIONS: string[] = [];
+for (let octave = 2; octave <= 6; octave++) {
+  for (const note of NOTE_NAMES) {
+    HAND_ROOT_OPTIONS.push(`${note}${octave}`);
+  }
+}
+
 export function ControlSidebar() {
   const { 
     selectedKey, selectedScale, isKeyLocked, midiState, selectedTuning,
+    leftHand, rightHand,
     setKey, setScale, setKeyLocked, setTuning,
+    setLeftHand, setRightHand,
     setActiveNotes, clearNotes, playNote
   } = useHarmonic();
 
