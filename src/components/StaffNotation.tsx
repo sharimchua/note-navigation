@@ -230,7 +230,7 @@ export function StaffNotation() {
   }
 
   return (
-    <div className="glass-panel p-4 h-full flex flex-col">
+    <div className="glass-panel p-4 h-full flex flex-col" style={{ minHeight: "340px" }}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
         <button
