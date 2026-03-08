@@ -4,7 +4,7 @@ import { Note } from "tonal";
 import { useCallback, useRef, useEffect, useState } from "react";
 
 export function GuitarFretboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning, setTuning, useFlats, scaleNotes, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning, setTuning, useFlats, scaleNotes } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
   const tuningRef = useRef<HTMLDivElement>(null);
 
