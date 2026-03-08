@@ -3,6 +3,11 @@ import * as Tone from "tone";
 import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
 
+export interface HandPosition {
+  enabled: boolean;
+  rootNote: string; // e.g. "C4"
+}
+
 interface HarmonicState {
   activeNotes: Set<string>; // full note names like "C4"
   selectedKey: string;
@@ -12,6 +17,8 @@ interface HarmonicState {
   useFlats: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
+  leftHand: HandPosition;
+  rightHand: HandPosition;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
@@ -20,6 +27,8 @@ interface HarmonicState {
   setKeyLocked: (locked: boolean) => void;
   setUseFlats: (useFlats: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
+  setLeftHand: (hand: HandPosition) => void;
+  setRightHand: (hand: HandPosition) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
 }
