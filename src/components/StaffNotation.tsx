@@ -117,12 +117,11 @@ export function StaffNotation() {
           opacity="0.4"
         />
 
-        {/* Treble Clef - centered on G line (2nd from bottom, y=72) */}
-        {/* The unicode treble clef glyph baseline sits roughly at the G line */}
+        {/* Treble Clef - G clef centered on G4 line (y=72) */}
         <text
           x="36"
-          y={trebleClefY + 20}
-          fontSize="48"
+          y={trebleClefY + 24}
+          fontSize="52"
           fill="hsl(var(--foreground))"
           opacity="0.6"
           fontFamily="serif"
