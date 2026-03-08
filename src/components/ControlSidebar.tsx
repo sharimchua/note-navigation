@@ -90,17 +90,6 @@ export function ControlSidebar() {
       {/* Controls */}
       <div className="space-y-3">
         <h4 className="engineering-label">Harmonic Calibration</h4>
-        
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isKeyLocked}
-            onChange={e => setKeyLocked(e.target.checked)}
-            className="accent-primary"
-          />
-          <span className="text-xs font-mono text-secondary-foreground">One-Key Focus</span>
-        </label>
-
 
         <button
           onClick={clearNotes}
