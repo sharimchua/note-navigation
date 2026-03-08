@@ -1,7 +1,16 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getHandMidis } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis, NOTE_COLOR_KEYS } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
+
+/** Return a brightened/saturated version of a note color for use on dark backgrounds */
+function getBrightNoteColor(noteName: string): string {
+  const pc = Note.pitchClass(noteName) || noteName;
+  const enharmonic = Note.enharmonic(pc) || pc;
+  const key = NOTE_COLOR_KEYS[pc] || NOTE_COLOR_KEYS[enharmonic] || "var(--note-c)";
+  // Boost saturation to 95% and lightness to 75% for high contrast on dark keys
+  return `hsl(${key} / 1)`.replace(')', '').replace('hsl(', '');
+}
 
 // Get the horizontal center % of a key by its MIDI number
 function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth: number): number | null {
