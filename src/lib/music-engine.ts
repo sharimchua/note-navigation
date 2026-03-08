@@ -2,7 +2,15 @@
 import { Note, Scale, Interval } from "tonal";
 
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as const;
+export const NOTE_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"] as const;
 export type NoteName = typeof NOTE_NAMES[number];
+
+export function getNotePitchClass(noteName: string, useFlats: boolean): string {
+  const midi = Note.midi(noteName);
+  if (midi === null) return Note.pitchClass(noteName) || noteName;
+  const pc = midi % 12;
+  return useFlats ? NOTE_NAMES_FLAT[pc] : NOTE_NAMES[pc];
+}
 
 export const NOTE_COLOR_KEYS: Record<string, string> = {
   "C": "var(--note-c)",

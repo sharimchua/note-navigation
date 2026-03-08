@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNoteColor, getNoteChroma } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
@@ -92,8 +91,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const [useFlats, setUseFlats] = useState(false);
-  const { activeNotes, selectedKey, selectedScale } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats } = useHarmonic();
 
   const activeArray = [...activeNotes].map(n => {
     const midi = Note.midi(n) || 60;
