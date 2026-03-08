@@ -9,7 +9,6 @@ interface HarmonicState {
   selectedScale: string;
   scaleNotes: string[];
   isKeyLocked: boolean;
-  audiationMode: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
   toggleNote: (note: string) => void;
@@ -18,7 +17,6 @@ interface HarmonicState {
   setKey: (key: string) => void;
   setScale: (scale: string) => void;
   setKeyLocked: (locked: boolean) => void;
-  setAudiationMode: (mode: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
