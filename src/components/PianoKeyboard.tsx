@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getPentascaleMidis } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo } from "react";
 
@@ -119,7 +119,7 @@ function HandOverlaySVG({
 }
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyClick = useCallback((note: string) => {
@@ -130,26 +130,30 @@ export function PianoKeyboard() {
   const whiteKeys = PIANO_KEYS.filter(k => !k.isBlack);
   const whiteKeyWidth = 100 / whiteKeys.length;
 
-  // Compute hand finger positions as { x%, finger, isBlack }
+  // Compute hand finger positions using scale-aware logic
+  // Left hand: finger 1 is highest (thumb), finger 5 is lowest (pinky)
+  // getHandMidis returns [low..high] for left, so index 0=finger5, index 4=finger1
   const leftFingerPositions = useMemo(() => {
     if (!leftHand.enabled) return [];
-    const midis = getPentascaleMidis(leftHand.rootNote);
+    const midis = getHandMidis(leftHand.rootNote, scaleNotes, "left");
     return midis.map((midi, i) => {
       const x = getKeyCenter(midi, whiteKeys, whiteKeyWidth);
       const key = PIANO_KEYS.find(k => k.midi === midi);
+      // midis are low-to-high: index 0 = finger 5, index 4 = finger 1
       return x !== null ? { x, finger: 5 - i, isBlack: key?.isBlack ?? false } : null;
     }).filter(Boolean) as { x: number; finger: number; isBlack: boolean }[];
-  }, [leftHand, whiteKeys, whiteKeyWidth]);
+  }, [leftHand, scaleNotes, whiteKeys, whiteKeyWidth]);
 
+  // Right hand: finger 1 is lowest (thumb), finger 5 is highest (pinky)
   const rightFingerPositions = useMemo(() => {
     if (!rightHand.enabled) return [];
-    const midis = getPentascaleMidis(rightHand.rootNote);
+    const midis = getHandMidis(rightHand.rootNote, scaleNotes, "right");
     return midis.map((midi, i) => {
       const x = getKeyCenter(midi, whiteKeys, whiteKeyWidth);
       const key = PIANO_KEYS.find(k => k.midi === midi);
       return x !== null ? { x, finger: i + 1, isBlack: key?.isBlack ?? false } : null;
     }).filter(Boolean) as { x: number; finger: number; isBlack: boolean }[];
-  }, [rightHand, whiteKeys, whiteKeyWidth]);
+  }, [rightHand, scaleNotes, whiteKeys, whiteKeyWidth]);
 
   // We need actual pixel dimensions for the SVG
   const containerWidth = containerRef.current?.scrollWidth ?? 800;

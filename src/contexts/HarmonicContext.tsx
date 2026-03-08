@@ -48,7 +48,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [isKeyLocked, setKeyLocked] = useState(false);
   const [useFlats, setUseFlats] = useState(false);
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
-  const [leftHand, setLeftHand] = useState<HandPosition>({ enabled: false, rootNote: "C3" });
+  const [leftHand, setLeftHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
   const [rightHand, setRightHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
   const synthRef = useRef<Tone.PolySynth | null>(null);
 

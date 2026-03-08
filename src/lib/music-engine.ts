@@ -130,22 +130,41 @@ export const SCALE_PRESETS: ScalePreset[] = [
   { name: "Blues", type: "blues", category: "blues" },
 ];
 
-// Pentascale: 5 notes spanning a perfect 5th from root
-// Major pentascale intervals: 0, 2, 4, 5, 7 semitones (W W H W)
-// Minor pentascale intervals: 0, 2, 3, 5, 7 semitones (W H W W)
-export function getPentascaleNotes(rootNote: string, mode: "major" | "minor" = "major"): string[] {
-  const rootMidi = Note.midi(rootNote);
-  if (rootMidi === null) return [];
-  const intervals = mode === "major" ? [0, 2, 4, 5, 7] : [0, 2, 3, 5, 7];
-  return intervals.map(i => Note.fromMidi(rootMidi + i));
-}
+// Get 5 scale-degree MIDI notes for a hand position.
+// finger1Note is where finger 1 (thumb) sits.
+// For right hand: finger 1 is the lowest, picks 5 ascending scale notes from finger1Note.
+// For left hand: finger 1 is the highest, picks 5 descending scale notes from finger1Note.
+export function getHandMidis(
+  finger1Note: string,
+  scaleNotes: string[],
+  hand: "left" | "right"
+): number[] {
+  const finger1Midi = Note.midi(finger1Note);
+  if (finger1Midi === null || scaleNotes.length === 0) return [];
 
-// Get all MIDI values for a pentascale hand position
-export function getPentascaleMidis(rootNote: string, mode: "major" | "minor" = "major"): number[] {
-  const rootMidi = Note.midi(rootNote);
-  if (rootMidi === null) return [];
-  const intervals = mode === "major" ? [0, 2, 4, 5, 7] : [0, 2, 3, 5, 7];
-  return intervals.map(i => rootMidi + i);
+  // Build a set of scale chromas for matching
+  const scaleChromas = new Set(scaleNotes.map(n => Note.chroma(n)).filter((c): c is number => c !== undefined));
+
+  if (hand === "right") {
+    // Ascending from finger1: find 5 scale tones starting at finger1Midi
+    const result: number[] = [];
+    for (let midi = finger1Midi; midi <= 108 && result.length < 5; midi++) {
+      if (scaleChromas.has(midi % 12)) {
+        result.push(midi);
+      }
+    }
+    return result;
+  } else {
+    // Left hand: descending from finger1 — finger 1 is highest, finger 5 is lowest
+    const result: number[] = [];
+    for (let midi = finger1Midi; midi >= 21 && result.length < 5; midi--) {
+      if (scaleChromas.has(midi % 12)) {
+        result.push(midi);
+      }
+    }
+    // Reverse so result is low-to-high (finger5 to finger1)
+    return result.reverse();
+  }
 }
 
 export interface DexterityPreset {
