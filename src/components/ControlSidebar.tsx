@@ -1,4 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
+import musoIcon from "@/assets/midlife_muso_icon.webp";
 import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, getNoteColor, getScaleNotes, getFretNote, STANDARD_TUNING } from "@/lib/music-engine";
 import { Note } from "tonal";
 
