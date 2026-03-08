@@ -120,6 +120,7 @@ function HandOverlaySVG({
 
 export function PianoKeyboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyClick = useCallback((note: string) => {
