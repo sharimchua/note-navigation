@@ -230,7 +230,7 @@ export function StaffNotation() {
   }
 
   return (
-    <div className="glass-panel p-4 h-full flex flex-col" style={{ minHeight: "400px" }}>
+    <div className="glass-panel p-4 h-full flex flex-col" style={{ minHeight: "460px" }}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
         <button
@@ -240,7 +240,7 @@ export function StaffNotation() {
           {useFlats ? "♭ Flats" : "♯ Sharps"}
         </button>
       </div>
-      <svg ref={svgRef} viewBox="0 0 200 200" className="w-full flex-1 cursor-pointer" preserveAspectRatio="xMidYMid slice" onClick={handleSvgClick}>
+      <svg ref={svgRef} viewBox="0 0 200 200" className="w-full flex-1 cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleSvgClick}>
         {/* Staff background */}
         <rect x="28" y={TREBLE_TOP - 4} width="164" height={TREBLE_BOTTOM - TREBLE_TOP + 8} rx="2"
           fill="hsl(var(--card))" opacity="0.6" />
