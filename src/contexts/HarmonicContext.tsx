@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import * as Tone from "tone";
 import { getScaleNotes, isNoteInScale, NOTE_NAMES } from "@/lib/music-engine";
+import { useMIDI, MIDIState } from "@/hooks/use-midi";
 
 interface HarmonicState {
   activeNotes: Set<string>; // full note names like "C4"
@@ -9,6 +10,7 @@ interface HarmonicState {
   scaleNotes: string[];
   isKeyLocked: boolean;
   audiationMode: boolean;
+  midiState: MIDIState;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
@@ -49,6 +51,22 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const scaleNotes = getScaleNotes(selectedKey, selectedScale);
 
+  const addNote = useCallback((note: string) => {
+    setActiveNotesState(prev => {
+      const next = new Set(prev);
+      next.add(note);
+      return next;
+    });
+  }, []);
+
+  const removeNote = useCallback((note: string) => {
+    setActiveNotesState(prev => {
+      const next = new Set(prev);
+      next.delete(note);
+      return next;
+    });
+  }, []);
+
   const toggleNote = useCallback((note: string) => {
     setActiveNotesState(prev => {
       const next = new Set(prev);
@@ -75,6 +93,21 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     synth.triggerAttackRelease(note, "8n");
   }, [getSynth]);
 
+  // MIDI input handlers
+  const handleMIDINoteOn = useCallback((note: string, velocity: number) => {
+    addNote(note);
+    playNote(note);
+  }, [addNote, playNote]);
+
+  const handleMIDINoteOff = useCallback((note: string) => {
+    removeNote(note);
+  }, [removeNote]);
+
+  const midiState = useMIDI({
+    onNoteOn: handleMIDINoteOn,
+    onNoteOff: handleMIDINoteOff,
+  });
+
   const isNoteInCurrentScale = useCallback((note: string) => {
     if (!isKeyLocked) return true;
     return isNoteInScale(note, scaleNotes);
@@ -91,6 +124,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       scaleNotes,
       isKeyLocked,
       audiationMode,
+      midiState,
       toggleNote,
       setActiveNotes,
       clearNotes,
