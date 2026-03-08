@@ -149,7 +149,10 @@ export function ControlSidebar() {
 
       {/* Hand Position Overlay */}
       <div className="space-y-3">
-        <h4 className="engineering-label">Hand Position (Pentascale)</h4>
+        <h4 className="engineering-label">Hand Position</h4>
+        <div className="text-[9px] font-mono text-muted-foreground">
+          5 notes from {selectedKey} {selectedScale}
+        </div>
         
         {/* Left Hand */}
         <div className="space-y-1.5">
@@ -166,16 +169,19 @@ export function ControlSidebar() {
             </span>
           </label>
           {leftHand.enabled && (
-            <select
-              value={leftHand.rootNote}
-              onChange={e => setLeftHand({ ...leftHand, rootNote: e.target.value })}
-              className="w-full px-2 py-1 text-xs font-mono rounded-sm border border-border 
-                bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
-            >
-              {HAND_ROOT_OPTIONS.map(n => (
-                <option key={`lh-${n}`} value={n}>{n}</option>
-              ))}
-            </select>
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono text-muted-foreground">Finger 1 (Thumb)</span>
+              <select
+                value={leftHand.rootNote}
+                onChange={e => setLeftHand({ ...leftHand, rootNote: e.target.value })}
+                className="w-full px-2 py-1 text-xs font-mono rounded-sm border border-border 
+                  bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
+              >
+                {HAND_ROOT_OPTIONS.map(n => (
+                  <option key={`lh-${n}`} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
 
@@ -194,16 +200,19 @@ export function ControlSidebar() {
             </span>
           </label>
           {rightHand.enabled && (
-            <select
-              value={rightHand.rootNote}
-              onChange={e => setRightHand({ ...rightHand, rootNote: e.target.value })}
-              className="w-full px-2 py-1 text-xs font-mono rounded-sm border border-border 
-                bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
-            >
-              {HAND_ROOT_OPTIONS.map(n => (
-                <option key={`rh-${n}`} value={n}>{n}</option>
-              ))}
-            </select>
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono text-muted-foreground">Finger 1 (Thumb)</span>
+              <select
+                value={rightHand.rootNote}
+                onChange={e => setRightHand({ ...rightHand, rootNote: e.target.value })}
+                className="w-full px-2 py-1 text-xs font-mono rounded-sm border border-border 
+                  bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
+              >
+                {HAND_ROOT_OPTIONS.map(n => (
+                  <option key={`rh-${n}`} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
       </div>
