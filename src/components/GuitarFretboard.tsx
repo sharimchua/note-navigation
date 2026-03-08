@@ -157,7 +157,6 @@ export function GuitarFretboard() {
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
-              const isHovered = hoveredPitchClass === (Note.midi(note)! % 12);
               const degree = isKeyLocked ? getScaleDegree(note, scaleNotes) : null;
 
               const x = fret === 0 
