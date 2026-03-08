@@ -87,7 +87,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, audiationMode, selectedKey, selectedScale } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale } = useHarmonic();
 
   const activeArray = [...activeNotes].map(n => ({
     note: n,
