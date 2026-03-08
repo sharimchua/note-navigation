@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import * as Tone from "tone";
-import { getScaleNotes, isNoteInScale, NOTE_NAMES } from "@/lib/music-engine";
+import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
 
 interface HarmonicState {
@@ -11,6 +11,7 @@ interface HarmonicState {
   isKeyLocked: boolean;
   audiationMode: boolean;
   midiState: MIDIState;
+  selectedTuning: GuitarTuning;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
@@ -18,6 +19,7 @@ interface HarmonicState {
   setScale: (scale: string) => void;
   setKeyLocked: (locked: boolean) => void;
   setAudiationMode: (mode: boolean) => void;
+  setTuning: (tuning: GuitarTuning) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
 }
