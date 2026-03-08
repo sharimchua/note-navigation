@@ -93,7 +93,7 @@ export function GuitarFretboard() {
                 ? 30 
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
-              if (!isActive && !isChromaActive && !dimmed) {
+              if (!isActive && !dimmed) {
                 // Show dots for scale notes when key is locked
                 if (isKeyLocked && inScale) {
                   return (
