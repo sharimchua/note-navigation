@@ -13,26 +13,6 @@ export function ControlSidebar() {
   const handleScalePreset = (scaleType: string) => {
     setScale(scaleType);
     setKeyLocked(true);
-    // Activate scale notes in octave 4
-    const notes = getScaleNotes(selectedKey, scaleType);
-    const fullNotes = new Set(notes.map(n => `${n}4`));
-    setActiveNotes(fullNotes);
-    fullNotes.forEach(n => playNote(n));
-  };
-
-  const handleDexterityPreset = (pattern: number[]) => {
-    // Start from the selected key on the guitar, 5th fret area
-    const startFret = 5;
-    const notes = new Set<string>();
-    pattern.forEach((finger, i) => {
-      const fret = startFret + finger - 1;
-      const note = getFretNote(selectedTuning.notes[4], fret); // 2nd string from top
-      if (note) {
-        notes.add(note);
-      }
-    });
-    setActiveNotes(notes);
-    notes.forEach(n => playNote(n));
   };
 
   return (
