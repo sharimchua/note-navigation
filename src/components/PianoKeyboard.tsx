@@ -189,7 +189,7 @@ export function PianoKeyboard() {
           const inScale = isNoteInCurrentScale(key.note);
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
-          const showScaleIndicator = isKeyLocked && inScale && !isActive;
+          const showScaleIndicator = isKeyLocked && inScale;
 
           return (
             <div
@@ -206,9 +206,12 @@ export function PianoKeyboard() {
               {showScaleIndicator && (
                 <div 
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                  style={{ borderColor: color }}
+                  style={{ 
+                    borderColor: isActive ? 'hsl(var(--background))' : color,
+                    backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                  }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color }}>{pc}</span>
+                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>{pc}</span>
                 </div>
               )}
               {pc === "C" && (
@@ -228,11 +231,11 @@ export function PianoKeyboard() {
           const isActive = activeNotes.has(key.note);
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
-          const showScaleIndicator = isKeyLocked && inScale && !isActive;
+          const showScaleIndicator = isKeyLocked && inScale;
 
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
-          const leftPos = (prevWhiteIdx + 0.65) * whiteKeyWidth;
+          const leftPos = (prevWhiteIdx + 0.55) * whiteKeyWidth;
 
           return (
             <div
@@ -240,7 +243,7 @@ export function PianoKeyboard() {
               className="absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90"
               style={{
                 left: `${leftPos}%`,
-                width: `${whiteKeyWidth * 0.6}%`,
+                width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
                 backgroundColor: isActive ? color : "hsl(var(--background))",
                 border: "1px solid hsl(var(--border))",
@@ -250,10 +253,13 @@ export function PianoKeyboard() {
             >
               {showScaleIndicator && (
                 <div 
-                  className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center"
-                  style={{ borderColor: color }}
+                  className="absolute top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                  style={{ 
+                    borderColor: isActive ? 'hsl(var(--background))' : color,
+                    backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                  }}
                 >
-                  <span className="text-[6px] font-mono font-bold" style={{ color }}>{Note.pitchClass(key.note)}</span>
+                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>{Note.pitchClass(key.note)}</span>
                 </div>
               )}
             </div>
