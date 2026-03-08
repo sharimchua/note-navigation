@@ -5,8 +5,8 @@ import { Note } from "tonal";
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, audiationMode, midiState, selectedTuning,
-    setKey, setScale, setKeyLocked, setAudiationMode, setTuning,
+    selectedKey, selectedScale, isKeyLocked, midiState, selectedTuning,
+    setKey, setScale, setKeyLocked, setTuning,
     setActiveNotes, clearNotes, playNote
   } = useHarmonic();
 
