@@ -56,7 +56,7 @@ export function PianoKeyboard() {
           style={{ minWidth: "1600px", height: "200px" }}
         >
         {/* White keys */}
-        {whiteKeys.map((key, i) => {
+        {WHITE_KEYS.map((key, i) => {
           const isActive = activeNotes.has(key.note);
           const inScale = isNoteInCurrentScale(key.note);
           const pc = Note.pitchClass(key.note);
