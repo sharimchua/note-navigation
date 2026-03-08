@@ -160,7 +160,7 @@ export function StaffNotation() {
       <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
         {/* Treble Clef - curl intersection on G4 line (y=72) */}
         <text
-          x="10"
+          x="22"
           y={trebleClefY + 6}
           fontSize="54"
           fill="hsl(var(--foreground))"
