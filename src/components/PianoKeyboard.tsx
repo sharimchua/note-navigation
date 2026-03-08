@@ -3,6 +3,121 @@ import { PIANO_KEYS, getNoteColor, getPentascaleMidis } from "@/lib/music-engine
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo } from "react";
 
+// Get the horizontal center % of a key by its MIDI number
+function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth: number): number | null {
+  const key = PIANO_KEYS.find(k => k.midi === midi);
+  if (!key) return null;
+  if (!key.isBlack) {
+    const idx = whiteKeys.findIndex(w => w.midi === midi);
+    if (idx < 0) return null;
+    return (idx + 0.5) * whiteKeyWidth;
+  } else {
+    const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > midi) - 1;
+    if (prevWhiteIdx < 0) return null;
+    return (prevWhiteIdx + 0.65 + whiteKeyWidth * 0.3 / whiteKeyWidth) * whiteKeyWidth;
+  }
+}
+
+// SVG hand shape: fingers extend upward from a palm base, mirrored for left hand
+function HandOverlaySVG({ 
+  fingerPositions, 
+  isLeft, 
+  containerWidth,
+  containerHeight,
+}: { 
+  fingerPositions: { x: number; finger: number; isBlack: boolean }[];
+  isLeft: boolean;
+  containerWidth: number;
+  containerHeight: number;
+}) {
+  if (fingerPositions.length === 0) return null;
+
+  // Sort by x position
+  const sorted = [...fingerPositions].sort((a, b) => a.x - b.x);
+  
+  // Convert % to px
+  const points = sorted.map(p => ({
+    xPx: (p.x / 100) * containerWidth,
+    finger: p.finger,
+    isBlack: p.isBlack,
+  }));
+
+  const palmCenterX = (points[0].xPx + points[points.length - 1].xPx) / 2;
+  const palmY = containerHeight + 30; // palm is below the keyboard
+  const fingerTipY = (f: { isBlack: boolean }) => f.isBlack ? containerHeight * 0.45 : containerHeight * 0.7;
+  
+  // Finger widths based on key width
+  const fingerW = (containerWidth * (100 / 52) / 100) * 0.7; // ~70% of white key width
+  
+  const color = isLeft ? "rgba(59, 130, 246, 0.35)" : "rgba(239, 68, 68, 0.35)";
+  const strokeColor = isLeft ? "rgba(59, 130, 246, 0.6)" : "rgba(239, 68, 68, 0.6)";
+  const badgeColor = isLeft ? "rgba(59, 130, 246, 0.85)" : "rgba(239, 68, 68, 0.85)";
+
+  return (
+    <svg 
+      className="absolute inset-0 pointer-events-none" 
+      style={{ zIndex: 10, overflow: "visible" }}
+      width={containerWidth} 
+      height={containerHeight}
+    >
+      {/* Palm area */}
+      <ellipse
+        cx={palmCenterX}
+        cy={palmY}
+        rx={(points[points.length - 1].xPx - points[0].xPx) / 2 + fingerW}
+        ry={40}
+        fill={color}
+        stroke={strokeColor}
+        strokeWidth={1.5}
+      />
+      
+      {/* Fingers as rounded rectangles connected to palm */}
+      {points.map((pt, i) => {
+        const tipY = fingerTipY(sorted[i]);
+        const baseY = containerHeight + 5;
+        const height = baseY - tipY;
+        const radius = fingerW / 2;
+        
+        return (
+          <g key={i}>
+            {/* Finger body */}
+            <rect
+              x={pt.xPx - fingerW / 2}
+              y={tipY}
+              width={fingerW}
+              height={height}
+              rx={radius}
+              ry={radius}
+              fill={color}
+              stroke={strokeColor}
+              strokeWidth={1.5}
+            />
+            {/* Fingertip circle with number */}
+            <circle
+              cx={pt.xPx}
+              cy={tipY + radius}
+              r={radius - 1}
+              fill={badgeColor}
+            />
+            <text
+              x={pt.xPx}
+              y={tipY + radius + 1}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="white"
+              fontSize={Math.max(9, fingerW * 0.55)}
+              fontFamily="monospace"
+              fontWeight="bold"
+            >
+              {pt.finger}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export function PianoKeyboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand } = useHarmonic();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -12,35 +127,41 @@ export function PianoKeyboard() {
     toggleNote(note);
   }, [playNote, toggleNote]);
 
-  // Compute hand overlay MIDI sets with finger numbers
-  const leftHandMap = useMemo(() => {
-    if (!leftHand.enabled) return new Map<number, number>();
-    const midis = getPentascaleMidis(leftHand.rootNote);
-    // Left hand: finger 5 on lowest note, finger 1 on highest
-    const map = new Map<number, number>();
-    midis.forEach((midi, i) => map.set(midi, 5 - i));
-    return map;
-  }, [leftHand]);
-
-  const rightHandMap = useMemo(() => {
-    if (!rightHand.enabled) return new Map<number, number>();
-    const midis = getPentascaleMidis(rightHand.rootNote);
-    // Right hand: finger 1 on lowest (thumb), finger 5 on highest
-    const map = new Map<number, number>();
-    midis.forEach((midi, i) => map.set(midi, i + 1));
-    return map;
-  }, [rightHand]);
-
   const whiteKeys = PIANO_KEYS.filter(k => !k.isBlack);
   const whiteKeyWidth = 100 / whiteKeys.length;
+
+  // Compute hand finger positions as { x%, finger, isBlack }
+  const leftFingerPositions = useMemo(() => {
+    if (!leftHand.enabled) return [];
+    const midis = getPentascaleMidis(leftHand.rootNote);
+    return midis.map((midi, i) => {
+      const x = getKeyCenter(midi, whiteKeys, whiteKeyWidth);
+      const key = PIANO_KEYS.find(k => k.midi === midi);
+      return x !== null ? { x, finger: 5 - i, isBlack: key?.isBlack ?? false } : null;
+    }).filter(Boolean) as { x: number; finger: number; isBlack: boolean }[];
+  }, [leftHand, whiteKeys, whiteKeyWidth]);
+
+  const rightFingerPositions = useMemo(() => {
+    if (!rightHand.enabled) return [];
+    const midis = getPentascaleMidis(rightHand.rootNote);
+    return midis.map((midi, i) => {
+      const x = getKeyCenter(midi, whiteKeys, whiteKeyWidth);
+      const key = PIANO_KEYS.find(k => k.midi === midi);
+      return x !== null ? { x, finger: i + 1, isBlack: key?.isBlack ?? false } : null;
+    }).filter(Boolean) as { x: number; finger: number; isBlack: boolean }[];
+  }, [rightHand, whiteKeys, whiteKeyWidth]);
+
+  // We need actual pixel dimensions for the SVG
+  const containerWidth = containerRef.current?.scrollWidth ?? 800;
+  const containerHeight = containerRef.current?.clientHeight ?? 128;
 
   return (
     <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Piano · 88 Keys</h3>
       <div 
         ref={containerRef}
-        className="relative h-32 select-none overflow-x-auto"
-        style={{ minWidth: "800px" }}
+        className="relative h-36 select-none overflow-x-auto"
+        style={{ minWidth: "800px", overflow: "hidden" }}
       >
         {/* White keys */}
         {whiteKeys.map((key, i) => {
@@ -49,8 +170,6 @@ export function PianoKeyboard() {
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale && !isActive;
-          const lhFinger = leftHandMap.get(key.midi);
-          const rhFinger = rightHandMap.get(key.midi);
 
           return (
             <div
@@ -64,26 +183,6 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
-              {/* Hand overlay indicators */}
-              {lhFinger && (
-                <div className="absolute top-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-[3] pointer-events-none">
-                  <div className="w-5 h-5 rounded-full bg-blue-500/80 flex items-center justify-center shadow-sm">
-                    <span className="text-[9px] font-mono font-bold text-white">{lhFinger}</span>
-                  </div>
-                  <span className="text-[7px] font-mono text-blue-600 font-semibold">L</span>
-                </div>
-              )}
-              {rhFinger && (
-                <div className="absolute top-1 right-1/2 translate-x-1/2 flex flex-col items-center gap-0.5 z-[3] pointer-events-none"
-                  style={{ left: lhFinger ? '70%' : '50%', transform: lhFinger ? 'translateX(-50%)' : 'translateX(-50%)' }}
-                >
-                  <div className="w-5 h-5 rounded-full bg-red-500/80 flex items-center justify-center shadow-sm">
-                    <span className="text-[9px] font-mono font-bold text-white">{rhFinger}</span>
-                  </div>
-                  <span className="text-[7px] font-mono text-red-600 font-semibold">R</span>
-                </div>
-              )}
-              {/* Scale indicator circle */}
               {showScaleIndicator && (
                 <div 
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
@@ -110,8 +209,6 @@ export function PianoKeyboard() {
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale && !isActive;
-          const lhFinger = leftHandMap.get(key.midi);
-          const rhFinger = rightHandMap.get(key.midi);
 
           const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
@@ -131,24 +228,6 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
-              {/* Hand overlay for black keys */}
-              {lhFinger && (
-                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-[3] pointer-events-none">
-                  <div className="w-4 h-4 rounded-full bg-blue-500/80 flex items-center justify-center shadow-sm">
-                    <span className="text-[7px] font-mono font-bold text-white">{lhFinger}</span>
-                  </div>
-                </div>
-              )}
-              {rhFinger && (
-                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-[3] pointer-events-none"
-                  style={{ bottom: lhFinger ? '20px' : '4px' }}
-                >
-                  <div className="w-4 h-4 rounded-full bg-red-500/80 flex items-center justify-center shadow-sm">
-                    <span className="text-[7px] font-mono font-bold text-white">{rhFinger}</span>
-                  </div>
-                </div>
-              )}
-              {/* Scale indicator circle with note name */}
               {showScaleIndicator && (
                 <div 
                   className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center"
@@ -160,6 +239,24 @@ export function PianoKeyboard() {
             </div>
           );
         })}
+
+        {/* Hand overlays rendered as SVG on top */}
+        {leftHand.enabled && (
+          <HandOverlaySVG
+            fingerPositions={leftFingerPositions}
+            isLeft={true}
+            containerWidth={containerWidth}
+            containerHeight={containerHeight}
+          />
+        )}
+        {rightHand.enabled && (
+          <HandOverlaySVG
+            fingerPositions={rightFingerPositions}
+            isLeft={false}
+            containerWidth={containerWidth}
+            containerHeight={containerHeight}
+          />
+        )}
       </div>
     </div>
   );
