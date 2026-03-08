@@ -277,6 +277,7 @@ export function PianoKeyboard() {
             containerHeight={containerHeight}
           />
         )}
+        </div>
       </div>
     </div>
   );

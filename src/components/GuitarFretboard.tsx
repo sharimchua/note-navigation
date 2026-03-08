@@ -162,7 +162,8 @@ export function GuitarFretboard() {
               </text>
             );
           })}
-        </svg>
+          </svg>
+        </div>
       </div>
     </div>
   );
