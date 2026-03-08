@@ -58,7 +58,15 @@ export function ControlSidebar() {
           {NOTE_NAMES.map(note => (
             <button
               key={note}
-              onClick={() => setKey(note)}
+              onClick={() => {
+                setKey(note);
+                // Re-apply current scale with new key if locked
+                if (isKeyLocked && selectedScale) {
+                  const notes = getScaleNotes(note, selectedScale);
+                  const fullNotes = new Set(notes.map(n => `${n}4`));
+                  setActiveNotes(fullNotes);
+                }
+              }}
               className={`px-1.5 py-1.5 text-xs font-mono rounded-sm border transition-all
                 ${selectedKey === note 
                   ? 'border-primary bg-primary/20 text-primary' 
