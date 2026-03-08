@@ -6,7 +6,7 @@ import { useCallback, useRef, useMemo, useEffect } from "react";
 const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes, hoveredPitchClass, setHoveredPitchClass } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
