@@ -1,0 +1,105 @@
+import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import * as Tone from "tone";
+import { getScaleNotes, isNoteInScale, NOTE_NAMES } from "@/lib/music-engine";
+
+interface HarmonicState {
+  activeNotes: Set<string>; // full note names like "C4"
+  selectedKey: string;
+  selectedScale: string;
+  scaleNotes: string[];
+  isKeyLocked: boolean;
+  audiationMode: boolean;
+  toggleNote: (note: string) => void;
+  setActiveNotes: (notes: Set<string>) => void;
+  clearNotes: () => void;
+  setKey: (key: string) => void;
+  setScale: (scale: string) => void;
+  setKeyLocked: (locked: boolean) => void;
+  setAudiationMode: (mode: boolean) => void;
+  playNote: (note: string) => void;
+  isNoteInCurrentScale: (note: string) => boolean;
+}
+
+const HarmonicContext = createContext<HarmonicState | null>(null);
+
+export function useHarmonic() {
+  const ctx = useContext(HarmonicContext);
+  if (!ctx) throw new Error("useHarmonic must be used within HarmonicProvider");
+  return ctx;
+}
+
+export function HarmonicProvider({ children }: { children: React.ReactNode }) {
+  const [activeNotes, setActiveNotesState] = useState<Set<string>>(new Set());
+  const [selectedKey, setSelectedKey] = useState("C");
+  const [selectedScale, setSelectedScale] = useState("major");
+  const [isKeyLocked, setKeyLocked] = useState(false);
+  const [audiationMode, setAudiationMode] = useState(false);
+  const synthRef = useRef<Tone.PolySynth | null>(null);
+
+  const getSynth = useCallback(() => {
+    if (!synthRef.current) {
+      synthRef.current = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: "triangle8" },
+        envelope: { attack: 0.02, decay: 0.3, sustain: 0.2, release: 0.8 },
+      }).toDestination();
+      synthRef.current.volume.value = -12;
+    }
+    return synthRef.current;
+  }, []);
+
+  const scaleNotes = getScaleNotes(selectedKey, selectedScale);
+
+  const toggleNote = useCallback((note: string) => {
+    setActiveNotesState(prev => {
+      const next = new Set(prev);
+      if (next.has(note)) {
+        next.delete(note);
+      } else {
+        next.add(note);
+      }
+      return next;
+    });
+  }, []);
+
+  const setActiveNotes = useCallback((notes: Set<string>) => {
+    setActiveNotesState(notes);
+  }, []);
+
+  const clearNotes = useCallback(() => {
+    setActiveNotesState(new Set());
+  }, []);
+
+  const playNote = useCallback(async (note: string) => {
+    await Tone.start();
+    const synth = getSynth();
+    synth.triggerAttackRelease(note, "8n");
+  }, [getSynth]);
+
+  const isNoteInCurrentScale = useCallback((note: string) => {
+    if (!isKeyLocked) return true;
+    return isNoteInScale(note, scaleNotes);
+  }, [isKeyLocked, scaleNotes]);
+
+  const setKey = useCallback((key: string) => setSelectedKey(key), []);
+  const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+
+  return React.createElement(HarmonicContext.Provider, {
+    value: {
+      activeNotes,
+      selectedKey,
+      selectedScale,
+      scaleNotes,
+      isKeyLocked,
+      audiationMode,
+      toggleNote,
+      setActiveNotes,
+      clearNotes,
+      setKey,
+      setScale,
+      setKeyLocked,
+      setAudiationMode,
+      playNote,
+      isNoteInCurrentScale,
+    }
+  }, children);
+}
