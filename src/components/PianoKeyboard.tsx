@@ -4,6 +4,7 @@ import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
 const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
+const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
@@ -14,8 +15,6 @@ export function PianoKeyboard() {
     playNote(note);
     toggleNote(note);
   }, [playNote, toggleNote]);
-
-  const whiteKeys = PIANO_KEYS.filter(k => !k.isBlack);
   const whiteKeyWidth = 100 / whiteKeys.length;
 
   const fingeringMap = useMemo(() => {

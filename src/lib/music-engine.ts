@@ -48,7 +48,7 @@ export function isNoteInScale(noteName: string, scaleNotes: string[]): boolean {
 }
 
 // Guitar tunings
-export const STANDARD_TUNING = ["E2", "A2", "D3", "G3", "B3", "E4"];
+
 export const TOTAL_FRETS = 22;
 
 export interface GuitarTuning {

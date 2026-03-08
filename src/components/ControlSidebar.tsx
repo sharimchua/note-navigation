@@ -87,8 +87,6 @@ export function ControlSidebar() {
         </div>
       </div>
 
-
-
       {/* Controls */}
       <div className="space-y-3">
         <h4 className="engineering-label">Harmonic Calibration</h4>

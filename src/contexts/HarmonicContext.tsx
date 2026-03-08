@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
 import * as Tone from "tone";
 import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
 
 export interface HandPosition {
   enabled: boolean;
-  rootNote: string; // e.g. "C4"
+  rootNote: string;
 }
 
 interface HarmonicState {
@@ -19,7 +19,6 @@ interface HarmonicState {
   selectedTuning: GuitarTuning;
   leftHand: HandPosition;
   rightHand: HandPosition;
-  hoveredPitchClass: number | null;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
@@ -30,7 +29,6 @@ interface HarmonicState {
   setTuning: (tuning: GuitarTuning) => void;
   setLeftHand: (hand: HandPosition) => void;
   setRightHand: (hand: HandPosition) => void;
-  setHoveredPitchClass: (pc: number | null) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
 }
@@ -52,8 +50,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const [leftHand, setLeftHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
   const [rightHand, setRightHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
-  const [hoveredPitchClass, setHoveredPitchClass] = useState<number | null>(null);
   const synthRef = useRef<Tone.PolySynth | null>(null);
+  const audioStartedRef = useRef(false);
 
   const getSynth = useCallback(() => {
     if (!synthRef.current) {
@@ -66,7 +64,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     return synthRef.current;
   }, []);
 
-  const scaleNotes = getScaleNotes(selectedKey, selectedScale);
+  const scaleNotes = useMemo(() => getScaleNotes(selectedKey, selectedScale), [selectedKey, selectedScale]);
 
   const addNote = useCallback((note: string) => {
     setActiveNotesState(prev => {
@@ -105,7 +103,10 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playNote = useCallback(async (note: string) => {
-    await Tone.start();
+    if (!audioStartedRef.current) {
+      await Tone.start();
+      audioStartedRef.current = true;
+    }
     const synth = getSynth();
     synth.triggerAttackRelease(note, "8n");
   }, [getSynth]);
@@ -134,7 +135,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
   const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
   const setRightHandCb = useCallback((hand: HandPosition) => setRightHand(hand), []);
-  const setHoveredPitchClassCb = useCallback((pc: number | null) => setHoveredPitchClass(pc), []);
 
   return React.createElement(HarmonicContext.Provider, {
     value: {
@@ -148,7 +148,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       selectedTuning,
       leftHand,
       rightHand,
-      hoveredPitchClass,
       toggleNote,
       setActiveNotes,
       clearNotes,
@@ -159,7 +158,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setTuning,
       setLeftHand: setLeftHandCb,
       setRightHand: setRightHandCb,
-      setHoveredPitchClass: setHoveredPitchClassCb,
       playNote,
       isNoteInCurrentScale,
     }
