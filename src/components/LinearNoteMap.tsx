@@ -35,8 +35,8 @@ export function LinearNoteMap() {
         <span className="text-[9px] text-muted-foreground">C3 ← C4 → C5</span>
       </div>
 
-      <div className="relative overflow-x-auto">
-        <div className="relative flex items-center justify-between" style={{ minWidth: isMobile ? 540 : undefined }}>
+      <div className="relative overflow-x-auto pb-3">
+        <div className="relative flex items-center justify-between mb-2" style={{ minWidth: isMobile ? 540 : undefined }}>
           <div
             className="absolute top-1/2 left-0 right-0 -translate-y-1/2"
             style={{ height: 2, background: 'hsl(var(--border))' }}
