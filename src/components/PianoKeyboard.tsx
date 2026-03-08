@@ -181,7 +181,7 @@ export function PianoKeyboard() {
         <div 
           ref={containerRef}
           className="relative h-40 md:h-44 lg:h-48 select-none"
-          style={{ minWidth: "800px" }}
+          style={{ minWidth: "1200px" }}
         >
         {/* White keys */}
         {whiteKeys.map((key, i) => {
