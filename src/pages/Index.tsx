@@ -3,6 +3,7 @@ import { ControlSidebar } from "@/components/ControlSidebar";
 import { PianoKeyboard } from "@/components/PianoKeyboard";
 import { GuitarFretboard } from "@/components/GuitarFretboard";
 import { StaffNotation } from "@/components/StaffNotation";
+import { LinearNoteMap } from "@/components/LinearNoteMap";
 
 const Index = () => {
   return (
@@ -27,6 +28,7 @@ const Index = () => {
             
             {/* Piano + Fretboard stacked in right column */}
             <div className="xl:w-[55%] 2xl:w-[60%] flex flex-col gap-4 shrink-0">
+              <LinearNoteMap />
               <PianoKeyboard />
               <GuitarFretboard />
             </div>
