@@ -39,8 +39,6 @@ function midiToY(midi: number, useFlats: boolean): number {
   const diatonicPos = map[pc] + (octave - 5) * 7;
   return MIDDLE_C_Y - diatonicPos * STEP;
 }
-  return MIDDLE_C_Y - diatonicPos * STEP;
-}
 
 function needsAccidental(midi: number): boolean {
   const pc = midi % 12;
