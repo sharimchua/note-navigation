@@ -46,7 +46,10 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedKey, setSelectedKey] = useState("C");
   const [selectedScale, setSelectedScale] = useState("major");
   const [isKeyLocked, setKeyLocked] = useState(false);
-  const [useFlats, setUseFlats] = useState(false);
+  // Auto-derive sharps/flats from key center (idiomatic to the key)
+  const FLAT_KEYS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
+  const useFlats = FLAT_KEYS.has(selectedKey);
+  const setUseFlats = (_: boolean) => {}; // no-op, kept for interface compat
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const [leftHand, setLeftHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
   const [rightHand, setRightHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });

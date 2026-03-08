@@ -235,12 +235,9 @@ export function StaffNotation() {
     <div className="glass-panel p-4 h-full flex flex-col" style={{ minHeight: "460px" }}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">Grand Staff</h3>
-        <button
-          onClick={() => setUseFlats(!useFlats)}
-          className="px-2 py-0.5 text-[10px] font-mono rounded border border-border bg-secondary/50 text-secondary-foreground hover:border-primary/50 transition-all"
-        >
+        <span className="px-2 py-0.5 text-[10px] font-mono rounded border border-border bg-secondary/50 text-muted-foreground">
           {useFlats ? "♭ Flats" : "♯ Sharps"}
-        </button>
+        </span>
       </div>
       <svg ref={svgRef} viewBox="0 0 200 200" className="w-full flex-1 cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleSvgClick}>
         {/* Staff background */}
