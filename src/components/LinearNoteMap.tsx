@@ -36,7 +36,6 @@ export function LinearNoteMap() {
         {notes.map(n => {
           const dimmed = isKeyLocked && !n.inScale;
           const color = getNoteColor(n.pc);
-          const size = n.isCenter ? 22 : 16;
 
           return (
             <button
@@ -46,13 +45,13 @@ export function LinearNoteMap() {
               title={`${n.pc}${Note.octave(n.noteName)}`}
             >
               <div
-                className="rounded-full transition-all duration-150 border"
+                className="rounded-full transition-all duration-150"
                 style={{
-                  width: size,
-                  height: size,
-                  backgroundColor: n.isActive ? color : dimmed ? 'hsl(var(--muted))' : color,
-                  borderColor: n.isActive ? color : 'transparent',
-                  opacity: n.isActive ? 1 : dimmed ? 0.15 : 0.4,
+                  width: 18,
+                  height: 18,
+                  backgroundColor: n.isActive ? color : 'transparent',
+                  border: `2px solid ${dimmed ? 'hsl(var(--muted))' : color}`,
+                  opacity: n.isActive ? 1 : dimmed ? 0.15 : n.inScale ? 0.7 : 0.3,
                   boxShadow: n.isActive ? `0 0 10px ${color}` : 'none',
                 }}
               />
