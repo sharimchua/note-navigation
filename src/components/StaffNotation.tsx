@@ -278,10 +278,10 @@ export function StaffNotation() {
         )}
 
         {/* Treble notes - chord form (stacked at same x) */}
-        {!audiationMode && treblePositioned.map(n => renderNote(n, "treble"))}
+        {treblePositioned.map(n => renderNote(n, "treble"))}
 
         {/* Bass notes - chord form (stacked at same x) */}
-        {!audiationMode && bassPositioned.map(n => renderNote(n, "bass"))}
+        {bassPositioned.map(n => renderNote(n, "bass"))}
 
       </svg>
     </div>

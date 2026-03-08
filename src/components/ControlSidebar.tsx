@@ -162,15 +162,6 @@ export function ControlSidebar() {
           <span className="text-xs font-mono text-secondary-foreground">One-Key Focus</span>
         </label>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={audiationMode}
-            onChange={e => setAudiationMode(e.target.checked)}
-            className="accent-primary"
-          />
-          <span className="text-xs font-mono text-secondary-foreground">Audiation Mode</span>
-        </label>
 
         <button
           onClick={clearNotes}
