@@ -1,6 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNoteColor, getNoteChroma } from "@/lib/music-engine";
-import { Note } from "tonal";
+import { Note, Key } from "tonal";
 
 // Grand staff with unified coordinate system
 // Diatonic position: C4 = 0, D4 = 1, E4 = 2, F4 = 3, G4 = 4, A4 = 5, B4 = 6, C5 = 7...
@@ -40,13 +40,54 @@ function needsAccidental(midi: number): boolean {
   return [1, 3, 6, 8, 10].includes(pc); // C#, D#, F#, G#, A#
 }
 
+// Key signature positions on staff
+// Sharps order: F C G D A E B — treble y positions for each
+// Flats order: B E A D G C F — treble y positions for each
+const SHARP_ORDER = ["F", "C", "G", "D", "A", "E", "B"];
+const FLAT_ORDER = ["B", "E", "A", "D", "G", "C", "F"];
+
+// Diatonic position within an octave: C=0,D=1,E=2,F=3,G=4,A=5,B=6
+const DIATONIC_POS: Record<string, number> = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+
+// Treble key sig positions (octave context): F5=10, C5=7, G5=11, D5=8, A4=5, E5=9, B4=6
+const TREBLE_SHARP_POSITIONS = [10, 7, 11, 8, 5, 9, 6]; // diatonic pos from C4=0
+const TREBLE_FLAT_POSITIONS = [6, 9, 5, 8, 4, 7, 3]; // B4, E5, A4, D5, G4, C5, F4
+
+// Bass key sig: same pattern but shifted down 2 diatonic steps (one octave lower effective)
+const BASS_SHARP_POSITIONS = TREBLE_SHARP_POSITIONS.map(p => p - 14);
+const BASS_FLAT_POSITIONS = TREBLE_FLAT_POSITIONS.map(p => p - 14);
+
+function getKeySignature(selectedKey: string, selectedScale: string) {
+  // Get key signature info using tonal
+  const keyName = selectedScale === "minor" 
+    ? `${selectedKey} minor` 
+    : `${selectedKey} major`;
+  
+  const keyInfo = selectedScale === "minor" 
+    ? Key.minorKey(selectedKey) 
+    : Key.majorKey(selectedKey);
+  
+  if (!keyInfo) return { sharps: 0, flats: 0, type: "sharp" as const };
+  
+  const alteration = "alteration" in keyInfo ? (keyInfo as any).alteration : 0;
+  
+  if (alteration > 0) {
+    return { sharps: alteration, flats: 0, type: "sharp" as const };
+  } else if (alteration < 0) {
+    return { sharps: 0, flats: Math.abs(alteration), type: "flat" as const };
+  }
+  return { sharps: 0, flats: 0, type: "sharp" as const };
+}
+
 // Chord x position - all notes stacked vertically at same x
+const KEY_SIG_START_X = 48;
+const KEY_SIG_SPACING = 8;
 const CHORD_X = 120;
 // Offset for seconds (adjacent notes) to avoid overlap
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, audiationMode } = useHarmonic();
+  const { activeNotes, audiationMode, selectedKey, selectedScale } = useHarmonic();
 
   const activeArray = [...activeNotes].map(n => ({
     note: n,
@@ -122,6 +163,7 @@ export function StaffNotation() {
 
   const treblePositioned = getChordPositions(trebleNotes);
   const bassPositioned = getChordPositions(bassNotes);
+  const keySig = getKeySignature(selectedKey, selectedScale);
 
   // Render a note head with the note name inside
   function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
@@ -199,7 +241,41 @@ export function StaffNotation() {
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
-        {/* Middle C ledger line indicator */}
+        {/* Key Signature */}
+        {keySig.type === "sharp" && keySig.sharps > 0 && (
+          <>
+            {Array.from({ length: keySig.sharps }).map((_, i) => {
+              const trebleY = MIDDLE_C_Y - TREBLE_SHARP_POSITIONS[i] * STEP;
+              const bassY = MIDDLE_C_Y - BASS_SHARP_POSITIONS[i] * STEP;
+              const x = KEY_SIG_START_X + i * KEY_SIG_SPACING;
+              return (
+                <g key={`ks-${i}`}>
+                  <text x={x} y={trebleY + 4} fontSize="11" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif" fontWeight="bold">♯</text>
+                  <text x={x} y={bassY + 4} fontSize="11" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif" fontWeight="bold">♯</text>
+                </g>
+              );
+            })}
+          </>
+        )}
+        {keySig.type === "flat" && keySig.flats > 0 && (
+          <>
+            {Array.from({ length: keySig.flats }).map((_, i) => {
+              const trebleY = MIDDLE_C_Y - TREBLE_FLAT_POSITIONS[i] * STEP;
+              const bassY = MIDDLE_C_Y - BASS_FLAT_POSITIONS[i] * STEP;
+              const x = KEY_SIG_START_X + i * KEY_SIG_SPACING;
+              return (
+                <g key={`kf-${i}`}>
+                  <text x={x} y={trebleY + 4} fontSize="12" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif">♭</text>
+                  <text x={x} y={bassY + 4} fontSize="12" fill="hsl(var(--foreground))" opacity="0.8"
+                    fontFamily="serif">♭</text>
+                </g>
+              );
+            })}
+          </>
+        )}
         {activeArray.length === 0 && (
           <line x1="108" y1={MIDDLE_C_Y} x2="132" y2={MIDDLE_C_Y}
             stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.3" />
