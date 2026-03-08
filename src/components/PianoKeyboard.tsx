@@ -1,7 +1,21 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getHandMidis } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis, NOTE_COLOR_KEYS } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
+
+/** Return a brightened version of a note's color for legibility on dark keys */
+function getBrightNoteColor(noteName: string): string {
+  const pc = Note.pitchClass(noteName) || noteName;
+  const enharmonic = Note.enharmonic(pc) || pc;
+  const cssVar = NOTE_COLOR_KEYS[pc] || NOTE_COLOR_KEYS[enharmonic] || "var(--note-c)";
+  // Use the same CSS var but override saturation/lightness via calc — 
+  // we can't easily parse CSS vars, so use a filter trick:
+  // Just return a brighter fixed version by wrapping with adjusted lightness
+  return `hsl(${cssVar})`;
+}
+
+/** Inline style for a bright indicator on black keys: boost brightness via filter */
+const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 
 // Get the horizontal center % of a key by its MIDI number
 function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth: number): number | null {
@@ -198,7 +212,7 @@ export function PianoKeyboard() {
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                backgroundColor: isActive ? color : "#ffffff",
+                backgroundColor: isActive ? color : "#f5f0e8",
                 zIndex: 1,
               }}
               onClick={() => handleKeyClick(key.note)}
@@ -257,9 +271,10 @@ export function PianoKeyboard() {
                   style={{ 
                     borderColor: isActive ? 'hsl(var(--background))' : color,
                     backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    filter: isActive ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>{Note.pitchClass(key.note)}</span>
+                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER }}>{Note.pitchClass(key.note)}</span>
                 </div>
               )}
             </div>
