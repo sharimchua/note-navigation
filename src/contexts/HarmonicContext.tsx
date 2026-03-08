@@ -143,6 +143,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       useFlats,
       midiState,
       selectedTuning,
+      leftHand,
+      rightHand,
       toggleNote,
       setActiveNotes,
       clearNotes,
@@ -151,6 +153,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setKeyLocked,
       setUseFlats,
       setTuning,
+      setLeftHand: setLeftHandCb,
+      setRightHand: setRightHandCb,
       playNote,
       isNoteInCurrentScale,
     }
