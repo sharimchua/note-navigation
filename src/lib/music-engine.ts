@@ -88,22 +88,6 @@ export function getFretNote(openString: string, fret: number): string {
   return Note.fromMidi(midi + fret);
 }
 
-export function getAllFretboardPositions(noteName: string, tuning: string[] = STANDARD_TUNING): { string: number; fret: number }[] {
-  const targetChroma = getNoteChroma(noteName);
-  const positions: { string: number; fret: number }[] = [];
-  
-  tuning.forEach((openNote, stringIdx) => {
-    for (let fret = 0; fret <= TOTAL_FRETS; fret++) {
-      const fretNote = getFretNote(openNote, fret);
-      if (getNoteChroma(fretNote) === targetChroma) {
-        positions.push({ string: stringIdx, fret });
-      }
-    }
-  });
-  
-  return positions;
-}
-
 // Piano range: A0 to C8 (88 keys)
 export const PIANO_START_MIDI = 21; // A0
 export const PIANO_END_MIDI = 108; // C8
