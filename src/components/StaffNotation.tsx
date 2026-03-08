@@ -91,13 +91,17 @@ const SECOND_OFFSET = 16;
 export function StaffNotation() {
   const { activeNotes, selectedKey, selectedScale } = useHarmonic();
 
-  const activeArray = [...activeNotes].map(n => ({
-    note: n,
-    midi: Note.midi(n) || 60,
-    pc: Note.pitchClass(n),
-    color: getNoteColor(n),
-    isSharp: needsAccidental(Note.midi(n) || 60),
-  }));
+  const activeArray = [...activeNotes].map(n => {
+    const midi = Note.midi(n) || 60;
+    const pc = midi % 12;
+    return {
+      note: n,
+      midi,
+      pc: SHARP_PC_NAMES[pc], // Always use sharp-based names to match staff positioning
+      color: getNoteColor(n),
+      isSharp: needsAccidental(midi),
+    };
+  });
 
   // Sort by MIDI for consistent display
   activeArray.sort((a, b) => a.midi - b.midi);
