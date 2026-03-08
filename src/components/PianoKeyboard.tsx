@@ -32,7 +32,7 @@ function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth:
   }
 }
 
-// Realistic hand overlay with anatomically proportioned fingers and thumb
+// Realistic hand overlay with proper fingertip placement, knuckle bumps, and forearm
 function HandOverlaySVG({ 
   fingerPositions, 
   isLeft, 
@@ -55,39 +55,54 @@ function HandOverlaySVG({
 
   const keyW = containerWidth / 52;
   
-  const skinBase = isLeft ? "rgba(59, 130, 246, 0.18)" : "rgba(239, 68, 68, 0.18)";
-  const skinStroke = isLeft ? "rgba(59, 130, 246, 0.4)" : "rgba(239, 68, 68, 0.4)";
-  const nailColor = isLeft ? "rgba(59, 130, 246, 0.08)" : "rgba(239, 68, 68, 0.08)";
-  const knuckleColor = isLeft ? "rgba(59, 130, 246, 0.25)" : "rgba(239, 68, 68, 0.25)";
+  const skinBase = isLeft ? "rgba(59, 130, 246, 0.16)" : "rgba(239, 68, 68, 0.16)";
+  const skinDarker = isLeft ? "rgba(59, 130, 246, 0.22)" : "rgba(239, 68, 68, 0.22)";
+  const skinStroke = isLeft ? "rgba(59, 130, 246, 0.35)" : "rgba(239, 68, 68, 0.35)";
+  const nailColor = isLeft ? "rgba(59, 130, 246, 0.06)" : "rgba(239, 68, 68, 0.06)";
+  const knuckleColor = isLeft ? "rgba(59, 130, 246, 0.3)" : "rgba(239, 68, 68, 0.3)";
   const badgeColor = isLeft ? "rgba(59, 130, 246, 0.8)" : "rgba(239, 68, 68, 0.8)";
 
-  // Anatomical finger data indexed by finger number (1=thumb, 5=pinky)
-  // widthRatio: relative to keyW, lengthRatio: how far up from palm the tip reaches (fraction of container height)
-  const anatomy: Record<number, { widthRatio: number; lengthPct: number; }> = {
-    1: { widthRatio: 0.85, lengthPct: 0.30 }, // Thumb: short & wide
-    2: { widthRatio: 0.55, lengthPct: 0.50 }, // Index
-    3: { widthRatio: 0.54, lengthPct: 0.56 }, // Middle (longest)
-    4: { widthRatio: 0.52, lengthPct: 0.48 }, // Ring
-    5: { widthRatio: 0.46, lengthPct: 0.38 }, // Pinky: shortest & thinnest
+  const anatomy: Record<number, { widthRatio: number; lengthPct: number }> = {
+    1: { widthRatio: 0.82, lengthPct: 0.28 },
+    2: { widthRatio: 0.52, lengthPct: 0.48 },
+    3: { widthRatio: 0.50, lengthPct: 0.54 },
+    4: { widthRatio: 0.48, lengthPct: 0.46 },
+    5: { widthRatio: 0.42, lengthPct: 0.36 },
   };
 
-  // Palm geometry
-  const palmLeft = points[0].xPx - keyW * 0.8;
-  const palmRight = points[points.length - 1].xPx + keyW * 0.8;
-  const palmTop = containerHeight * 0.84;
-  const palmBottom = containerHeight + 40;
+  // Best-practice fingertip placement: white keys at ~75% down, black keys at center (~30%)
+  const whiteTipY = containerHeight * 0.75;
+  const blackTipY = containerHeight * 0.30;
+
+  // Palm + wrist + forearm
+  const palmLeft = points[0].xPx - keyW * 1.0;
+  const palmRight = points[points.length - 1].xPx + keyW * 1.0;
+  const palmTop = containerHeight * 0.88;
+  const palmBottom = containerHeight + 20;
   const palmCX = (palmLeft + palmRight) / 2;
   const palmW = palmRight - palmLeft;
+  const wristW = palmW * 0.55;
+  const wristTop = palmBottom;
+  const wristBottom = containerHeight + 65;
+  const forearmW = palmW * 0.50;
+  const forearmBottom = containerHeight + 120;
 
-  const palmPath = `
-    M ${palmLeft + 6} ${palmTop}
-    Q ${palmLeft - 3} ${palmTop + 18} ${palmLeft} ${(palmTop + palmBottom) / 2}
-    Q ${palmLeft} ${palmBottom - 5} ${palmCX - palmW * 0.12} ${palmBottom}
-    Q ${palmCX} ${palmBottom + 5} ${palmCX + palmW * 0.12} ${palmBottom}
-    Q ${palmRight} ${palmBottom - 5} ${palmRight} ${(palmTop + palmBottom) / 2}
-    Q ${palmRight + 3} ${palmTop + 18} ${palmRight - 6} ${palmTop}
+  const handPath = `
+    M ${palmLeft + 4} ${palmTop}
+    Q ${palmLeft - 2} ${palmTop + 12} ${palmLeft} ${(palmTop + palmBottom) / 2}
+    Q ${palmLeft + 2} ${palmBottom - 3} ${palmCX - wristW / 2} ${wristTop}
+    Q ${palmCX - wristW / 2 - 2} ${(wristTop + wristBottom) / 2} ${palmCX - forearmW / 2} ${wristBottom}
+    L ${palmCX - forearmW / 2} ${forearmBottom}
+    Q ${palmCX} ${forearmBottom + 8} ${palmCX + forearmW / 2} ${forearmBottom}
+    L ${palmCX + forearmW / 2} ${wristBottom}
+    Q ${palmCX + wristW / 2 + 2} ${(wristTop + wristBottom) / 2} ${palmCX + wristW / 2} ${wristTop}
+    Q ${palmRight - 2} ${palmBottom - 3} ${palmRight} ${(palmTop + palmBottom) / 2}
+    Q ${palmRight + 2} ${palmTop + 12} ${palmRight - 4} ${palmTop}
     Z
   `;
+
+  const wristCreaseY1 = wristTop + 4;
+  const wristCreaseY2 = wristTop + 10;
 
   return (
     <svg 
@@ -98,129 +113,122 @@ function HandOverlaySVG({
     >
       <defs>
         <filter id={`hand-shadow-${isLeft ? 'l' : 'r'}`}>
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={isLeft ? "rgba(59,130,246,0.15)" : "rgba(239,68,68,0.15)"} />
+          <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor={isLeft ? "rgba(59,130,246,0.12)" : "rgba(239,68,68,0.12)"} />
         </filter>
       </defs>
 
       <g filter={`url(#hand-shadow-${isLeft ? 'l' : 'r'})`}>
-        {/* Palm */}
-        <path d={palmPath} fill={skinBase} stroke={skinStroke} strokeWidth={1.2} />
+        <path d={handPath} fill={skinBase} stroke={skinStroke} strokeWidth={1} />
+        
+        {/* Wrist creases */}
+        <line x1={palmCX - wristW * 0.3} y1={wristCreaseY1} x2={palmCX + wristW * 0.3} y2={wristCreaseY1}
+          stroke={knuckleColor} strokeWidth={0.7} strokeLinecap="round" />
+        <line x1={palmCX - wristW * 0.25} y1={wristCreaseY2} x2={palmCX + wristW * 0.25} y2={wristCreaseY2}
+          stroke={knuckleColor} strokeWidth={0.5} strokeLinecap="round" />
+
+        {/* Knuckle bumps + tendon lines on back of hand */}
+        {points.map((pt, idx) => (
+          <g key={`meta-${idx}`}>
+            <ellipse cx={pt.xPx} cy={palmTop - 1} rx={keyW * 0.22} ry={3}
+              fill={skinDarker} stroke={knuckleColor} strokeWidth={0.5} />
+            <line x1={pt.xPx} y1={palmTop + 5} x2={pt.xPx} y2={palmTop + (palmBottom - palmTop) * 0.5}
+              stroke={knuckleColor} strokeWidth={0.4} strokeLinecap="round" />
+          </g>
+        ))}
         
         {/* Fingers */}
         {points.map((pt, i) => {
-          const fingerNum = sorted[i].finger; // 1=thumb .. 5=pinky
+          const fingerNum = sorted[i].finger;
           const isThumb = fingerNum === 1;
-          const { widthRatio, lengthPct } = anatomy[fingerNum] || anatomy[3];
+          const { widthRatio } = anatomy[fingerNum] || anatomy[3];
           
           const fw = keyW * widthRatio;
-          const baseY = palmTop + 2;
+          const baseY = palmTop;
+          const targetTipY = pt.isBlack ? blackTipY : whiteTipY;
           
-          // Tip Y: where fingertip touches the key
-          const touchY = pt.isBlack ? containerHeight * 0.40 : containerHeight * 0.65;
-          // Actual tip based on finger length (longer fingers reach further)
-          const tipY = baseY - containerHeight * lengthPct;
-          // Use the lower of touchY and tipY (finger curls to reach the key)
-          const effectiveTipY = Math.min(touchY, tipY);
-          
-          // Splay: outer fingers angle slightly outward
-          const splay = (i - (points.length - 1) / 2) * 1.5;
+          const splay = (i - (points.length - 1) / 2) * 1.8;
           const tipX = pt.xPx + splay;
           
-          // Tapered dimensions
-          const baseW = fw * (isThumb ? 1.1 : 1.0);
-          const midW = fw * (isThumb ? 1.0 : 0.9);
-          const tipW = fw * (isThumb ? 0.9 : 0.75);
+          const baseW = fw * (isThumb ? 1.15 : 1.0);
+          const midW = fw * (isThumb ? 1.0 : 0.88);
+          const tipW = fw * (isThumb ? 0.85 : 0.72);
           
-          // Three-segment finger: base → mid-knuckle → DIP joint → tip
-          const seg1Y = baseY - (baseY - effectiveTipY) * 0.38; // proximal knuckle
-          const seg2Y = baseY - (baseY - effectiveTipY) * 0.65; // DIP joint
+          const totalLen = baseY - targetTipY;
+          const seg1Y = baseY - totalLen * (isThumb ? 0.45 : 0.35);
+          const seg2Y = baseY - totalLen * (isThumb ? 0.75 : 0.62);
+          const seg3Y = isThumb ? undefined : baseY - totalLen * 0.82;
           
           let fingerPath: string;
           
           if (isThumb) {
-            // Thumb: wider, stubbier, approaches more from the side
-            const thumbAngle = isLeft ? -3 : 3; // slight lateral offset
-            const tx = tipX + thumbAngle;
+            const thumbOff = isLeft ? -2 : 2;
+            const tx = tipX + thumbOff;
             fingerPath = `
               M ${pt.xPx - baseW / 2} ${baseY}
-              C ${pt.xPx - baseW / 2} ${seg1Y + 5}, ${tx - midW / 2 - 2} ${seg1Y}, ${tx - midW / 2} ${seg2Y}
-              Q ${tx - tipW / 2} ${effectiveTipY + 2} ${tx} ${effectiveTipY}
-              Q ${tx + tipW / 2} ${effectiveTipY + 2} ${tx + midW / 2} ${seg2Y}
-              C ${tx + midW / 2 + 2} ${seg1Y}, ${pt.xPx + baseW / 2} ${seg1Y + 5}, ${pt.xPx + baseW / 2} ${baseY}
+              C ${pt.xPx - baseW / 2 - 1} ${seg1Y + 5}, ${tx - midW / 2 - 2} ${seg1Y}, ${tx - midW / 2} ${seg2Y}
+              Q ${tx - tipW / 2} ${targetTipY + 3} ${tx} ${targetTipY}
+              Q ${tx + tipW / 2} ${targetTipY + 3} ${tx + midW / 2} ${seg2Y}
+              C ${tx + midW / 2 + 2} ${seg1Y}, ${pt.xPx + baseW / 2 + 1} ${seg1Y + 5}, ${pt.xPx + baseW / 2} ${baseY}
               Z
             `;
           } else {
-            // Regular finger: three phalanges with natural taper
             fingerPath = `
               M ${pt.xPx - baseW / 2} ${baseY}
-              C ${pt.xPx - baseW / 2 - 0.5} ${seg1Y + 3}, ${tipX - midW / 2 - 0.5} ${seg1Y - 2}, ${tipX - midW / 2} ${seg2Y}
-              Q ${tipX - tipW / 2 - 0.5} ${effectiveTipY + tipW * 0.3} ${tipX} ${effectiveTipY}
-              Q ${tipX + tipW / 2 + 0.5} ${effectiveTipY + tipW * 0.3} ${tipX + midW / 2} ${seg2Y}
-              C ${tipX + midW / 2 + 0.5} ${seg1Y - 2}, ${pt.xPx + baseW / 2 + 0.5} ${seg1Y + 3}, ${pt.xPx + baseW / 2} ${baseY}
+              C ${pt.xPx - baseW / 2 - 0.5} ${seg1Y + 4}, ${tipX - midW / 2 - 0.5} ${seg1Y}, ${tipX - midW / 2} ${seg2Y}
+              C ${tipX - midW / 2 + 0.3} ${seg3Y! + 2}, ${tipX - tipW / 2 - 0.3} ${seg3Y!}, ${tipX - tipW / 2} ${targetTipY + tipW * 0.3}
+              Q ${tipX - tipW / 3} ${targetTipY - 1} ${tipX} ${targetTipY}
+              Q ${tipX + tipW / 3} ${targetTipY - 1} ${tipX + tipW / 2} ${targetTipY + tipW * 0.3}
+              C ${tipX + tipW / 2 + 0.3} ${seg3Y!}, ${tipX + midW / 2 - 0.3} ${seg3Y! + 2}, ${tipX + midW / 2} ${seg2Y}
+              C ${tipX + midW / 2 + 0.5} ${seg1Y}, ${pt.xPx + baseW / 2 + 0.5} ${seg1Y + 4}, ${pt.xPx + baseW / 2} ${baseY}
               Z
             `;
           }
 
-          const nailW = tipW * 0.65;
-          const nailH = tipW * (isThumb ? 0.35 : 0.28);
+          const nailW = tipW * 0.6;
+          const nailH = tipW * (isThumb ? 0.32 : 0.24);
 
           return (
             <g key={i}>
-              {/* Finger body */}
-              <path d={fingerPath} fill={skinBase} stroke={skinStroke} strokeWidth={1} />
+              <path d={fingerPath} fill={skinBase} stroke={skinStroke} strokeWidth={0.8} />
               
-              {/* Fingernail at tip */}
+              {/* Fingernail */}
               <ellipse
                 cx={tipX + (isThumb ? (isLeft ? -1 : 1) : 0)}
-                cy={effectiveTipY + tipW * 0.2}
-                rx={nailW / 2}
-                ry={nailH}
-                fill={nailColor}
-                stroke={skinStroke}
-                strokeWidth={0.5}
+                cy={targetTipY + tipW * 0.15}
+                rx={nailW / 2} ry={nailH}
+                fill={nailColor} stroke={skinStroke} strokeWidth={0.4}
               />
               
-              {/* Proximal knuckle crease */}
-              <line
-                x1={tipX - midW * 0.35}
-                y1={seg1Y}
-                x2={tipX + midW * 0.35}
-                y2={seg1Y}
-                stroke={knuckleColor}
-                strokeWidth={0.8}
-                strokeLinecap="round"
+              {/* Fingertip contact pad */}
+              <ellipse cx={tipX} cy={targetTipY + tipW * 0.35}
+                rx={tipW * 0.3} ry={tipW * 0.15}
+                fill={skinDarker} opacity={0.5}
               />
               
-              {/* DIP joint crease (skip on thumb — only 2 phalanges) */}
-              {!isThumb && (
-                <line
-                  x1={tipX - midW * 0.28}
-                  y1={seg2Y}
-                  x2={tipX + midW * 0.28}
-                  y2={seg2Y}
-                  stroke={knuckleColor}
-                  strokeWidth={0.6}
-                  strokeLinecap="round"
-                />
+              {/* MCP knuckle bump */}
+              <ellipse
+                cx={tipX + (isThumb ? (isLeft ? -0.5 : 0.5) : 0)}
+                cy={seg1Y} rx={midW * 0.28} ry={2.5}
+                fill={skinDarker}
+              />
+              
+              {/* PIP/IP joint */}
+              <line x1={tipX - midW * 0.25} y1={seg2Y} x2={tipX + midW * 0.25} y2={seg2Y}
+                stroke={knuckleColor} strokeWidth={0.7} strokeLinecap="round" />
+              
+              {/* DIP joint (non-thumb) */}
+              {!isThumb && seg3Y !== undefined && (
+                <line x1={tipX - tipW * 0.28} y1={seg3Y} x2={tipX + tipW * 0.28} y2={seg3Y}
+                  stroke={knuckleColor} strokeWidth={0.5} strokeLinecap="round" />
               )}
               
-              {/* Finger number badge — positioned mid-finger */}
-              <circle
-                cx={tipX}
-                cy={(seg1Y + seg2Y) / 2}
-                r={Math.max(6, fw * 0.4)}
-                fill={badgeColor}
-              />
-              <text
-                x={tipX}
-                y={(seg1Y + seg2Y) / 2 + 0.5}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="white"
-                fontSize={Math.max(8, fw * 0.45)}
-                fontFamily="monospace"
-                fontWeight="bold"
-              >
+              {/* Finger number badge */}
+              <circle cx={tipX} cy={(seg1Y + seg2Y) / 2}
+                r={Math.max(5.5, fw * 0.36)} fill={badgeColor} />
+              <text x={tipX} y={(seg1Y + seg2Y) / 2 + 0.5}
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize={Math.max(7, fw * 0.42)}
+                fontFamily="monospace" fontWeight="bold">
                 {fingerNum}
               </text>
             </g>
