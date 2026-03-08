@@ -170,7 +170,7 @@ export function StaffNotation() {
         {/* Treble Clef - curl intersection on G4 line (y=72) */}
         <text
           x="36"
-          y={trebleClefY + 18}
+          y={trebleClefY + 6}
           fontSize="54"
           fill="hsl(var(--foreground))"
           opacity="0.6"
