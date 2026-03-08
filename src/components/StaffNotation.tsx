@@ -41,7 +41,7 @@ function needsAccidental(midi: number): boolean {
 }
 
 // Chord x position - all notes stacked vertically at same x
-const CHORD_X = 200;
+const CHORD_X = 120;
 // Offset for seconds (adjacent notes) to avoid overlap
 const SECOND_OFFSET = 16;
 
