@@ -80,8 +80,8 @@ function getKeySignature(selectedKey: string, selectedScale: string) {
 }
 
 // Chord x position - all notes stacked vertically at same x
-const KEY_SIG_START_X = 48;
-const KEY_SIG_SPACING = 8;
+const KEY_SIG_START_X = 44;
+const KEY_SIG_SPACING = 5;
 const CHORD_X = 120;
 // Offset for seconds (adjacent notes) to avoid overlap
 const SECOND_OFFSET = 16;
@@ -250,9 +250,9 @@ export function StaffNotation() {
               const x = KEY_SIG_START_X + i * KEY_SIG_SPACING;
               return (
                 <g key={`ks-${i}`}>
-                  <text x={x} y={trebleY + 4} fontSize="11" fill="hsl(var(--foreground))" opacity="0.8"
+                  <text x={x} y={trebleY + 3} fontSize="9" fill="hsl(var(--foreground))" opacity="0.8"
                     fontFamily="serif" fontWeight="bold">♯</text>
-                  <text x={x} y={bassY + 4} fontSize="11" fill="hsl(var(--foreground))" opacity="0.8"
+                  <text x={x} y={bassY + 3} fontSize="9" fill="hsl(var(--foreground))" opacity="0.8"
                     fontFamily="serif" fontWeight="bold">♯</text>
                 </g>
               );
@@ -267,9 +267,9 @@ export function StaffNotation() {
               const x = KEY_SIG_START_X + i * KEY_SIG_SPACING;
               return (
                 <g key={`kf-${i}`}>
-                  <text x={x} y={trebleY + 4} fontSize="12" fill="hsl(var(--foreground))" opacity="0.8"
+                  <text x={x} y={trebleY + 3} fontSize="10" fill="hsl(var(--foreground))" opacity="0.8"
                     fontFamily="serif">♭</text>
-                  <text x={x} y={bassY + 4} fontSize="12" fill="hsl(var(--foreground))" opacity="0.8"
+                  <text x={x} y={bassY + 3} fontSize="10" fill="hsl(var(--foreground))" opacity="0.8"
                     fontFamily="serif">♭</text>
                 </g>
               );
