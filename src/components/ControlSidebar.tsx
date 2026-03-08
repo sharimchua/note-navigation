@@ -26,7 +26,7 @@ export function ControlSidebar() {
     const notes = new Set<string>();
     pattern.forEach((finger, i) => {
       const fret = startFret + finger - 1;
-      const note = getFretNote(STANDARD_TUNING[4], fret); // B string
+      const note = getFretNote(selectedTuning.notes[4], fret); // 2nd string from top
       if (note) {
         notes.add(note);
       }
