@@ -1,6 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { NOTE_NAMES, SCALE_PRESETS } from "@/lib/music-engine";
+import { KEY_NAMES_COF, NOTE_NAMES, SCALE_PRESETS } from "@/lib/music-engine";
 
 // Generate piano note options for hand root selection (C2-C6)
 const HAND_ROOT_OPTIONS: string[] = [];
@@ -48,7 +48,7 @@ export function ControlSidebar() {
       <div className="space-y-2">
         <h4 className="engineering-label">Key Center (Tonic)</h4>
         <div className="grid grid-cols-6 gap-1">
-          {NOTE_NAMES.map(note => (
+          {KEY_NAMES_COF.map(note => (
             <button
               key={note}
               onClick={() => {

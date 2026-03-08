@@ -3,6 +3,8 @@ import { Note, Scale } from "tonal";
 
 export const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as const;
 export const NOTE_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"] as const;
+// Circle-of-fifths idiomatic key names (enharmonic choices matching standard usage)
+export const KEY_NAMES_COF = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"] as const;
 export type NoteName = typeof NOTE_NAMES[number];
 
 export function getNotePitchClass(noteName: string, useFlats: boolean): string {
