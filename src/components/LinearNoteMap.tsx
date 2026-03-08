@@ -27,12 +27,12 @@ export function LinearNoteMap() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg p-2 md:p-3">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">
+    <div className="glass-panel p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="engineering-label">
           Linear Note Map
         </h3>
-        <span className="text-[9px] text-muted-foreground">C3 ← C4 → C5</span>
+        <span className="text-[9px] text-muted-foreground font-mono">C3 ← C4 → C5</span>
       </div>
 
       <div className="relative overflow-x-auto pb-3">
