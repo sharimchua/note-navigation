@@ -31,7 +31,7 @@ export function GuitarFretboard() {
   }, []);
 
   return (
-    <div className="glass-panel p-4">
+    <div className="glass-panel p-4 pb-6">
       <h3 className="engineering-label mb-3">Fretboard · {selectedTuning.name} · {TOTAL_FRETS} Frets</h3>
       <div ref={fretScrollRef} className="overflow-x-auto">
         <div style={{ minWidth: "1600px" }}>
