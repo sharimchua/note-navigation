@@ -44,12 +44,14 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
-              {/* Scale indicator dot */}
+              {/* Scale indicator circle */}
               {showScaleIndicator && (
                 <div 
-                  className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                  style={{ borderColor: color }}
+                >
+                  <span className="text-[7px] font-mono font-bold" style={{ color }}>{pc}</span>
+                </div>
               )}
               <span 
                 className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
