@@ -14,7 +14,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold font-mono text-foreground">
-                The Harmonic <span className="text-primary">Mapper</span>
+                Note <span className="text-primary">Navigation</span>
               </h1>
               <p className="text-xs font-mono text-muted-foreground">
                 Sound & Symbol · Unified Tri-View Engine
