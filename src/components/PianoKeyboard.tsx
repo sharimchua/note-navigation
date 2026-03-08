@@ -1,7 +1,7 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { PIANO_KEYS, getNoteColor, getHandMidis } from "@/lib/music-engine";
 import { Note } from "tonal";
-import { useCallback, useRef, useMemo } from "react";
+import { useCallback, useRef, useMemo, useEffect } from "react";
 
 // Get the horizontal center % of a key by its MIDI number
 function getKeyCenter(midi: number, whiteKeys: typeof PIANO_KEYS, whiteKeyWidth: number): number | null {
