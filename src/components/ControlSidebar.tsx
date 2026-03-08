@@ -48,7 +48,7 @@ export function ControlSidebar() {
       <div className="space-y-2">
         <h4 className="engineering-label">Key Center (Tonic)</h4>
         <div className="grid grid-cols-6 gap-1">
-          {NOTE_NAMES.map(note => (
+          {KEY_NAMES_COF.map(note => (
             <button
               key={note}
               onClick={() => {
