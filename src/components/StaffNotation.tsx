@@ -212,6 +212,8 @@ export function StaffNotation() {
   function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
     const { x, y } = n;
     const ledgers = getLedgerLines(y, x, clef);
+    const degree = isKeyLocked ? getScaleDegree(n.note, scaleNotes) : null;
+    const label = degree !== null ? String(degree) : n.pc;
 
     return (
       <g key={n.note} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); playNote(n.note); toggleNote(n.note); }}>
@@ -223,7 +225,7 @@ export function StaffNotation() {
           transform={`rotate(-15 ${x} ${y})`} />
         <text x={x} y={y + 3} fontSize="6" fill="hsl(var(--background))"
           textAnchor="middle" fontFamily="JetBrains Mono" fontWeight="bold" style={{ pointerEvents: "none" }}>
-          {n.pc}
+          {label}
         </text>
       </g>
     );
