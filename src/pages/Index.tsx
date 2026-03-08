@@ -10,16 +10,8 @@ const Index = () => {
       <div className="flex h-screen overflow-hidden">
         <ControlSidebar />
         <main className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold font-mono text-foreground">
-                Note <span className="text-primary">Navigation</span>
-              </h1>
-              <p className="text-xs font-mono text-muted-foreground">
-                Sound & Symbol · Unified Tri-View Engine
-              </p>
-            </div>
+          {/* Header hints */}
+          <div className="flex justify-end">
             <div className="text-[10px] font-mono text-muted-foreground text-right">
               <div>Click any note to activate</div>
               <div>Colors sync across all views</div>
