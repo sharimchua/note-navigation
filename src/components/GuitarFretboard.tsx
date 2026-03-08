@@ -34,7 +34,7 @@ export function GuitarFretboard() {
     <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Fretboard · {selectedTuning.name} · {TOTAL_FRETS} Frets</h3>
       <div ref={fretScrollRef} className="overflow-x-auto">
-        <div style={{ minWidth: "1200px" }}>
+        <div style={{ minWidth: "1600px" }}>
           <svg viewBox="0 0 1100 160" className="w-full" style={{ minHeight: "140px" }}>
           {/* Nut */}
           <rect x="44" y="10" width="4" height="140" fill="hsl(var(--foreground))" opacity="0.6" rx="1" />
