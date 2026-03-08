@@ -33,7 +33,7 @@ interface HarmonicState {
   isNoteInCurrentScale: (note: string) => boolean;
 }
 
-const HarmonicContext = createContext<HarmonicState | null>(null);
+const HarmonicContext = createContext<HarmonicState | null>(null); // context
 
 export function useHarmonic() {
   const ctx = useContext(HarmonicContext);
