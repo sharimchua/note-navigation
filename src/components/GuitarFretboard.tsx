@@ -90,8 +90,9 @@ export function GuitarFretboard() {
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
 
+              // Open string (fret 0) markers appear on the nut, not over string labels
               const x = fret === 0 
-                ? 30 
+                ? 46 
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
               if (!isActive && dimmed) {
@@ -141,7 +142,7 @@ export function GuitarFretboard() {
           {/* Fret numbers */}
           {Array.from({ length: TOTAL_FRETS + 1 }, (_, fret) => {
             const x = fret === 0 
-              ? 30 
+              ? 46 
               : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
             return (
               <text key={`fnum-${fret}`} x={x} y="158" fill="hsl(var(--muted-foreground))" 
