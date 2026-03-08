@@ -3,6 +3,7 @@ import { ControlSidebar } from "@/components/ControlSidebar";
 import { PianoKeyboard } from "@/components/PianoKeyboard";
 import { GuitarFretboard } from "@/components/GuitarFretboard";
 import { StaffNotation } from "@/components/StaffNotation";
+import { LinearNoteMap } from "@/components/LinearNoteMap";
 
 const Index = () => {
   return (
