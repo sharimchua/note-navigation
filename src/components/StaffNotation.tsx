@@ -288,13 +288,6 @@ export function StaffNotation() {
         {/* Bass notes - chord form (stacked at same x) */}
         {!audiationMode && bassPositioned.map(n => renderNote(n, "bass"))}
 
-        {/* Empty state */}
-        {activeArray.length === 0 && (
-          <text x="110" y={MIDDLE_C_Y + 4} fontSize="9" fill="hsl(var(--muted-foreground))"
-            textAnchor="middle" fontFamily="JetBrains Mono" opacity="0.5">
-            Select notes
-          </text>
-        )}
       </svg>
     </div>
   );
