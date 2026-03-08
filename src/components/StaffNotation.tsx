@@ -135,11 +135,11 @@ export function StaffNotation() {
             stroke="hsl(var(--border))" strokeWidth="0.8" />
         ))}
 
-        {/* Bass Clef - dots surround F3 line (2nd from top, y=120) */}
+        {/* Bass Clef - F clef centered on F3 line (y=120) */}
         <text
           x="36"
-          y={bassClefY + 8}
-          fontSize="32"
+          y={bassClefY + 4}
+          fontSize="36"
           fill="hsl(var(--foreground))"
           opacity="0.6"
           fontFamily="serif"

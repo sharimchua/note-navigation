@@ -118,7 +118,7 @@ export function GuitarFretboard() {
                 <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                   <circle cx={x} cy={y} r="9" fill={color} 
                     opacity={dimmed ? 0.15 : (isActive ? 1 : 0.5)} 
-                    className={isActive ? "animate-note-pulse" : ""} />
+                    />
                   <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize="7"
                     fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold"
                     opacity={dimmed ? 0.2 : 1}>

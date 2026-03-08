@@ -70,9 +70,8 @@ export function PianoKeyboard() {
           return (
             <div
               key={key.midi}
-              className={`absolute top-0 cursor-pointer transition-all duration-150 rounded-b-sm
-                ${dimmed ? 'opacity-20' : 'hover:opacity-90'}
-                ${isActive ? 'animate-note-pulse' : ''}`}
+              className={`absolute top-0 cursor-pointer rounded-b-sm
+                ${dimmed ? 'opacity-20' : 'hover:opacity-90'}`}
               style={{
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.6}%`,
