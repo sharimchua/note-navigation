@@ -156,6 +156,20 @@ export function PianoKeyboard() {
     }).filter(Boolean) as { x: number; finger: number; isBlack: boolean }[];
   }, [rightHand, scaleNotes, whiteKeys, whiteKeyWidth]);
 
+  // Scroll to C4 on mount
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    const innerEl = containerRef.current;
+    if (!scrollEl || !innerEl) return;
+    // C4 is MIDI 60. Find its white key index
+    const c4Idx = whiteKeys.findIndex(k => k.midi === 60);
+    if (c4Idx < 0) return;
+    const innerWidth = innerEl.scrollWidth;
+    const visibleWidth = scrollEl.clientWidth;
+    const c4Pos = (c4Idx / whiteKeys.length) * innerWidth;
+    scrollEl.scrollLeft = Math.max(0, c4Pos - visibleWidth / 2);
+  }, [whiteKeys]);
+
   // We need actual pixel dimensions for the SVG
   const containerWidth = containerRef.current?.scrollWidth ?? 800;
   const containerHeight = containerRef.current?.clientHeight ?? 128;
@@ -163,11 +177,12 @@ export function PianoKeyboard() {
   return (
     <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Piano · 88 Keys</h3>
-      <div 
-        ref={containerRef}
-        className="relative h-36 select-none overflow-x-auto"
-        style={{ minWidth: "800px", overflow: "hidden" }}
-      >
+      <div ref={scrollRef} className="overflow-x-auto">
+        <div 
+          ref={containerRef}
+          className="relative h-36 select-none"
+          style={{ minWidth: "800px" }}
+        >
         {/* White keys */}
         {whiteKeys.map((key, i) => {
           const isActive = activeNotes.has(key.note);
