@@ -1,17 +1,18 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { STANDARD_TUNING, TOTAL_FRETS, getFretNote, getNoteColor } from "@/lib/music-engine";
+import { TOTAL_FRETS, getFretNote, getNoteColor } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback } from "react";
 
 export function GuitarFretboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning } = useHarmonic();
 
   const handleFretClick = useCallback((note: string) => {
     playNote(note);
     toggleNote(note);
   }, [playNote, toggleNote]);
 
-  const strings = [...STANDARD_TUNING].reverse(); // Display high E on top
+  const tuningNotes = selectedTuning.notes;
+  const strings = [...tuningNotes].reverse(); // Display high string on top
   const fretWidth = 100 / (TOTAL_FRETS + 1);
   const stringSpacing = 100 / (strings.length + 1);
 
@@ -21,7 +22,7 @@ export function GuitarFretboard() {
 
   return (
     <div className="glass-panel p-4">
-      <h3 className="engineering-label mb-3">Fretboard · Standard Tuning · {TOTAL_FRETS} Frets</h3>
+      <h3 className="engineering-label mb-3">Fretboard · {selectedTuning.name} · {TOTAL_FRETS} Frets</h3>
       <div className="relative overflow-x-auto" style={{ minWidth: "900px" }}>
         <svg viewBox="0 0 1100 160" className="w-full h-auto">
           {/* Nut */}
@@ -80,7 +81,7 @@ export function GuitarFretboard() {
             const originalStringIdx = strings.length - 1 - stringIdx;
 
             return Array.from({ length: TOTAL_FRETS + 1 }, (_, fret) => {
-              const note = getFretNote(STANDARD_TUNING[originalStringIdx], fret);
+              const note = getFretNote(tuningNotes[originalStringIdx], fret);
               if (!note) return null;
 
               const pc = Note.pitchClass(note);

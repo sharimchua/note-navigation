@@ -39,9 +39,40 @@ export function isNoteInScale(noteName: string, scaleNotes: string[]): boolean {
   return scaleNotes.some(sn => getNoteChroma(sn) === chroma);
 }
 
-// Standard guitar tuning (low to high): E2, A2, D3, G3, B3, E4
+// Guitar tunings
 export const STANDARD_TUNING = ["E2", "A2", "D3", "G3", "B3", "E4"];
 export const TOTAL_FRETS = 22;
+
+export interface GuitarTuning {
+  name: string;
+  notes: string[];
+  category: "standard" | "drop" | "open" | "alternate";
+}
+
+export const GUITAR_TUNINGS: GuitarTuning[] = [
+  // Standard tunings
+  { name: "Standard", notes: ["E2", "A2", "D3", "G3", "B3", "E4"], category: "standard" },
+  { name: "Half Step Down", notes: ["Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"], category: "standard" },
+  { name: "Whole Step Down", notes: ["D2", "G2", "C3", "F3", "A3", "D4"], category: "standard" },
+  
+  // Drop tunings
+  { name: "Drop D", notes: ["D2", "A2", "D3", "G3", "B3", "E4"], category: "drop" },
+  { name: "Drop C", notes: ["C2", "G2", "C3", "F3", "A3", "D4"], category: "drop" },
+  { name: "Drop B", notes: ["B1", "Gb2", "B2", "E3", "Ab3", "Db4"], category: "drop" },
+  { name: "Double Drop D", notes: ["D2", "A2", "D3", "G3", "B3", "D4"], category: "drop" },
+  
+  // Open tunings
+  { name: "Open G", notes: ["D2", "G2", "D3", "G3", "B3", "D4"], category: "open" },
+  { name: "Open D", notes: ["D2", "A2", "D3", "Gb3", "A3", "D4"], category: "open" },
+  { name: "Open E", notes: ["E2", "B2", "E3", "Ab3", "B3", "E4"], category: "open" },
+  { name: "Open A", notes: ["E2", "A2", "E3", "A3", "Db4", "E4"], category: "open" },
+  { name: "Open C", notes: ["C2", "G2", "C3", "G3", "C4", "E4"], category: "open" },
+  
+  // Alternate tunings
+  { name: "DADGAD", notes: ["D2", "A2", "D3", "G3", "A3", "D4"], category: "alternate" },
+  { name: "All Fourths", notes: ["E2", "A2", "D3", "G3", "C4", "F4"], category: "alternate" },
+  { name: "NST (New Standard)", notes: ["C2", "G2", "D3", "A3", "E4", "G4"], category: "alternate" },
+];
 
 export function getFretNote(openString: string, fret: number): string {
   const midi = Note.midi(openString);

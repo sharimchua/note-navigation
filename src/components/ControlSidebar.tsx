@@ -1,12 +1,12 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, getNoteColor, getScaleNotes, getFretNote, STANDARD_TUNING } from "@/lib/music-engine";
+import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, GUITAR_TUNINGS, getNoteColor, getScaleNotes, getFretNote } from "@/lib/music-engine";
 import { Note } from "tonal";
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, audiationMode, midiState,
-    setKey, setScale, setKeyLocked, setAudiationMode, 
+    selectedKey, selectedScale, isKeyLocked, audiationMode, midiState, selectedTuning,
+    setKey, setScale, setKeyLocked, setAudiationMode, setTuning,
     setActiveNotes, clearNotes, playNote
   } = useHarmonic();
 
@@ -26,7 +26,7 @@ export function ControlSidebar() {
     const notes = new Set<string>();
     pattern.forEach((finger, i) => {
       const fret = startFret + finger - 1;
-      const note = getFretNote(STANDARD_TUNING[4], fret); // B string
+      const note = getFretNote(selectedTuning.notes[4], fret); // 2nd string from top
       if (note) {
         notes.add(note);
       }
@@ -107,6 +107,44 @@ export function ControlSidebar() {
               <div className="text-[9px] text-muted-foreground">{preset.description}</div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Guitar Tuning */}
+      <div className="space-y-2">
+        <h4 className="engineering-label">Guitar Tuning</h4>
+        <select
+          value={selectedTuning.name}
+          onChange={e => {
+            const tuning = GUITAR_TUNINGS.find(t => t.name === e.target.value);
+            if (tuning) setTuning(tuning);
+          }}
+          className="w-full px-2 py-1.5 text-xs font-mono rounded-sm border border-border 
+            bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
+        >
+          <optgroup label="Standard">
+            {GUITAR_TUNINGS.filter(t => t.category === "standard").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Drop">
+            {GUITAR_TUNINGS.filter(t => t.category === "drop").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Open">
+            {GUITAR_TUNINGS.filter(t => t.category === "open").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Alternate">
+            {GUITAR_TUNINGS.filter(t => t.category === "alternate").map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </optgroup>
+        </select>
+        <div className="text-[9px] font-mono text-muted-foreground">
+          {selectedTuning.notes.join(" · ")}
         </div>
       </div>
 

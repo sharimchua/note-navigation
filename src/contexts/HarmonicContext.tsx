@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import * as Tone from "tone";
-import { getScaleNotes, isNoteInScale, NOTE_NAMES } from "@/lib/music-engine";
+import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
 
 interface HarmonicState {
@@ -11,6 +11,7 @@ interface HarmonicState {
   isKeyLocked: boolean;
   audiationMode: boolean;
   midiState: MIDIState;
+  selectedTuning: GuitarTuning;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
@@ -18,6 +19,7 @@ interface HarmonicState {
   setScale: (scale: string) => void;
   setKeyLocked: (locked: boolean) => void;
   setAudiationMode: (mode: boolean) => void;
+  setTuning: (tuning: GuitarTuning) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
 }
@@ -36,6 +38,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedScale, setSelectedScale] = useState("major");
   const [isKeyLocked, setKeyLocked] = useState(false);
   const [audiationMode, setAudiationMode] = useState(false);
+  const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const synthRef = useRef<Tone.PolySynth | null>(null);
 
   const getSynth = useCallback(() => {
@@ -115,6 +118,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
   const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+  const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
 
   return React.createElement(HarmonicContext.Provider, {
     value: {
@@ -125,6 +129,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       isKeyLocked,
       audiationMode,
       midiState,
+      selectedTuning,
       toggleNote,
       setActiveNotes,
       clearNotes,
@@ -132,6 +137,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setScale,
       setKeyLocked,
       setAudiationMode,
+      setTuning,
       playNote,
       isNoteInCurrentScale,
     }
