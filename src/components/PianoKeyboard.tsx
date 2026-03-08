@@ -180,7 +180,7 @@ export function PianoKeyboard() {
       <div ref={scrollRef} className="overflow-x-auto">
         <div 
           ref={containerRef}
-          className="relative h-36 select-none"
+          className="relative h-40 md:h-44 lg:h-48 select-none"
           style={{ minWidth: "800px" }}
         >
         {/* White keys */}
