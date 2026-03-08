@@ -92,7 +92,40 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote } = useHarmonic();
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Convert y position to the nearest diatonic note name with octave
+  // Diatonic notes from C: C=0, D=1, E=2, F=3, G=4, A=5, B=6
+  const DIATONIC_TO_MIDI_SHARP = [0, 2, 4, 5, 7, 9, 11]; // C, D, E, F, G, A, B
+  
+  const yToNote = useCallback((y: number): string => {
+    // Reverse: diatonicPos = (MIDDLE_C_Y - y) / STEP
+    const diatonicPos = Math.round((MIDDLE_C_Y - y) / STEP);
+    // diatonicPos 0 = C4, 7 = C5, -7 = C3
+    const octaveOffset = Math.floor(diatonicPos / 7);
+    let stepInOctave = diatonicPos % 7;
+    if (stepInOctave < 0) stepInOctave += 7;
+    const octave = 4 + octaveOffset + (stepInOctave < 0 ? -1 : 0);
+    const pcNames = useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES;
+    const midi = DIATONIC_TO_MIDI_SHARP[stepInOctave];
+    const noteName = pcNames[midi];
+    return `${noteName}${octave}`;
+  }, [useFlats]);
+
+  const handleSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+    const note = yToNote(svgPt.y);
+    if (note) {
+      playNote(note);
+      toggleNote(note);
+    }
+  }, [yToNote, playNote, toggleNote]);
 
   const activeArray = [...activeNotes].map(n => {
     const midi = Note.midi(n) || 60;
