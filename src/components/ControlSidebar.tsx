@@ -1,6 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
-import { NOTE_NAMES, SCALE_PRESETS, DEXTERITY_PRESETS, GUITAR_TUNINGS, getNoteColor, getScaleNotes, getFretNote } from "@/lib/music-engine";
+import { NOTE_NAMES, SCALE_PRESETS, GUITAR_TUNINGS, getNoteColor, getScaleNotes } from "@/lib/music-engine";
 import { Note } from "tonal";
 
 export function ControlSidebar() {
