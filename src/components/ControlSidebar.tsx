@@ -143,6 +143,30 @@ export function ControlSidebar() {
         </button>
       </div>
 
+      {/* MIDI Status */}
+      <div className="space-y-2">
+        <h4 className="engineering-label">MIDI Input</h4>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${
+            midiState.isConnected 
+              ? 'bg-green-500 animate-pulse' 
+              : midiState.isSupported 
+                ? 'bg-yellow-500' 
+                : 'bg-red-500'
+          }`} />
+          <span className="text-xs font-mono text-muted-foreground">
+            {midiState.isConnected 
+              ? midiState.deviceName 
+              : midiState.isSupported 
+                ? 'Waiting for device...' 
+                : 'Not supported'}
+          </span>
+        </div>
+        {midiState.error && (
+          <div className="text-[10px] text-destructive font-mono">{midiState.error}</div>
+        )}
+      </div>
+
       {/* Active Notes Display */}
       <div className="space-y-2">
         <h4 className="engineering-label">Active Signal</h4>
