@@ -158,6 +158,11 @@ export function StaffNotation() {
         )}
       </div>
       <svg viewBox="0 0 200 200" className="w-full flex-1" preserveAspectRatio="xMidYMid meet">
+        {/* Staff background */}
+        <rect x="28" y={TREBLE_TOP - 4} width="164" height={TREBLE_BOTTOM - TREBLE_TOP + 8} rx="2"
+          fill="hsl(var(--card))" opacity="0.6" />
+        <rect x="28" y={BASS_TOP - 4} width="164" height={BASS_BOTTOM - BASS_TOP + 8} rx="2"
+          fill="hsl(var(--card))" opacity="0.6" />
         {/* Treble Clef - curl intersection on G4 line (y=72) */}
         <text
           x="22"
