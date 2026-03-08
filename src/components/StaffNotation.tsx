@@ -98,10 +98,11 @@ export function StaffNotation() {
   const activeArray = [...activeNotes].map(n => {
     const midi = Note.midi(n) || 60;
     const pc = midi % 12;
+    const pcNames = useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES;
     return {
       note: n,
       midi,
-      pc: SHARP_PC_NAMES[pc], // Always use sharp-based names to match staff positioning
+      pc: pcNames[pc],
       color: getNoteColor(n),
       isSharp: needsAccidental(midi),
     };
