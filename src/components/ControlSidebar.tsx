@@ -147,7 +147,67 @@ export function ControlSidebar() {
         </button>
       </div>
 
-      {/* MIDI Status */}
+      {/* Hand Position Overlay */}
+      <div className="space-y-3">
+        <h4 className="engineering-label">Hand Position (Pentascale)</h4>
+        
+        {/* Left Hand */}
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={leftHand.enabled}
+              onChange={e => setLeftHand({ ...leftHand, enabled: e.target.checked })}
+              className="accent-primary"
+            />
+            <span className="text-xs font-mono text-secondary-foreground flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500/80 inline-block" />
+              Left Hand
+            </span>
+          </label>
+          {leftHand.enabled && (
+            <select
+              value={leftHand.rootNote}
+              onChange={e => setLeftHand({ ...leftHand, rootNote: e.target.value })}
+              className="w-full px-2 py-1 text-xs font-mono rounded-sm border border-border 
+                bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
+            >
+              {HAND_ROOT_OPTIONS.map(n => (
+                <option key={`lh-${n}`} value={n}>{n}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Right Hand */}
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rightHand.enabled}
+              onChange={e => setRightHand({ ...rightHand, enabled: e.target.checked })}
+              className="accent-primary"
+            />
+            <span className="text-xs font-mono text-secondary-foreground flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block" />
+              Right Hand
+            </span>
+          </label>
+          {rightHand.enabled && (
+            <select
+              value={rightHand.rootNote}
+              onChange={e => setRightHand({ ...rightHand, rootNote: e.target.value })}
+              className="w-full px-2 py-1 text-xs font-mono rounded-sm border border-border 
+                bg-secondary/50 text-secondary-foreground focus:border-primary focus:outline-none"
+            >
+              {HAND_ROOT_OPTIONS.map(n => (
+                <option key={`rh-${n}`} value={n}>{n}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-2">
         <h4 className="engineering-label">MIDI Input</h4>
         <div className="flex items-center gap-2">
