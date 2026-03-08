@@ -129,6 +129,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       isKeyLocked,
       audiationMode,
       midiState,
+      selectedTuning,
       toggleNote,
       setActiveNotes,
       clearNotes,
@@ -136,6 +137,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setScale,
       setKeyLocked,
       setAudiationMode,
+      setTuning,
       playNote,
       isNoteInCurrentScale,
     }
