@@ -271,9 +271,10 @@ export function PianoKeyboard() {
                   style={{ 
                     borderColor: isActive ? 'hsl(var(--background))' : color,
                     backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    filter: isActive ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>{Note.pitchClass(key.note)}</span>
+                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER }}>{Note.pitchClass(key.note)}</span>
                 </div>
               )}
             </div>
