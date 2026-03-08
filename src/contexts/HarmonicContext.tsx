@@ -118,6 +118,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
   const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+  const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
 
   return React.createElement(HarmonicContext.Provider, {
     value: {
