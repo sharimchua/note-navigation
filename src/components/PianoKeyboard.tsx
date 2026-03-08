@@ -122,7 +122,7 @@ export function PianoKeyboard() {
           const fingering = fingeringMap.get(key.midi);
           const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
 
-          const prevWhiteIdx = whiteKeys.findIndex(w => w.midi > key.midi) - 1;
+          const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
           const leftPos = (prevWhiteIdx + 0.55) * whiteKeyWidth;
 
