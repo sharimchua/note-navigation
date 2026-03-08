@@ -40,7 +40,7 @@ export function PianoKeyboard() {
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                backgroundColor: isActive ? color : "hsl(var(--muted))",
+                backgroundColor: isActive ? color : "#ffffff",
                 zIndex: 1,
               }}
               onClick={() => handleKeyClick(key.note)}
