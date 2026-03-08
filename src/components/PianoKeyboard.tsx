@@ -53,12 +53,14 @@ export function PianoKeyboard() {
                   <span className="text-[7px] font-mono font-bold" style={{ color }}>{pc}</span>
                 </div>
               )}
-              <span 
-                className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
-                style={{ color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
-              >
-                {pc}{Note.octave(key.note)}
-              </span>
+              {pc === "C" && (
+                <span 
+                  className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
+                  style={{ color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
+                >
+                  C{Note.octave(key.note)}
+                </span>
+              )}
             </div>
           );
         })}
