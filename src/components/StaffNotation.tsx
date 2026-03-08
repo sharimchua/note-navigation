@@ -80,8 +80,8 @@ function getKeySignature(selectedKey: string, selectedScale: string) {
 }
 
 // Chord x position - all notes stacked vertically at same x
-const KEY_SIG_START_X = 48;
-const KEY_SIG_SPACING = 8;
+const KEY_SIG_START_X = 44;
+const KEY_SIG_SPACING = 5;
 const CHORD_X = 120;
 // Offset for seconds (adjacent notes) to avoid overlap
 const SECOND_OFFSET = 16;
