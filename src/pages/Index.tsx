@@ -26,21 +26,19 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Tri-View Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Staff - takes 1 col */}
-            <div className="lg:col-span-1">
+          {/* Tri-View: Staff left, instruments right */}
+          <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0">
+            {/* Grand Staff - full vertical height */}
+            <div className="xl:flex-1 xl:min-w-[340px] min-h-[360px] xl:min-h-0">
               <StaffNotation />
             </div>
             
-            {/* Piano - takes 2 cols */}
-            <div className="lg:col-span-2">
+            {/* Piano + Fretboard stacked in right column */}
+            <div className="xl:w-[55%] 2xl:w-[60%] flex flex-col gap-4 shrink-0">
               <PianoKeyboard />
+              <GuitarFretboard />
             </div>
           </div>
-
-          {/* Fretboard - full width */}
-          <GuitarFretboard />
 
           {/* Footer */}
           <div className="flex items-center justify-between text-[9px] font-mono text-muted-foreground pt-2 border-t border-border">
