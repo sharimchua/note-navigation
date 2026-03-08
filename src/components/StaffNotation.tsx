@@ -27,6 +27,8 @@ const BASS_TOP = 108;
 const BASS_BOTTOM = 156;
 
 const DIATONIC_MAP = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C,C#,D,D#,E,F,F#,G,G#,A,A#,B
+// Sharp-based pitch class names matching the DIATONIC_MAP positioning
+const SHARP_PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 function midiToY(midi: number): number {
   const octave = Math.floor(midi / 12);
