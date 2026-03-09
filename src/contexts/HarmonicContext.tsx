@@ -18,6 +18,7 @@ interface HarmonicState {
   isKeyLocked: boolean;
   scaleLabelMode: ScaleLabelMode;
   useFlats: boolean;
+  isMuted: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
   leftHand: HandPosition;
@@ -30,6 +31,7 @@ interface HarmonicState {
   setKeyLocked: (locked: boolean) => void;
   setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
+  setMuted: (muted: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   setLeftHand: (hand: HandPosition) => void;
   setRightHand: (hand: HandPosition) => void;
