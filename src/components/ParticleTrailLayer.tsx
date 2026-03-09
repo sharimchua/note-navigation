@@ -86,11 +86,11 @@ export function ParticleTrailLayer({
 
       // Spawn new particles for active notes
       if (frameRef.current % SPAWN_EVERY === 0 && activeNoteYs.length > 0) {
-        for (const { y, color } of activeNoteYs) {
+        for (const { y, chroma } of activeNoteYs) {
           particlesRef.current.push({
             x: spawnX,
             y,
-            color,
+            chroma,
             opacity: 0.85,
             radius: 2.2,
           });
