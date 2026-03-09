@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNoteColor, getNoteChroma, getScaleDegree } from "@/lib/music-engine";
+import { getNoteColor, getNoteChroma, getScaleLabel } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
 
 // Grand staff with unified coordinate system
