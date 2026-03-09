@@ -95,8 +95,14 @@ export function StaffNotation() {
   const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
   
-  // Use useMemo for hook to avoid calling inside callbacks without dependencies where possible
-  // Although we already import useMemo in React
+  const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
+  const baseMidi = useMemo(() => {
+    let lowestMidi = 40; // Approx E2
+    while (lowestMidi % 12 !== rootChroma) {
+      lowestMidi++;
+    }
+    return lowestMidi;
+  }, [rootChroma]);
 
 
   // Convert y position to the nearest diatonic note name with octave
