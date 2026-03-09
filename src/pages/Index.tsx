@@ -5,7 +5,7 @@ import { GuitarFretboard } from "@/components/GuitarFretboard";
 import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
 import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
-import { Trash2, Volume2, VolumeX } from "lucide-react";
+import { Trash2, Volume2, VolumeX, Sparkles } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { KEY_NAMES_COF, SCALE_PRESETS } from "@/lib/music-engine";

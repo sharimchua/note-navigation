@@ -2,6 +2,7 @@ import { useCallback, useRef, useMemo } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNoteColor, getNoteChroma, getScaleLabel } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
+import { ParticleTrailLayer } from "@/components/ParticleTrailLayer";
 
 // Grand staff with unified coordinate system
 // Diatonic position: C4 = 0, D4 = 1, E4 = 2, F4 = 3, G4 = 4, A4 = 5, B4 = 6, C5 = 7...
