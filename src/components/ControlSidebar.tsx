@@ -13,7 +13,7 @@ for (let octave = 2; octave <= 6; octave++) {
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, scaleLabelMode, midiState,
+    selectedKey, selectedScale, scaleRootOffset, isKeyLocked, scaleLabelMode, midiState,
     leftHand, rightHand, isMuted,
     setKey, setScale, setKeyLocked, setScaleLabelMode,
     setLeftHand, setRightHand, setMuted,
