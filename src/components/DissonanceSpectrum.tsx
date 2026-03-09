@@ -180,7 +180,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         </div>
       </div>
 
-      <div className="overflow-x-auto w-full">
+      <div className="overflow-x-auto w-full flex-1 min-h-0">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           className="w-full"
