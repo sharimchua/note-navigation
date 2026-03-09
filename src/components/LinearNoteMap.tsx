@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNoteColor, getNotePitchClass, getScaleDegree } from "@/lib/music-engine";
+import { getNoteColor, getNotePitchClass, getScaleLabel } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMemo } from "react";
@@ -8,7 +8,7 @@ const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
 
 export function LinearNoteMap() {
-  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote } = useHarmonic();
+  const { activeNotes, scaleNotes, isKeyLocked, scaleLabelMode, useFlats, toggleNote, playNote } = useHarmonic();
   const isMobile = useIsMobile();
 
   const CIRCLE_SIZE = isMobile ? 20 : 28;
@@ -25,12 +25,12 @@ export function LinearNoteMap() {
       const noteName = Note.fromMidi(midi);
       const pc = getNotePitchClass(noteName, useFlats);
       const inScale = scaleChromas.has(midi % 12);
-      const degree = getScaleDegree(noteName, scaleNotes);
+      const scaleLabel = getScaleLabel(noteName, scaleNotes, scaleLabelMode);
 
-      result.push({ midi, noteName, pc, inScale, degree });
+      result.push({ midi, noteName, pc, inScale, scaleLabel });
     }
     return result;
-  }, [useFlats, scaleChromas, scaleNotes]);
+  }, [useFlats, scaleChromas, scaleNotes, scaleLabelMode]);
 
   return (
     <div className="glass-panel p-4">
@@ -75,10 +75,10 @@ export function LinearNoteMap() {
               >
                 {!deEmphasize && (
                   <span
-                    className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : 'text-[8px]'}`}
+                    className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : (n.scaleLabel && n.scaleLabel.length > 1 ? 'text-[6.5px]' : 'text-[8px]')}`}
                     style={{ color: 'hsl(var(--primary-foreground))' }}
                   >
-                    {isKeyLocked && n.degree ? n.degree : n.pc}
+                    {isKeyLocked && n.scaleLabel ? n.scaleLabel : n.pc}
                   </span>
                 )}
               </button>

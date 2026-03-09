@@ -8,12 +8,15 @@ export interface HandPosition {
   rootNote: string;
 }
 
+export type ScaleLabelMode = "solfege" | "degree";
+
 interface HarmonicState {
   activeNotes: Set<string>;
   selectedKey: string;
   selectedScale: string;
   scaleNotes: string[];
   isKeyLocked: boolean;
+  scaleLabelMode: ScaleLabelMode;
   useFlats: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
@@ -25,6 +28,7 @@ interface HarmonicState {
   setKey: (key: string) => void;
   setScale: (scale: string) => void;
   setKeyLocked: (locked: boolean) => void;
+  setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   setLeftHand: (hand: HandPosition) => void;
@@ -60,6 +64,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedKey, setSelectedKey] = useState("C");
   const [selectedScale, setSelectedScale] = useState("major");
   const [isKeyLocked, setKeyLocked] = useState(false);
+  const [scaleLabelMode, setScaleLabelModeState] = useState<ScaleLabelMode>("solfege");
   // Auto-derive sharps/flats from key center (idiomatic to the key)
   const FLAT_KEYS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
   const useFlats = FLAT_KEYS.has(selectedKey);
@@ -149,6 +154,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
   const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+  const setScaleLabelMode = useCallback((mode: ScaleLabelMode) => setScaleLabelModeState(mode), []);
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
   const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
   const setRightHandCb = useCallback((hand: HandPosition) => setRightHand(hand), []);
@@ -160,6 +166,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       selectedScale,
       scaleNotes,
       isKeyLocked,
+      scaleLabelMode,
       useFlats,
       midiState,
       selectedTuning,
@@ -171,6 +178,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setKey,
       setScale,
       setKeyLocked,
+      setScaleLabelMode,
       setUseFlats,
       setTuning,
       setLeftHand: setLeftHandCb,

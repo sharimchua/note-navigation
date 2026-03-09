@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNoteColor, getNoteChroma, getScaleDegree } from "@/lib/music-engine";
+import { getNoteColor, getNoteChroma, getScaleLabel } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
 
 // Grand staff with unified coordinate system
@@ -92,7 +92,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleNotes } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Convert y position to the nearest diatonic note name with octave
@@ -212,8 +212,8 @@ export function StaffNotation() {
   function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
     const { x, y } = n;
     const ledgers = getLedgerLines(y, x, clef);
-    const degree = isKeyLocked ? getScaleDegree(n.note, scaleNotes) : null;
-    const label = degree !== null ? String(degree) : n.pc;
+    const scaleLabel = isKeyLocked ? getScaleLabel(n.note, scaleNotes, scaleLabelMode) : null;
+    const label = scaleLabel !== null ? scaleLabel : n.pc;
 
     return (
       <g key={n.note} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); playNote(n.note); toggleNote(n.note); }}>
@@ -223,7 +223,7 @@ export function StaffNotation() {
         ))}
         <ellipse cx={x} cy={y} rx="8" ry="5.5" fill={n.color}
           transform={`rotate(-15 ${x} ${y})`} />
-        <text x={x} y={y + 3} fontSize="6" fill="hsl(var(--background))"
+        <text x={x} y={y + 2.5} fontSize={label.length > 1 ? "4.5" : "6"} fill="hsl(var(--background))"
           textAnchor="middle" fontFamily="JetBrains Mono" fontWeight="bold" style={{ pointerEvents: "none" }}>
           {label}
         </text>

@@ -1,6 +1,7 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
 import { KEY_NAMES_COF, NOTE_NAMES, SCALE_PRESETS } from "@/lib/music-engine";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // Generate piano note options for hand root selection (C2-C6)
 const HAND_ROOT_OPTIONS: string[] = [];
@@ -12,9 +13,9 @@ for (let octave = 2; octave <= 6; octave++) {
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, isKeyLocked, midiState,
+    selectedKey, selectedScale, isKeyLocked, scaleLabelMode, midiState,
     leftHand, rightHand,
-    setKey, setScale, setKeyLocked,
+    setKey, setScale, setKeyLocked, setScaleLabelMode,
     setLeftHand, setRightHand,
     clearNotes, playNote
   } = useHarmonic();
@@ -85,6 +86,16 @@ export function ControlSidebar() {
             </button>
           ))}
         </div>
+
+        {isKeyLocked && (
+          <div className="pt-2">
+            <h4 className="engineering-label mb-2">Note Labels</h4>
+            <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
+              <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
+              <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        )}
       </div>
 
       {/* Controls */}
