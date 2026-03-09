@@ -128,13 +128,14 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playNote = useCallback(async (note: string) => {
+    if (isMuted) return;
     if (!audioStartedRef.current) {
       await Tone.start();
       audioStartedRef.current = true;
     }
     const synth = getSynth();
     synth.triggerAttackRelease(note, "8n");
-  }, [getSynth]);
+  }, [getSynth, isMuted]);
 
   const handleMIDINoteOn = useCallback((note: string, velocity: number) => {
     addNote(note);
