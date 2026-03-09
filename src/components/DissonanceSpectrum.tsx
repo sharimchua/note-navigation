@@ -164,7 +164,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
   const hasNotes = noteNames.length > 0;
 
   return (
-    <div className="glass-panel p-4">
+    <div className="glass-panel p-4 h-full flex flex-col overflow-hidden">
       <div className="flex items-center gap-3 mb-3">
         <h3 className="engineering-label shrink-0">Fundamentals &amp; Overtones ·</h3>
         <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Crunch</span>
@@ -180,7 +180,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         </div>
       </div>
 
-      <div className="overflow-x-auto w-full">
+      <div className="overflow-x-auto w-full flex-1 min-h-0">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           className="w-full"
