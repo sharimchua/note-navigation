@@ -225,7 +225,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                   <g key={`b-${pc}-${i}`}>
                     {bar.subBars.map((sb, si) => (
                       <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
-                        fill={noteColor(pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
+                        fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
                       />
                     ))}
                     {isFundamental && (
