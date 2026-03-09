@@ -92,7 +92,16 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     return synthRef.current;
   }, []);
 
-  const scaleNotes = useMemo(() => getScaleNotes(selectedKey, selectedScale), [selectedKey, selectedScale]);
+  const scaleNotes = useMemo(() => {
+    if (scaleRootOffset === 0) return getScaleNotes(selectedKey, selectedScale);
+    // Compute offset root note name
+    const keyChroma = Note.chroma(selectedKey) ?? 0;
+    const offsetChroma = (keyChroma + scaleRootOffset) % 12;
+    const FLAT_KEYS_SET = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
+    const useFlatsForRoot = FLAT_KEYS_SET.has(selectedKey);
+    const offsetRoot = useFlatsForRoot ? NOTE_NAMES_FLAT[offsetChroma] : NOTE_NAMES[offsetChroma];
+    return getScaleNotes(offsetRoot, selectedScale);
+  }, [selectedKey, selectedScale, scaleRootOffset]);
 
   const addNote = useCallback((note: string) => {
     setActiveNotesState(prev => {
