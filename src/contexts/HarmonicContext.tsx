@@ -15,6 +15,7 @@ interface HarmonicState {
   activeNotes: Set<string>;
   selectedKey: string;
   selectedScale: string;
+  scaleRootOffset: number;
   scaleNotes: string[];
   isKeyLocked: boolean;
   scaleLabelMode: ScaleLabelMode;
