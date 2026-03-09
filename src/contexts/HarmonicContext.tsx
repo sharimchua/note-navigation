@@ -18,6 +18,7 @@ interface HarmonicState {
   isKeyLocked: boolean;
   scaleLabelMode: ScaleLabelMode;
   useFlats: boolean;
+  isMuted: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
   leftHand: HandPosition;
@@ -30,6 +31,7 @@ interface HarmonicState {
   setKeyLocked: (locked: boolean) => void;
   setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
+  setMuted: (muted: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   setLeftHand: (hand: HandPosition) => void;
   setRightHand: (hand: HandPosition) => void;
@@ -72,6 +74,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const [leftHand, setLeftHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
   const [rightHand, setRightHand] = useState<HandPosition>({ enabled: false, rootNote: "C4" });
+  const [isMuted, setMuted] = useState(false);
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const audioStartedRef = useRef(false);
 
@@ -125,13 +128,14 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playNote = useCallback(async (note: string) => {
+    if (isMuted) return;
     if (!audioStartedRef.current) {
       await Tone.start();
       audioStartedRef.current = true;
     }
     const synth = getSynth();
     synth.triggerAttackRelease(note, "8n");
-  }, [getSynth]);
+  }, [getSynth, isMuted]);
 
   const handleMIDINoteOn = useCallback((note: string, velocity: number) => {
     addNote(note);
@@ -168,6 +172,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       isKeyLocked,
       scaleLabelMode,
       useFlats,
+      isMuted,
       midiState,
       selectedTuning,
       leftHand,
@@ -180,6 +185,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setKeyLocked,
       setScaleLabelMode,
       setUseFlats,
+      setMuted,
       setTuning,
       setLeftHand: setLeftHandCb,
       setRightHand: setRightHandCb,
