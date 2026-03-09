@@ -7,7 +7,7 @@ const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode, getNoteIntensity } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
