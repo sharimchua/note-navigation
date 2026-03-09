@@ -16,6 +16,7 @@ interface HarmonicState {
   scaleLabelMode: ScaleLabelMode;
   useFlats: boolean;
   isMuted: boolean;
+  trailMode: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
   toggleNote: (note: string) => void;
@@ -27,6 +28,7 @@ interface HarmonicState {
   setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
   setMuted: (muted: boolean) => void;
+  setTrailMode: (trailMode: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
