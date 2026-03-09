@@ -67,7 +67,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [activeNotes, setActiveNotesState] = useState<Set<string>>(new Set());
   const [selectedKey, setSelectedKey] = useState("C");
   const [selectedScale, setSelectedScale] = useState("major");
-  const [isKeyLocked, setKeyLocked] = useState(false);
+  const [scaleRootOffset, setScaleRootOffset] = useState(0);
   const [scaleLabelMode, setScaleLabelModeState] = useState<ScaleLabelMode>("solfege");
   // Auto-derive sharps/flats from key center (idiomatic to the key)
   const FLAT_KEYS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
