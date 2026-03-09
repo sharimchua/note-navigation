@@ -29,7 +29,7 @@ interface HarmonicState {
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
   setKey: (key: string) => void;
-  setScale: (scale: string) => void;
+  setScale: (scale: string, rootOffset?: number) => void;
   setKeyLocked: (locked: boolean) => void;
   setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
