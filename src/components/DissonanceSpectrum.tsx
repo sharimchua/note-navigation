@@ -59,9 +59,9 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     ((Math.log2(f) - logMin) / (logMax - logMin)) * width;
 
   const svgWidth = 900;
-  const svgHeight = 220;
-  const plotTop = 24;
-  const plotBottom = 185;
+  const svgHeight = 150;
+  const plotTop = 18;
+  const plotBottom = 125;
   const plotHeight = plotBottom - plotTop;
 
   const octaveMarkers = useMemo(() => {
@@ -145,32 +145,27 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     return { line, fill, peak };
   }, [interactions, svgWidth, plotHeight, plotBottom]);
 
-  if (noteNames.length === 0) {
-    return (
-      <div className="glass-panel p-4">
-        <h3 className="engineering-label mb-3">Fundamentals &amp; Overtones</h3>
-        <p className="text-xs font-mono text-muted-foreground">Activate notes to see their harmonic spectrum.</p>
-      </div>
-    );
-  }
+  const hasNotes = noteNames.length > 0;
 
   return (
     <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Fundamentals &amp; Overtones</h3>
 
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Total Crunch:</span>
-        <span className="text-sm font-mono font-bold text-foreground">{Math.round(totalDissonance)}%</span>
-        <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{
-              width: `${Math.min(100, totalDissonance)}%`,
-              background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
-            }}
-          />
+      {hasNotes && (
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Total Crunch:</span>
+          <span className="text-sm font-mono font-bold text-foreground">{Math.round(totalDissonance)}%</span>
+          <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${Math.min(100, totalDissonance)}%`,
+                background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="overflow-x-auto w-full">
         <svg
@@ -253,25 +248,27 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         </svg>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2">
-        {activePitchClasses.map(pc => (
-          <div key={pc} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColor(pc) }} />
-            <span>{getNotePitchClass(noteNames.find(n => {
-              const m = Note.midi(n);
-              return m !== null && m % 12 === pc;
-            }) || "", useFlats)}</span>
+      {hasNotes && (
+        <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2">
+          {activePitchClasses.map(pc => (
+            <div key={pc} className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColor(pc) }} />
+              <span>{getNotePitchClass(noteNames.find(n => {
+                const m = Note.midi(n);
+                return m !== null && m % 12 === pc;
+              }) || "", useFlats)}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1 ml-2">
+            <span className="w-4 h-px" style={{ background: "hsla(0, 0%, 95%, 0.7)" }} />
+            <span>Crunch</span>
           </div>
-        ))}
-        <div className="flex items-center gap-1 ml-2">
-          <span className="w-4 h-px" style={{ background: "hsla(0, 0%, 95%, 0.7)" }} />
-          <span>Crunch</span>
+          <div className="flex items-center gap-1 ml-1">
+            <span className="w-3 h-px border-t border-dashed border-muted-foreground" />
+            <span>Octave (C)</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 ml-1">
-          <span className="w-3 h-px border-t border-dashed border-muted-foreground" />
-          <span>Octave (C)</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 });
