@@ -73,20 +73,25 @@ export function ControlSidebar() {
       <div className="space-y-2">
         <h4 className="engineering-label">Scale Blueprint</h4>
         <div className="space-y-1">
-          {SCALE_PRESETS.map(preset => (
-            <button
-              key={preset.type}
-              onClick={() => handleScalePreset(preset.type)}
-              className={`w-full text-left px-2 py-1.5 text-xs font-mono rounded-sm border transition-all
-                ${selectedScale === preset.type && isKeyLocked
-                  ? 'border-primary bg-primary/20 text-primary'
-                  : 'border-border bg-secondary/50 text-secondary-foreground hover:border-primary/50'
-                }`}
-            >
-              <span>{preset.name}</span>
-              <span className="text-[9px] text-muted-foreground ml-1">({preset.category})</span>
-            </button>
-          ))}
+          {SCALE_PRESETS.map(preset => {
+            const presetKey = `${preset.type}:${preset.rootOffset ?? 0}`;
+            const currentKey = `${selectedScale}:${scaleRootOffset}`;
+            const isActive = presetKey === currentKey && isKeyLocked;
+            return (
+              <button
+                key={preset.name}
+                onClick={() => handleScalePreset(preset)}
+                className={`w-full text-left px-2 py-1.5 text-xs font-mono rounded-sm border transition-all
+                  ${isActive
+                    ? 'border-primary bg-primary/20 text-primary'
+                    : 'border-border bg-secondary/50 text-secondary-foreground hover:border-primary/50'
+                  }`}
+              >
+                <span>{preset.name}</span>
+                <span className="text-[9px] text-muted-foreground ml-1">({preset.category})</span>
+              </button>
+            );
+          })}
         </div>
 
         {isKeyLocked && (
