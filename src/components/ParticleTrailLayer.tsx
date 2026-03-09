@@ -9,13 +9,33 @@ interface Particle {
 }
 
 interface ParticleTrailLayerProps {
-  /** The active note Y positions in SVG viewBox coordinates (mapped to canvas) */
-  activeNoteYs: { y: number; color: string }[];
+  /** The active note Y positions with chroma values */
+  activeNoteYs: { y: number; chroma: number }[];
   /** SVG viewBox dimensions so we can map to canvas pixels */
   viewBoxWidth: number;
   viewBoxHeight: number;
   /** Spawn x in viewBox coords — particles start here and drift left */
   spawnX: number;
+}
+
+// Map chroma (0-11) to CSS custom property names
+const CHROMA_CSS_PROPS: string[] = [
+  "--note-c", "--note-cs", "--note-d", "--note-ds",
+  "--note-e", "--note-f", "--note-fs", "--note-g",
+  "--note-gs", "--note-a", "--note-as", "--note-b",
+];
+
+// Resolve CSS variable HSL values to actual color strings at runtime
+function resolveNoteColors(): string[] {
+  const style = getComputedStyle(document.documentElement);
+  return CHROMA_CSS_PROPS.map(prop => {
+    const val = style.getPropertyValue(prop).trim();
+    return val || "0 0% 50%";
+  });
+}
+
+function chromaToColor(resolved: string[], chroma: number, alpha = 1): string {
+  return `hsla(${resolved[chroma % 12].replace(/ /g, ", ")}, ${alpha})`;
 }
 
 // Pixels per frame in viewBox coords
