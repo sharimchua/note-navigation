@@ -245,7 +245,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         </svg>
       </div>
 
-      {hasNotes && (
+      
       <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2 h-4">
         {activePitchClasses.map(pc => (
           <div key={pc} className="flex items-center gap-1">
