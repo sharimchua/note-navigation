@@ -169,7 +169,10 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, [isKeyLocked, scaleNotes]);
 
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
-  const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+  const setScale = useCallback((scale: string, rootOffset?: number) => {
+    setSelectedScale(scale);
+    setScaleRootOffset(rootOffset ?? 0);
+  }, []);
   const setScaleLabelMode = useCallback((mode: ScaleLabelMode) => setScaleLabelModeState(mode), []);
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
   const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
