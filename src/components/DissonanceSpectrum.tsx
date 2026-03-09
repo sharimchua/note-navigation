@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { Note } from "tonal";
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNotePitchClass, NOTE_COLOR_KEYS, NOTE_NAMES } from "@/lib/music-engine";
+import { getNotePitchClass } from "@/lib/music-engine";
 import {
   getPartialsFromNotes,
   calculatePartialInteractions,
@@ -41,11 +41,27 @@ const SUB_BAR_W = 2;
 const BAR_GAP = 1;
 
 export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
-  const { activeNotes, useFlats, trailMode } = useHarmonic();
+  const { useFlats, trailMode, visualNotes, getNoteIntensity } = useHarmonic();
   const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
   useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
-  const noteNames = useMemo(() => Array.from(activeNotes), [activeNotes]);
+  const noteNames = useMemo(() => visualNotes, [visualNotes]);
+
+  const pcIntensity = useMemo(() => {
+    const arr = new Array(12).fill(0) as number[];
+    for (const n of noteNames) {
+      const pc = Note.chroma(n);
+      if (pc === undefined || pc === null) continue;
+      const intensity = getNoteIntensity(n);
+      if (intensity > arr[pc]) arr[pc] = intensity;
+    }
+    return arr;
+  }, [noteNames, getNoteIntensity]);
+
+  const overallIntensity = useMemo(
+    () => pcIntensity.reduce((m, v) => Math.max(m, v), 0),
+    [pcIntensity]
+  );
 
   const { partials, noteFrequencies } = useMemo(
     () => getPartialsFromNotes(noteNames),
@@ -105,13 +121,14 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     const allBars: { pc: number; items: { cx: number; height: number; partial: Partial; subBars: { x: number; h: number }[] }[] }[] = [];
     for (const [pc, notePartials] of partialsByNote.entries()) {
       const sorted = [...notePartials].sort((a, b) => a.frequency - b.frequency);
+      const intensity = pcIntensity[pc] ?? 1;
       const items = sorted.map(p => {
         const cx = freqToX(p.frequency, svgWidth);
         const cbHz = criticalBandwidth(p.frequency);
         const xLo = freqToX(Math.max(minFreq, p.frequency - cbHz / 2), svgWidth);
         const xHi = freqToX(p.frequency + cbHz / 2, svgWidth);
         const totalW = Math.max(6, xHi - xLo);
-        const peakHeight = p.amplitude * plotHeight * 0.85;
+        const peakHeight = p.amplitude * intensity * plotHeight * 0.85;
         const numBars = Math.max(3, Math.floor(totalW / (SUB_BAR_W + BAR_GAP)));
         const mid = (numBars - 1) / 2;
         const subBars: { x: number; h: number }[] = [];
@@ -127,7 +144,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
       allBars.push({ pc, items });
     }
     return allBars;
-  }, [partialsByNote, svgWidth, plotHeight]);
+  }, [partialsByNote, pcIntensity, svgWidth, plotHeight]);
 
   const dissonancePath = useMemo(() => {
     if (interactions.length === 0) return { line: "", fill: "", peak: 0 };
@@ -222,19 +239,21 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
             <g key={`bars-${pc}`}>
               {items.map((bar, i) => {
                 const isFundamental = bar.partial.partialNumber === 1;
+                const intensity = pcIntensity[pc] ?? 1;
                 return (
                    <g key={`b-${pc}-${i}`}>
                      {bar.subBars.map((sb, si) => (
                        <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
-                         fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
+                         fill={noteColor(resolvedColors, pc, (isFundamental ? 0.7 : 0.4) * intensity)} rx={0.5}
                          style={trailMode ? { transition: 'height 600ms ease-out, opacity 600ms ease-out' } : undefined}
                        />
                     ))}
                     {isFundamental && (
                       <>
-                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9} />
+                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9 * intensity} />
                         <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
                           fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
+                          opacity={intensity}
                         >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
                           const m = Note.midi(n);
                           return m !== null && m % 12 === pc;
@@ -243,7 +262,8 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                     )}
                     {!isFundamental && bar.partial.amplitude > 0.35 && (
                       <text x={bar.cx} y={plotBottom - bar.height - 3} textAnchor="middle" fontSize={6}
-                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6)}
+                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6 * intensity)}
+                        opacity={intensity}
                       >{bar.partial.partialNumber}×</text>
                     )}
                   </g>
@@ -254,8 +274,8 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
 
           {dissonancePath.fill && (
             <>
-              <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" />
-              <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} />
+              <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" style={trailMode ? { opacity: overallIntensity } : undefined} />
+              <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} style={trailMode ? { opacity: overallIntensity } : undefined} />
             </>
           )}
 
