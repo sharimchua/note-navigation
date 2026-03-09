@@ -67,6 +67,7 @@ export function PianoKeyboard() {
                 width: `${whiteKeyWidth}%`,
                 backgroundColor: isActive ? color : "#f5f0e8",
                 zIndex: 1,
+                transition: trailMode && !isActive ? 'background-color 850ms ease-out' : 'background-color 0ms',
               }}
               onClick={() => handleKeyClick(key.note)}
             >
