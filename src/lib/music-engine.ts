@@ -106,6 +106,8 @@ export interface ScalePreset {
   name: string;
   type: string;
   category: "diatonic" | "pentatonic" | "blues" | "modes" | "melodic" | "harmonic" | "symmetric";
+  /** For symmetric scales: semitone offset from selected key to get the actual root */
+  rootOffset?: number;
 }
 
 export const SCALE_PRESETS: ScalePreset[] = [
