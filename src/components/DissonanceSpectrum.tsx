@@ -121,13 +121,14 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     const allBars: { pc: number; items: { cx: number; height: number; partial: Partial; subBars: { x: number; h: number }[] }[] }[] = [];
     for (const [pc, notePartials] of partialsByNote.entries()) {
       const sorted = [...notePartials].sort((a, b) => a.frequency - b.frequency);
+      const intensity = pcIntensity[pc] ?? 1;
       const items = sorted.map(p => {
         const cx = freqToX(p.frequency, svgWidth);
         const cbHz = criticalBandwidth(p.frequency);
         const xLo = freqToX(Math.max(minFreq, p.frequency - cbHz / 2), svgWidth);
         const xHi = freqToX(p.frequency + cbHz / 2, svgWidth);
         const totalW = Math.max(6, xHi - xLo);
-        const peakHeight = p.amplitude * plotHeight * 0.85;
+        const peakHeight = p.amplitude * intensity * plotHeight * 0.85;
         const numBars = Math.max(3, Math.floor(totalW / (SUB_BAR_W + BAR_GAP)));
         const mid = (numBars - 1) / 2;
         const subBars: { x: number; h: number }[] = [];
@@ -143,7 +144,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
       allBars.push({ pc, items });
     }
     return allBars;
-  }, [partialsByNote, svgWidth, plotHeight]);
+  }, [partialsByNote, pcIntensity, svgWidth, plotHeight]);
 
   const dissonancePath = useMemo(() => {
     if (interactions.length === 0) return { line: "", fill: "", peak: 0 };
