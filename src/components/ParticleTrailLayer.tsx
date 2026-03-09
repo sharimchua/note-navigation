@@ -112,11 +112,11 @@ export function ParticleTrailLayer({
       for (const p of particlesRef.current) {
         ctx2.beginPath();
         ctx2.arc(p.x * scaleX, p.y * scaleY, p.radius * scaleX, 0, Math.PI * 2);
-        ctx2.globalAlpha = p.opacity;
-        ctx2.fillStyle = p.color;
+        const color = chromaToColor(resolvedColors, p.chroma, p.opacity);
+        ctx2.fillStyle = color;
+        ctx2.globalAlpha = 1; // Alpha is in the color
         ctx2.fill();
       }
-      ctx2.globalAlpha = 1;
 
       rafRef.current = requestAnimationFrame(loop);
     }
