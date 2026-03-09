@@ -1,10 +1,10 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass, GUITAR_TUNINGS, getScaleDegree } from "@/lib/music-engine";
+import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass, GUITAR_TUNINGS, getScaleLabel } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useEffect, useState } from "react";
 
 export function GuitarFretboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, selectedTuning, setTuning, useFlats, scaleNotes } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
   const tuningRef = useRef<HTMLDivElement>(null);
 
