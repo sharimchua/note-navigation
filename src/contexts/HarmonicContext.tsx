@@ -18,8 +18,6 @@ interface HarmonicState {
   isMuted: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
-  leftHand: HandPosition;
-  rightHand: HandPosition;
   toggleNote: (note: string) => void;
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
