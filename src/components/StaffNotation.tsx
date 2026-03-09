@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNoteColor, getNoteChroma, getScaleLabel } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
