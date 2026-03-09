@@ -165,10 +165,26 @@ export function getScaleDegree(noteName: string, scaleNotes: string[]): number |
 }
 
 export type ScaleLabelMode = "solfege" | "degree";
-export const SOLFEGE_LABELS = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Ti"] as const;
+export const RELATIVE_INTERVALS = [
+  { degree: "1", solfege: "Do" },
+  { degree: "b2", solfege: "Ra" },
+  { degree: "2", solfege: "Re" },
+  { degree: "b3", solfege: "Me" },
+  { degree: "3", solfege: "Mi" },
+  { degree: "4", solfege: "Fa" },
+  { degree: "b5", solfege: "Se" },
+  { degree: "5", solfege: "Sol" },
+  { degree: "b6", solfege: "Le" },
+  { degree: "6", solfege: "La" },
+  { degree: "b7", solfege: "Te" },
+  { degree: "7", solfege: "Ti" },
+] as const;
 
 export function getScaleLabel(noteName: string, scaleNotes: string[], mode: ScaleLabelMode): string | null {
-  const degree = getScaleDegree(noteName, scaleNotes);
-  if (degree === null) return null;
-  return mode === "solfege" ? SOLFEGE_LABELS[(degree - 1) % 7] : String(degree);
+  if (scaleNotes.length === 0) return null;
+  const rootChroma = getNoteChroma(scaleNotes[0]);
+  const noteChroma = getNoteChroma(noteName);
+  const interval = (noteChroma - rootChroma + 12) % 12;
+  const label = RELATIVE_INTERVALS[interval];
+  return mode === "solfege" ? label.solfege : label.degree;
 }
