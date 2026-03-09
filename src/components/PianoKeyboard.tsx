@@ -41,13 +41,13 @@ export function PianoKeyboard() {
   }, []);
 
   return (
-    <div className="glass-panel p-4">
+    <div className="glass-panel p-4 h-full flex flex-col">
       <h3 className="engineering-label mb-3">Piano · 88 Keys</h3>
-      <div ref={scrollRef} className="overflow-x-auto pb-3">
+      <div ref={scrollRef} className="overflow-x-auto pb-3 flex-1 min-h-0">
         <div 
           ref={containerRef}
-          className="relative select-none"
-          style={{ minWidth: "1600px", height: "200px" }}
+          className="relative select-none h-full"
+          style={{ minWidth: "1600px", minHeight: "120px" }}
         >
         {/* White keys */}
         {WHITE_KEYS.map((key, i) => {
