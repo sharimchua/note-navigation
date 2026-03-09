@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getHandMidis, getScaleLabel } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis, getScaleLabel, getNoteChroma, PIANO_START_MIDI } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
@@ -10,6 +10,15 @@ export function PianoKeyboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, leftHand, rightHand, scaleNotes } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
+  const baseMidi = useMemo(() => {
+    let lowestMidi = PIANO_START_MIDI;
+    while (lowestMidi % 12 !== rootChroma) {
+      lowestMidi++;
+    }
+    return lowestMidi;
+  }, [rootChroma]);
 
   const handleKeyClick = useCallback((note: string) => {
     playNote(note);
@@ -63,7 +72,7 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode) : null;
+          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
 
           return (
             <div
@@ -120,7 +129,7 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode) : null;
+          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
 
           const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;

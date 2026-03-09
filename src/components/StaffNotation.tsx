@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNoteColor, getNoteChroma, getScaleLabel } from "@/lib/music-engine";
 import { Note, Key } from "tonal";
@@ -94,6 +94,16 @@ const SECOND_OFFSET = 16;
 export function StaffNotation() {
   const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
+  
+  const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
+  const baseMidi = useMemo(() => {
+    let lowestMidi = 40; // Approx E2
+    while (lowestMidi % 12 !== rootChroma) {
+      lowestMidi++;
+    }
+    return lowestMidi;
+  }, [rootChroma]);
+
 
   // Convert y position to the nearest diatonic note name with octave
   // Diatonic notes from C: C=0, D=1, E=2, F=3, G=4, A=5, B=6
@@ -212,7 +222,7 @@ export function StaffNotation() {
   function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
     const { x, y } = n;
     const ledgers = getLedgerLines(y, x, clef);
-    const scaleLabel = isKeyLocked ? getScaleLabel(n.note, scaleNotes, scaleLabelMode) : null;
+    const scaleLabel = isKeyLocked ? getScaleLabel(n.note, scaleNotes, scaleLabelMode, baseMidi) : null;
     const label = scaleLabel !== null ? scaleLabel : n.pc;
 
     return (
