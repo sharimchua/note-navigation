@@ -56,6 +56,10 @@ export function ParticleTrailLayer({
   const frameRef = useRef(0);
   const rafRef = useRef<number>(0);
   const propsRef = useRef({ activeNoteYs, spawnX });
+  const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
+
+  // Resolve colors on mount
+  useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
   // Keep props ref in sync without restarting the loop
   propsRef.current = { activeNoteYs, spawnX };
