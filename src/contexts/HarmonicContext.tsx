@@ -69,6 +69,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const setUseFlats = (_: boolean) => {}; // no-op, kept for interface compat
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const [isMuted, setMuted] = useState(false);
+  const [trailMode, setTrailMode] = useState(false);
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const audioStartedRef = useRef(false);
 
