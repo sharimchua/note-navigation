@@ -149,11 +149,13 @@ function MainContent() {
           </div>
           <div className="xl:w-[55%] 2xl:w-[60%] flex flex-col gap-2 md:gap-3 shrink-0 xl:self-stretch">
             <LinearNoteMap />
-            <div className="flex-1 min-h-[120px]">
+            <div className="h-[200px] shrink-0">
               <PianoKeyboard />
             </div>
             <GuitarFretboard />
-            <DissonanceSpectrum />
+            <div className="min-h-0 flex-1 shrink">
+              <DissonanceSpectrum />
+            </div>
           </div>
         </div>
 
