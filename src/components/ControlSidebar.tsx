@@ -98,17 +98,18 @@ export function ControlSidebar() {
         )}
       </div>
 
-      {/* Controls */}
-      <div className="space-y-3">
-        <h4 className="engineering-label">Harmonic Calibration</h4>
-
-        <button
-          onClick={clearNotes}
-          className="w-full px-2 py-1.5 text-xs font-mono rounded-sm border border-border 
-            bg-secondary/50 text-secondary-foreground hover:border-destructive/50 hover:text-destructive transition-all"
-        >
-          Clear All Notes
-        </button>
+      {/* Audio */}
+      <div className="space-y-2">
+        <h4 className="engineering-label">Audio</h4>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isMuted}
+            onChange={e => setMuted(e.target.checked)}
+            className="accent-primary"
+          />
+          <span className="text-xs font-mono text-secondary-foreground">Mute tone output</span>
+        </label>
       </div>
 
       {/* Hand Position Overlay */}
