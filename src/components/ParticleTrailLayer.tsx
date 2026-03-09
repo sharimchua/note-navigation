@@ -19,9 +19,9 @@ interface ParticleTrailLayerProps {
 }
 
 // Pixels per frame in viewBox coords
-const SPEED = 0.18;
-// Opacity shed per frame
-const FADE_RATE = 0.0025;
+const SPEED = 0.15;
+// Opacity shed per frame (slower fade for longer trails)
+const FADE_RATE = 0.0008;
 // Spawn every N frames to throttle density
 const SPAWN_EVERY = 4;
 
