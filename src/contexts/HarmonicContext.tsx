@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
 import * as Tone from "tone";
-import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
+import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning, NOTE_NAMES_FLAT } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
+import { Note } from "tonal";
 
 export interface HandPosition {
   enabled: boolean;
@@ -14,6 +15,7 @@ interface HarmonicState {
   activeNotes: Set<string>;
   selectedKey: string;
   selectedScale: string;
+  scaleRootOffset: number;
   scaleNotes: string[];
   isKeyLocked: boolean;
   scaleLabelMode: ScaleLabelMode;
@@ -27,7 +29,7 @@ interface HarmonicState {
   setActiveNotes: (notes: Set<string>) => void;
   clearNotes: () => void;
   setKey: (key: string) => void;
-  setScale: (scale: string) => void;
+  setScale: (scale: string, rootOffset?: number) => void;
   setKeyLocked: (locked: boolean) => void;
   setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
@@ -65,6 +67,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [activeNotes, setActiveNotesState] = useState<Set<string>>(new Set());
   const [selectedKey, setSelectedKey] = useState("C");
   const [selectedScale, setSelectedScale] = useState("major");
+  const [scaleRootOffset, setScaleRootOffset] = useState(0);
   const [isKeyLocked, setKeyLocked] = useState(false);
   const [scaleLabelMode, setScaleLabelModeState] = useState<ScaleLabelMode>("solfege");
   // Auto-derive sharps/flats from key center (idiomatic to the key)
@@ -89,7 +92,16 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     return synthRef.current;
   }, []);
 
-  const scaleNotes = useMemo(() => getScaleNotes(selectedKey, selectedScale), [selectedKey, selectedScale]);
+  const scaleNotes = useMemo(() => {
+    if (scaleRootOffset === 0) return getScaleNotes(selectedKey, selectedScale);
+    // Compute offset root note name
+    const keyChroma = Note.chroma(selectedKey) ?? 0;
+    const offsetChroma = (keyChroma + scaleRootOffset) % 12;
+    const FLAT_KEYS_SET = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
+    const useFlatsForRoot = FLAT_KEYS_SET.has(selectedKey);
+    const offsetRoot = useFlatsForRoot ? NOTE_NAMES_FLAT[offsetChroma] : NOTE_NAMES[offsetChroma];
+    return getScaleNotes(offsetRoot, selectedScale);
+  }, [selectedKey, selectedScale, scaleRootOffset]);
 
   const addNote = useCallback((note: string) => {
     setActiveNotesState(prev => {
@@ -157,7 +169,10 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, [isKeyLocked, scaleNotes]);
 
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
-  const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+  const setScale = useCallback((scale: string, rootOffset?: number) => {
+    setSelectedScale(scale);
+    setScaleRootOffset(rootOffset ?? 0);
+  }, []);
   const setScaleLabelMode = useCallback((mode: ScaleLabelMode) => setScaleLabelModeState(mode), []);
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
   const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
@@ -168,6 +183,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       activeNotes,
       selectedKey,
       selectedScale,
+      scaleRootOffset,
       scaleNotes,
       isKeyLocked,
       scaleLabelMode,

@@ -106,6 +106,8 @@ export interface ScalePreset {
   name: string;
   type: string;
   category: "diatonic" | "pentatonic" | "blues" | "modes" | "melodic" | "harmonic" | "symmetric";
+  /** For symmetric scales: semitone offset from selected key to get the actual root */
+  rootOffset?: number;
 }
 
 export const SCALE_PRESETS: ScalePreset[] = [
@@ -130,8 +132,11 @@ export const SCALE_PRESETS: ScalePreset[] = [
   { name: "Melodic Minor", type: "melodic minor", category: "melodic" },
 
   // Symmetric
-  { name: "Whole Tone", type: "whole tone", category: "symmetric" },
-  { name: "Diminished (H-W)", type: "diminished", category: "symmetric" },
+  { name: "Whole Tone I", type: "whole tone", category: "symmetric" },
+  { name: "Whole Tone II", type: "whole tone", category: "symmetric", rootOffset: 1 },
+  { name: "Dim H-W (I)", type: "diminished", category: "symmetric" },
+  { name: "Dim H-W (II)", type: "diminished", category: "symmetric", rootOffset: 1 },
+  { name: "Dim H-W (III)", type: "diminished", category: "symmetric", rootOffset: 2 },
   { name: "Chromatic", type: "chromatic", category: "symmetric" },
 ];
 

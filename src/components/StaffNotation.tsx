@@ -32,6 +32,70 @@ const DIATONIC_MAP_FLAT =  [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6]; // C,Db,D,Eb,E,
 const SHARP_PC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const FLAT_PC_NAMES =  ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
+/** Choose enharmonic spelling for each note to avoid duplicate letter names.
+ *  For accidentals, if the sharp spelling shares a letter with another note, use flat, and vice versa. */
+function smartSpellNotes(midis: number[], defaultUseFlats: boolean): Map<number, { pc: string; useFlat: boolean }> {
+  const result = new Map<number, { pc: string; useFlat: boolean }>();
+  
+  // First pass: assign default spellings
+  const defaultNames = defaultUseFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES;
+  for (const midi of midis) {
+    const pc = midi % 12;
+    result.set(midi, { pc: defaultNames[pc], useFlat: defaultUseFlats });
+  }
+  
+  // Collect unique chromas
+  const chromas = [...new Set(midis.map(m => m % 12))].sort((a, b) => a - b);
+  
+  // For each accidental note, check if its default letter conflicts with another note
+  for (const chroma of chromas) {
+    const isAccidental = [1, 3, 6, 8, 10].includes(chroma);
+    if (!isAccidental) continue;
+    
+    const sharpName = SHARP_PC_NAMES[chroma]; // e.g. "C#"
+    const flatName = FLAT_PC_NAMES[chroma];   // e.g. "Db"
+    const sharpLetter = sharpName[0]; // "C"
+    const flatLetter = flatName[0];   // "D"
+    
+    // Check which other chromas have these letters
+    const otherChromas = chromas.filter(c => c !== chroma);
+    const sharpLetterConflict = otherChromas.some(c => SHARP_PC_NAMES[c][0] === sharpLetter || FLAT_PC_NAMES[c][0] === sharpLetter);
+    const flatLetterConflict = otherChromas.some(c => SHARP_PC_NAMES[c][0] === flatLetter || FLAT_PC_NAMES[c][0] === flatLetter);
+    
+    let chosenPc: string;
+    let chosenFlat: boolean;
+    
+    if (defaultUseFlats) {
+      // Default is flat; if flat letter conflicts but sharp doesn't, use sharp
+      if (flatLetterConflict && !sharpLetterConflict) {
+        chosenPc = sharpName;
+        chosenFlat = false;
+      } else {
+        chosenPc = flatName;
+        chosenFlat = true;
+      }
+    } else {
+      // Default is sharp; if sharp letter conflicts but flat doesn't, use flat
+      if (sharpLetterConflict && !flatLetterConflict) {
+        chosenPc = flatName;
+        chosenFlat = true;
+      } else {
+        chosenPc = sharpName;
+        chosenFlat = false;
+      }
+    }
+    
+    // Apply to all midis with this chroma
+    for (const midi of midis) {
+      if (midi % 12 === chroma) {
+        result.set(midi, { pc: chosenPc, useFlat: chosenFlat });
+      }
+    }
+  }
+  
+  return result;
+}
+
 function midiToY(midi: number, useFlats: boolean): number {
   const octave = Math.floor(midi / 12);
   const pc = midi % 12;
@@ -139,16 +203,19 @@ export function StaffNotation() {
     }
   }, [yToNote, playNote, toggleNote]);
 
+  const allMidis = [...activeNotes].map(n => Note.midi(n) || 60);
+  const spellingMap = smartSpellNotes(allMidis, useFlats);
+
   const activeArray = [...activeNotes].map(n => {
     const midi = Note.midi(n) || 60;
-    const pc = midi % 12;
-    const pcNames = useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES;
+    const spelling = spellingMap.get(midi) || { pc: (useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES)[midi % 12], useFlat: useFlats };
     return {
       note: n,
       midi,
-      pc: pcNames[pc],
+      pc: spelling.pc,
       color: getNoteColor(n),
       isSharp: needsAccidental(midi),
+      useFlat: spelling.useFlat,
     };
   });
 
@@ -163,7 +230,7 @@ export function StaffNotation() {
   function getChordPositions(notes: typeof activeArray) {
     const positioned = notes.map(n => ({
       ...n,
-      y: midiToY(n.midi, useFlats),
+      y: midiToY(n.midi, n.useFlat),
       x: CHORD_X,
       offsetRight: false,
     }));
