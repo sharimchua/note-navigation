@@ -263,7 +263,8 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                            fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} 
                            rx={0.5}
                            style={isFading && trailMode ? {
-                             transformOrigin: `${sb.x}px ${plotBottom}px`,
+                             transformBox: 'fill-box' as any,
+                             transformOrigin: 'bottom',
                              animation: `bar-shrink ${FADE_DURATION}ms ease-out forwards`
                            } : undefined}
                          />

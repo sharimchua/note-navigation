@@ -190,9 +190,9 @@
     100% { opacity: 0; }
   }
 
-  /* Individual bar shrink (height scales down) */
+  /* Individual bar shrink (SVG rect) — uses transform-box: fill-box */
   @keyframes bar-shrink {
-    0%   { transform: scaleY(1); }
-    100% { transform: scaleY(0); }
+    0%   { transform: scaleY(1); opacity: 1; }
+    100% { transform: scaleY(0); opacity: 0; }
   }
 }
