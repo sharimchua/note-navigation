@@ -7,7 +7,8 @@ import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
 import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Menu, Trash2 } from "lucide-react";
+import { Menu, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 function MainContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
