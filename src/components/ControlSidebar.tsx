@@ -86,6 +86,16 @@ export function ControlSidebar() {
             </button>
           ))}
         </div>
+
+        {isKeyLocked && (
+          <div className="pt-2">
+            <h4 className="engineering-label mb-2">Note Labels</h4>
+            <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
+              <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
+              <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        )}
       </div>
 
       {/* Controls */}

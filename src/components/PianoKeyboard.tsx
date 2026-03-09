@@ -120,7 +120,7 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
+          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode) : null;
 
           const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;
@@ -149,8 +149,8 @@ export function PianoKeyboard() {
                     filter: isActive ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER }}>
-                    {degree || Note.pitchClass(key.note)}
+                  <span className="font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                    {scaleLabel || Note.pitchClass(key.note)}
                   </span>
                 </div>
               )}

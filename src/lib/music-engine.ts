@@ -163,3 +163,12 @@ export function getScaleDegree(noteName: string, scaleNotes: string[]): number |
   }
   return null;
 }
+
+export type ScaleLabelMode = "solfege" | "degree";
+export const SOLFEGE_LABELS = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Ti"] as const;
+
+export function getScaleLabel(noteName: string, scaleNotes: string[], mode: ScaleLabelMode): string | null {
+  const degree = getScaleDegree(noteName, scaleNotes);
+  if (degree === null) return null;
+  return mode === "solfege" ? SOLFEGE_LABELS[(degree - 1) % 7] : String(degree);
+}

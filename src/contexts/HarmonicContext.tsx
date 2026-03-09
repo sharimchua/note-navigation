@@ -154,6 +154,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const setKey = useCallback((key: string) => setSelectedKey(key), []);
   const setScale = useCallback((scale: string) => setSelectedScale(scale), []);
+  const setScaleLabelMode = useCallback((mode: ScaleLabelMode) => setScaleLabelModeState(mode), []);
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
   const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
   const setRightHandCb = useCallback((hand: HandPosition) => setRightHand(hand), []);
@@ -165,6 +166,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       selectedScale,
       scaleNotes,
       isKeyLocked,
+      scaleLabelMode,
       useFlats,
       midiState,
       selectedTuning,
@@ -176,6 +178,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setKey,
       setScale,
       setKeyLocked,
+      setScaleLabelMode,
       setUseFlats,
       setTuning,
       setLeftHand: setLeftHandCb,

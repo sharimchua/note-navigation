@@ -75,10 +75,10 @@ export function LinearNoteMap() {
               >
                 {!deEmphasize && (
                   <span
-                    className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : 'text-[8px]'}`}
+                    className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : (n.scaleLabel && n.scaleLabel.length > 1 ? 'text-[6.5px]' : 'text-[8px]')}`}
                     style={{ color: 'hsl(var(--primary-foreground))' }}
                   >
-                    {isKeyLocked && n.degree ? n.degree : n.pc}
+                    {isKeyLocked && n.scaleLabel ? n.scaleLabel : n.pc}
                   </span>
                 )}
               </button>

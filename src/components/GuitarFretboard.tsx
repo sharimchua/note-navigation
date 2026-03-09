@@ -157,7 +157,7 @@ export function GuitarFretboard() {
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
-              const degree = isKeyLocked ? getScaleDegree(note, scaleNotes) : null;
+              const scaleLabel = isKeyLocked ? getScaleLabel(note, scaleNotes, scaleLabelMode) : null;
 
               const x = fret === 0 
                 ? 46 
@@ -175,9 +175,9 @@ export function GuitarFretboard() {
                 return (
                   <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                     <circle cx={x} cy={y} r="8" fill={color} opacity={0.3} />
-                    <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize="7"
+                    <text x={x} y={y + 3} fill="hsl(var(--foreground))" fontSize={scaleLabel && scaleLabel.length > 1 ? "5.5" : "7"}
                       fontFamily="JetBrains Mono" textAnchor="middle" opacity={0.7}>
-                      {degree || pc}
+                      {scaleLabel || pc}
                     </text>
                   </g>
                 );
@@ -195,9 +195,9 @@ export function GuitarFretboard() {
               return (
                 <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                   <circle cx={x} cy={y} r="9" fill={color} className="note-active" />
-                  <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize="7"
+                  <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize={scaleLabel && scaleLabel.length > 1 ? "5.5" : "7"}
                     fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold">
-                    {degree || pc}
+                    {scaleLabel || pc}
                   </text>
                 </g>
               );
