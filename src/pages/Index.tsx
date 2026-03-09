@@ -87,24 +87,30 @@ function MainContent() {
         </div>
 
         {/* Mute */}
-        <button
-          onClick={() => setMuted(!isMuted)}
-          className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
-            isMuted
-              ? 'border-destructive/40 bg-destructive/10 text-destructive'
-              : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
-          }`}
-          aria-label={isMuted ? "Unmute" : "Mute"}
-        >
-          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-        </button>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+          <button
+            onClick={() => setMuted(!isMuted)}
+            className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+              isMuted
+                ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+            }`}
+            aria-label={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+        </div>
 
         {/* Solfege / Degree toggle */}
         {isKeyLocked && (
-          <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
-            <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
-            <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
-          </ToggleGroup>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+            <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
+              <ToggleGroupItem value="solfege" size="sm" className="h-8 text-xs font-mono px-3">Solfege</ToggleGroupItem>
+              <ToggleGroupItem value="degree" size="sm" className="h-8 text-xs font-mono px-3">Degrees</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         )}
 
         {/* Spacer */}
