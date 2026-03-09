@@ -8,12 +8,15 @@ export interface HandPosition {
   rootNote: string;
 }
 
+export type ScaleLabelMode = "solfege" | "degree";
+
 interface HarmonicState {
   activeNotes: Set<string>;
   selectedKey: string;
   selectedScale: string;
   scaleNotes: string[];
   isKeyLocked: boolean;
+  scaleLabelMode: ScaleLabelMode;
   useFlats: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
@@ -25,6 +28,7 @@ interface HarmonicState {
   setKey: (key: string) => void;
   setScale: (scale: string) => void;
   setKeyLocked: (locked: boolean) => void;
+  setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   setLeftHand: (hand: HandPosition) => void;
