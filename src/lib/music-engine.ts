@@ -189,13 +189,20 @@ export function getScaleLabel(noteName: string, scaleNotes: string[], mode: Scal
   
   if (mode === "solfege") return label.solfege;
   
-  // For degree mode, check if we're in an extended octave
+  // For degree mode, calculate continuous degree from baseMidi
   if (baseMidi !== undefined) {
     const noteMidi = Note.midi(noteName);
     if (noteMidi !== null) {
       const octavesHigher = Math.floor((noteMidi - baseMidi) / 12);
       if (octavesHigher > 0) {
-        // Use the extended naming convention
+        // Parse extended label and add 7 for each additional octave beyond the first
+        const extendedMatch = label.extended.match(/^([b#]*)(\d+)$/);
+        if (extendedMatch) {
+          const accidental = extendedMatch[1];
+          const baseNum = parseInt(extendedMatch[2]);
+          const newNum = baseNum + 7 * (octavesHigher - 1);
+          return `${accidental}${newNum}`;
+        }
         return label.extended;
       }
     }
