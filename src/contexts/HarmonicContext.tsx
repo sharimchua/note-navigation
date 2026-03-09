@@ -28,8 +28,6 @@ interface HarmonicState {
   setUseFlats: (useFlats: boolean) => void;
   setMuted: (muted: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
-  setLeftHand: (hand: HandPosition) => void;
-  setRightHand: (hand: HandPosition) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
 }
