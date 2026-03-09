@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Particle {
   x: number;
   y: number;
-  color: string;
+  chroma: number;
   opacity: number;
   radius: number;
 }
