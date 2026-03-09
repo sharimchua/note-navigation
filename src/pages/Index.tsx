@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HarmonicProvider } from "@/contexts/HarmonicContext";
+import { HarmonicProvider, useHarmonic } from "@/contexts/HarmonicContext";
 import { ControlSidebar } from "@/components/ControlSidebar";
 import { PianoKeyboard } from "@/components/PianoKeyboard";
 import { GuitarFretboard } from "@/components/GuitarFretboard";
@@ -7,10 +7,11 @@ import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
 import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Trash2 } from "lucide-react";
 
-const Index = () => {
+function MainContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { clearNotes, activeNotes } = useHarmonic();
 
   return (
     <HarmonicProvider>
