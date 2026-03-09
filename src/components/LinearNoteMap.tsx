@@ -25,12 +25,12 @@ export function LinearNoteMap() {
       const noteName = Note.fromMidi(midi);
       const pc = getNotePitchClass(noteName, useFlats);
       const inScale = scaleChromas.has(midi % 12);
-      const degree = getScaleDegree(noteName, scaleNotes);
+      const scaleLabel = getScaleLabel(noteName, scaleNotes, scaleLabelMode);
 
-      result.push({ midi, noteName, pc, inScale, degree });
+      result.push({ midi, noteName, pc, inScale, scaleLabel });
     }
     return result;
-  }, [useFlats, scaleChromas, scaleNotes]);
+  }, [useFlats, scaleChromas, scaleNotes, scaleLabelMode]);
 
   return (
     <div className="glass-panel p-4">
