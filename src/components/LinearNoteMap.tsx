@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNoteColor, getNotePitchClass, getScaleDegree } from "@/lib/music-engine";
+import { getNoteColor, getNotePitchClass, getScaleLabel } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMemo } from "react";
@@ -8,7 +8,7 @@ const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
 
 export function LinearNoteMap() {
-  const { activeNotes, scaleNotes, isKeyLocked, useFlats, toggleNote, playNote } = useHarmonic();
+  const { activeNotes, scaleNotes, isKeyLocked, scaleLabelMode, useFlats, toggleNote, playNote } = useHarmonic();
   const isMobile = useIsMobile();
 
   const CIRCLE_SIZE = isMobile ? 20 : 28;
