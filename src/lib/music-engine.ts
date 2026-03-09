@@ -166,18 +166,18 @@ export function getScaleDegree(noteName: string, scaleNotes: string[]): number |
 
 export type ScaleLabelMode = "solfege" | "degree";
 export const RELATIVE_INTERVALS = [
-  { degree: "1", solfege: "Do" },
-  { degree: "b2", solfege: "Ra" },
-  { degree: "2", solfege: "Re" },
-  { degree: "b3", solfege: "Me" },
-  { degree: "3", solfege: "Mi" },
-  { degree: "4", solfege: "Fa" },
-  { degree: "b5", solfege: "Se" },
-  { degree: "5", solfege: "Sol" },
-  { degree: "b6", solfege: "Le" },
-  { degree: "6", solfege: "La" },
-  { degree: "b7", solfege: "Te" },
-  { degree: "7", solfege: "Ti" },
+  { degree: "1", extended: "8", solfege: "Do" },
+  { degree: "b2", extended: "b9", solfege: "Ra" },
+  { degree: "2", extended: "9", solfege: "Re" },
+  { degree: "b3", extended: "#9", solfege: "Me" },  // b3 becomes #9 in extended (standard jazz convention)
+  { degree: "3", extended: "10", solfege: "Mi" },
+  { degree: "4", extended: "11", solfege: "Fa" },
+  { degree: "b5", extended: "#11", solfege: "Se" }, // b5 becomes #11 in extended (standard jazz convention)
+  { degree: "5", extended: "12", solfege: "Sol" },
+  { degree: "b6", extended: "b13", solfege: "Le" },
+  { degree: "6", extended: "13", solfege: "La" },
+  { degree: "b7", extended: "b14", solfege: "Te" },
+  { degree: "7", extended: "14", solfege: "Ti" },
 ] as const;
 
 export function getScaleLabel(noteName: string, scaleNotes: string[], mode: ScaleLabelMode, baseMidi?: number): string | null {
@@ -189,22 +189,16 @@ export function getScaleLabel(noteName: string, scaleNotes: string[], mode: Scal
   
   if (mode === "solfege") return label.solfege;
   
-  let degreeStr: string = label.degree;
+  // For degree mode, check if we're in an extended octave
   if (baseMidi !== undefined) {
     const noteMidi = Note.midi(noteName);
     if (noteMidi !== null) {
       const octavesHigher = Math.floor((noteMidi - baseMidi) / 12);
       if (octavesHigher > 0) {
-        const match = degreeStr.match(/^([b#]*)(.*)$/);
-        if (match) {
-          const acc = match[1];
-          const num = parseInt(match[2], 10);
-          if (!isNaN(num)) {
-            degreeStr = `${acc}${num + 7 * octavesHigher}`;
-          }
-        }
+        // Use the extended naming convention
+        return label.extended;
       }
     }
   }
-  return degreeStr;
+  return label.degree;
 }
