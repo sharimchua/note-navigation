@@ -248,25 +248,27 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         </svg>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2">
-        {activePitchClasses.map(pc => (
-          <div key={pc} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColor(pc) }} />
-            <span>{getNotePitchClass(noteNames.find(n => {
-              const m = Note.midi(n);
-              return m !== null && m % 12 === pc;
-            }) || "", useFlats)}</span>
+      {hasNotes && (
+        <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2">
+          {activePitchClasses.map(pc => (
+            <div key={pc} className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColor(pc) }} />
+              <span>{getNotePitchClass(noteNames.find(n => {
+                const m = Note.midi(n);
+                return m !== null && m % 12 === pc;
+              }) || "", useFlats)}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1 ml-2">
+            <span className="w-4 h-px" style={{ background: "hsla(0, 0%, 95%, 0.7)" }} />
+            <span>Crunch</span>
           </div>
-        ))}
-        <div className="flex items-center gap-1 ml-2">
-          <span className="w-4 h-px" style={{ background: "hsla(0, 0%, 95%, 0.7)" }} />
-          <span>Crunch</span>
+          <div className="flex items-center gap-1 ml-1">
+            <span className="w-3 h-px border-t border-dashed border-muted-foreground" />
+            <span>Octave (C)</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 ml-1">
-          <span className="w-3 h-px border-t border-dashed border-muted-foreground" />
-          <span>Octave (C)</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 });
