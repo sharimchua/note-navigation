@@ -94,29 +94,6 @@ export function ControlSidebar() {
           })}
         </div>
 
-        {isKeyLocked && (
-          <div className="pt-2">
-            <h4 className="engineering-label mb-2">Note Labels</h4>
-            <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
-              <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
-              <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        )}
-      </div>
-
-      {/* Audio */}
-      <div className="space-y-2">
-        <h4 className="engineering-label">Audio</h4>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isMuted}
-            onChange={e => setMuted(e.target.checked)}
-            className="accent-primary"
-          />
-          <span className="text-xs font-mono text-secondary-foreground">Mute tone output</span>
-        </label>
       </div>
 
       {/* Hand Position Overlay */}
