@@ -105,15 +105,34 @@ for (let midi = PIANO_START_MIDI; midi <= PIANO_END_MIDI; midi++) {
 export interface ScalePreset {
   name: string;
   type: string;
-  category: "diatonic" | "pentatonic" | "blues";
+  category: "diatonic" | "pentatonic" | "blues" | "modes" | "melodic" | "harmonic" | "symmetric";
 }
 
 export const SCALE_PRESETS: ScalePreset[] = [
+  // Diatonic
   { name: "Major (Ionian)", type: "major", category: "diatonic" },
   { name: "Natural Minor (Aeolian)", type: "minor", category: "diatonic" },
+
+  // Modes
+  { name: "Dorian", type: "dorian", category: "modes" },
+  { name: "Phrygian", type: "phrygian", category: "modes" },
+  { name: "Lydian", type: "lydian", category: "modes" },
+  { name: "Mixolydian", type: "mixolydian", category: "modes" },
+  { name: "Locrian", type: "locrian", category: "modes" },
+
+  // Pentatonic & Blues
   { name: "Major Pentatonic", type: "major pentatonic", category: "pentatonic" },
   { name: "Minor Pentatonic", type: "minor pentatonic", category: "pentatonic" },
   { name: "Blues", type: "blues", category: "blues" },
+
+  // Harmonic & Melodic Minor
+  { name: "Harmonic Minor", type: "harmonic minor", category: "harmonic" },
+  { name: "Melodic Minor", type: "melodic minor", category: "melodic" },
+
+  // Symmetric
+  { name: "Whole Tone", type: "whole tone", category: "symmetric" },
+  { name: "Diminished (H-W)", type: "diminished", category: "symmetric" },
+  { name: "Chromatic", type: "chromatic", category: "symmetric" },
 ];
 
 // Get 5 scale-degree MIDI notes for a hand position.
