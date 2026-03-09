@@ -42,9 +42,18 @@ function MainContent() {
         </div>
 
         <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
-          {/* Header hints */}
-          <div className="flex justify-end">
-            <div className="text-[10px] font-mono text-muted-foreground text-right">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            {activeNotes.size > 0 && (
+              <button
+                onClick={clearNotes}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+              >
+                <Trash2 size={12} />
+                Clear Notes
+              </button>
+            )}
+            <div className="text-[10px] font-mono text-muted-foreground text-right ml-auto">
               <div>Click any note to activate</div>
               <div>Colors sync across all views</div>
             </div>
@@ -76,8 +85,13 @@ function MainContent() {
           </div>
         </main>
       </div>
-    </HarmonicProvider>
   );
-};
+}
+
+const Index = () => (
+  <HarmonicProvider>
+    <MainContent />
+  </HarmonicProvider>
+);
 
 export default Index;
