@@ -20,11 +20,13 @@ export function ControlSidebar() {
     playNote
   } = useHarmonic();
 
-  const handleScalePreset = (scaleType: string) => {
-    if (selectedScale === scaleType && isKeyLocked) {
+  const handleScalePreset = (preset: typeof SCALE_PRESETS[number]) => {
+    const presetKey = `${preset.type}:${preset.rootOffset ?? 0}`;
+    const currentKey = `${selectedScale}:${scaleRootOffset}`;
+    if (presetKey === currentKey && isKeyLocked) {
       setKeyLocked(false);
     } else {
-      setScale(scaleType);
+      setScale(preset.type, preset.rootOffset);
       setKeyLocked(true);
     }
   };
