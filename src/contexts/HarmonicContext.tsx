@@ -33,7 +33,21 @@ interface HarmonicState {
   isNoteInCurrentScale: (note: string) => boolean;
 }
 
-const HarmonicContext = createContext<HarmonicState | null>(null);
+// In Vite + React Fast Refresh, contexts can be re-created on hot updates,
+// causing "used within Provider" errors if consumers hold a stale instance.
+// Cache the context on globalThis in dev/HMR to keep a single instance.
+const HarmonicContext = (() => {
+  const g = globalThis as unknown as Record<string, unknown>;
+  const KEY = "__note_navigation_harmonic_context__";
+  const isHMR = !!(import.meta as any).hot;
+
+  if (isHMR) {
+    if (!g[KEY]) g[KEY] = createContext<HarmonicState | null>(null);
+    return g[KEY] as React.Context<HarmonicState | null>;
+  }
+
+  return createContext<HarmonicState | null>(null);
+})();
 
 export function useHarmonic() {
   const ctx = useContext(HarmonicContext);
