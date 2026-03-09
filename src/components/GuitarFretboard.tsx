@@ -4,7 +4,7 @@ import { Note } from "tonal";
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 
 export function GuitarFretboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes, trailMode } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
   const tuningRef = useRef<HTMLDivElement>(null);
 
@@ -205,6 +205,10 @@ export function GuitarFretboard() {
               // Active notes
               return (
                 <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
+                  {trailMode && (
+                    <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5"
+                      className="trail-ripple" style={{ transformBox: "fill-box" }} />
+                  )}
                   <circle cx={x} cy={y} r="9" fill={color} className="note-active" />
                   <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize={scaleLabel && scaleLabel.length > 1 ? "5.5" : "7"}
                     fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold">

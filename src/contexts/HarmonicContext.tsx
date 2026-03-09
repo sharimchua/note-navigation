@@ -16,6 +16,7 @@ interface HarmonicState {
   scaleLabelMode: ScaleLabelMode;
   useFlats: boolean;
   isMuted: boolean;
+  trailMode: boolean;
   midiState: MIDIState;
   selectedTuning: GuitarTuning;
   toggleNote: (note: string) => void;
@@ -27,6 +28,7 @@ interface HarmonicState {
   setScaleLabelMode: (mode: ScaleLabelMode) => void;
   setUseFlats: (useFlats: boolean) => void;
   setMuted: (muted: boolean) => void;
+  setTrailMode: (trailMode: boolean) => void;
   setTuning: (tuning: GuitarTuning) => void;
   playNote: (note: string) => void;
   isNoteInCurrentScale: (note: string) => boolean;
@@ -67,6 +69,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const setUseFlats = (_: boolean) => {}; // no-op, kept for interface compat
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const [isMuted, setMuted] = useState(false);
+  const [trailMode, setTrailMode] = useState(false);
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const audioStartedRef = useRef(false);
 
@@ -176,6 +179,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       scaleLabelMode,
       useFlats,
       isMuted,
+      trailMode,
       midiState,
       selectedTuning,
       toggleNote,
@@ -187,6 +191,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setScaleLabelMode,
       setUseFlats,
       setMuted,
+      setTrailMode,
       setTuning,
       playNote,
       isNoteInCurrentScale,

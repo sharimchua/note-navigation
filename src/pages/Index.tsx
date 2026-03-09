@@ -5,7 +5,7 @@ import { GuitarFretboard } from "@/components/GuitarFretboard";
 import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
 import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
-import { Trash2, Volume2, VolumeX } from "lucide-react";
+import { Trash2, Volume2, VolumeX, Sparkles } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { KEY_NAMES_COF, SCALE_PRESETS } from "@/lib/music-engine";
@@ -14,9 +14,9 @@ import musoIcon from "@/assets/midlife_muso_icon.webp";
 function MainContent() {
   const {
     selectedKey, selectedScale, scaleRootOffset, isKeyLocked, midiState,
-    activeNotes, isMuted, scaleLabelMode,
+    activeNotes, isMuted, scaleLabelMode, trailMode,
     setKey, setScale, setKeyLocked, setMuted, setScaleLabelMode, clearNotes,
-    playNote,
+    playNote, setTrailMode,
   } = useHarmonic();
 
   const handleScaleChange = (value: string) => {
@@ -99,6 +99,23 @@ function MainContent() {
             aria-label={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+        </div>
+
+        {/* Trail toggle */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+          <button
+            onClick={() => setTrailMode(!trailMode)}
+            className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+              trailMode
+                ? 'border-primary/60 bg-primary/15 text-primary'
+                : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+            }`}
+            aria-label={trailMode ? "Disable trail" : "Enable trail"}
+            title={trailMode ? "Trail mode on" : "Trail mode off"}
+          >
+            <Sparkles size={14} />
           </button>
         </div>
 

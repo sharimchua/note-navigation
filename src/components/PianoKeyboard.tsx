@@ -7,7 +7,7 @@ const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +70,13 @@ export function PianoKeyboard() {
               }}
               onClick={() => handleKeyClick(key.note)}
             >
+              {/* Trail shimmer bar at bottom of active key */}
+              {isActive && trailMode && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm trail-shimmer"
+                  style={{ background: `linear-gradient(to top, ${color}, transparent)` }}
+                />
+              )}
               {showScaleIndicator && (
                 <div 
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"

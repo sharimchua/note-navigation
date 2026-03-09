@@ -41,7 +41,7 @@ const SUB_BAR_W = 2;
 const BAR_GAP = 1;
 
 export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
-  const { activeNotes, useFlats } = useHarmonic();
+  const { activeNotes, useFlats, trailMode } = useHarmonic();
   const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
   useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
@@ -171,10 +171,11 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         <span className="text-xs font-mono font-bold text-foreground min-w-[3ch] text-right">{hasNotes ? `${Math.round(totalDissonance)}%` : "0%"}</span>
         <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-300"
+          className="h-full rounded-full"
             style={{
               width: `${hasNotes ? Math.min(100, totalDissonance) : 0}%`,
               background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
+              transition: trailMode ? 'width 800ms ease-out' : 'width 300ms ease-out',
             }}
           />
         </div>
@@ -222,11 +223,12 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
               {items.map((bar, i) => {
                 const isFundamental = bar.partial.partialNumber === 1;
                 return (
-                  <g key={`b-${pc}-${i}`}>
-                    {bar.subBars.map((sb, si) => (
-                      <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
-                        fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
-                      />
+                   <g key={`b-${pc}-${i}`}>
+                     {bar.subBars.map((sb, si) => (
+                       <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
+                         fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
+                         style={trailMode ? { transition: 'height 600ms ease-out, opacity 600ms ease-out' } : undefined}
+                       />
                     ))}
                     {isFundamental && (
                       <>
