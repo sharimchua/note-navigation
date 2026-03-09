@@ -10,20 +10,20 @@ import {
 } from "@/lib/overtone-engine";
 
 // Map chroma (0-11) to the shared CSS variable note colors
-const CHROMA_COLOR_VARS: string[] = [
-  "var(--note-c)", "var(--note-cs)", "var(--note-d)", "var(--note-ds)",
-  "var(--note-e)", "var(--note-f)", "var(--note-fs)", "var(--note-g)",
-  "var(--note-gs)", "var(--note-a)", "var(--note-as)", "var(--note-b)",
+const CHROMA_CSS_PROPS: string[] = [
+  "--note-c", "--note-cs", "--note-d", "--note-ds",
+  "--note-e", "--note-f", "--note-fs", "--note-g",
+  "--note-gs", "--note-a", "--note-as", "--note-b",
 ];
 
 function noteColor(pc: number, alpha = 0.85): string {
-  const cssVar = CHROMA_COLOR_VARS[pc % 12];
-  return `hsla(${cssVar}, ${alpha})`;
+  const prop = CHROMA_CSS_PROPS[pc % 12];
+  return `hsl(var(${prop}) / ${alpha})`;
 }
 
 function noteColorSolid(pc: number): string {
-  const cssVar = CHROMA_COLOR_VARS[pc % 12];
-  return `hsl(${cssVar})`;
+  const prop = CHROMA_CSS_PROPS[pc % 12];
+  return `hsl(var(${prop}))`;
 }
 
 function criticalBandwidth(freq: number): number {
