@@ -157,7 +157,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes, trailMode } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
   
   const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
