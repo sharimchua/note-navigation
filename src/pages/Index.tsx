@@ -14,9 +14,9 @@ import musoIcon from "@/assets/midlife_muso_icon.webp";
 function MainContent() {
   const {
     selectedKey, selectedScale, scaleRootOffset, isKeyLocked, midiState,
-    activeNotes, isMuted, scaleLabelMode,
+    activeNotes, isMuted, scaleLabelMode, trailMode,
     setKey, setScale, setKeyLocked, setMuted, setScaleLabelMode, clearNotes,
-    playNote,
+    playNote, setTrailMode,
   } = useHarmonic();
 
   const handleScaleChange = (value: string) => {
