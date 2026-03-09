@@ -230,7 +230,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                     ))}
                     {isFundamental && (
                       <>
-                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(pc)} opacity={0.9} />
+                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9} />
                         <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
                           fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
                         >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
