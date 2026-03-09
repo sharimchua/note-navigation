@@ -186,11 +186,11 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
               <stop offset="100%" stopColor="hsl(0, 0%, 100%)" stopOpacity="0.02" />
             </linearGradient>
             {activePitchClasses.map(pc => {
-              const hue = NOTE_HUES[pc % 12] ?? 0;
+              const cssVar = CHROMA_COLOR_VARS[pc % 12];
               return (
                 <linearGradient key={`grad-${pc}`} id={`nn-note-grad-${pc}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={`hsla(${hue}, 55%, 55%, 0.5)`} />
-                  <stop offset="100%" stopColor={`hsla(${hue}, 55%, 55%, 0.03)`} />
+                  <stop offset="0%" stopColor={`hsl(${cssVar})`} stopOpacity="0.5" />
+                  <stop offset="100%" stopColor={`hsl(${cssVar})`} stopOpacity="0.03" />
                 </linearGradient>
               );
             })}
