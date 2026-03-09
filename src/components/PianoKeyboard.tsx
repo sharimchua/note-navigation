@@ -7,7 +7,7 @@ const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode, getNoteIntensity } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +51,9 @@ export function PianoKeyboard() {
         >
         {/* White keys */}
         {WHITE_KEYS.map((key, i) => {
-          const isActive = activeNotes.has(key.note);
+          const pressed = activeNotes.has(key.note);
+          const intensity = getNoteIntensity(key.note);
+          const showActiveLike = intensity > 0;
           const inScale = isNoteInCurrentScale(key.note);
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
@@ -61,32 +63,33 @@ export function PianoKeyboard() {
           return (
             <div
               key={key.midi}
-              className={`absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm hover:opacity-90 ${isActive ? 'note-active' : ''}`}
+              className={`absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? 'note-active' : ''}`}
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                backgroundColor: isActive ? color : "#f5f0e8",
+                backgroundColor: showActiveLike ? color : "#f5f0e8",
+                opacity: showActiveLike ? intensity : 1,
                 zIndex: 1,
-                transition: trailMode && !isActive ? 'background-color 850ms ease-out' : 'background-color 0ms',
+                transition: trailMode && !pressed ? 'background-color 850ms ease-out, opacity 850ms ease-out' : 'background-color 0ms',
               }}
               onClick={() => handleKeyClick(key.note)}
             >
               {/* Trail shimmer bar at bottom of active key */}
-              {isActive && trailMode && (
+              {showActiveLike && trailMode && (
                 <div
                   className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm trail-shimmer"
-                  style={{ background: `linear-gradient(to top, ${color}, transparent)` }}
+                  style={{ background: `linear-gradient(to top, ${color}, transparent)`, opacity: intensity }}
                 />
               )}
               {showScaleIndicator && (
                 <div 
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
                   style={{ 
-                    borderColor: isActive ? 'hsl(var(--background))' : color,
-                    backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    borderColor: showActiveLike ? 'hsl(var(--background))' : color,
+                    backgroundColor: showActiveLike ? 'hsla(var(--background) / 0.3)' : 'transparent',
                   }}
                 >
-                  <span className="font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                  <span className="font-mono font-bold" style={{ color: showActiveLike ? 'hsl(var(--background))' : color, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
                     {scaleLabel || pc}
                   </span>
                 </div>
@@ -94,7 +97,7 @@ export function PianoKeyboard() {
               {pc === "C" && (
                 <span 
                   className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
-                  style={{ color: isActive ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
+                  style={{ color: showActiveLike ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
                 >
                   C{Note.octave(key.note)}
                 </span>
@@ -105,7 +108,9 @@ export function PianoKeyboard() {
 
         {/* Black keys */}
         {PIANO_KEYS.filter(k => k.isBlack).map((key) => {
-          const isActive = activeNotes.has(key.note);
+          const pressed = activeNotes.has(key.note);
+          const intensity = getNoteIntensity(key.note);
+          const showActiveLike = intensity > 0;
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
@@ -118,15 +123,16 @@ export function PianoKeyboard() {
           return (
             <div
               key={key.midi}
-              className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${isActive ? 'note-active' : ''}`}
+              className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? 'note-active' : ''}`}
               style={{
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
-                backgroundColor: isActive ? color : "hsl(var(--background))",
+                backgroundColor: showActiveLike ? color : "hsl(var(--background))",
+                opacity: showActiveLike ? intensity : 1,
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
-                transition: trailMode && !isActive ? 'background-color 850ms ease-out' : 'background-color 0ms',
+                transition: trailMode && !pressed ? 'background-color 850ms ease-out, opacity 850ms ease-out' : 'background-color 0ms',
               }}
               onClick={() => handleKeyClick(key.note)}
             >
@@ -134,12 +140,12 @@ export function PianoKeyboard() {
                 <div 
                   className="absolute top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
                   style={{ 
-                    borderColor: isActive ? 'hsl(var(--background))' : color,
-                    backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
-                    filter: isActive ? undefined : BRIGHT_FILTER,
+                    borderColor: showActiveLike ? 'hsl(var(--background))' : color,
+                    backgroundColor: showActiveLike ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    filter: showActiveLike ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                  <span className="font-mono font-bold" style={{ color: showActiveLike ? 'hsl(var(--background))' : color, filter: showActiveLike ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
                     {scaleLabel || Note.pitchClass(key.note)}
                   </span>
                 </div>
