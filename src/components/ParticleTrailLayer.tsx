@@ -67,8 +67,8 @@ export function ParticleTrailLayer({
             x: spawnX,
             y,
             color,
-            opacity: 0.45,
-            radius: 1.8,
+            opacity: 0.85,
+            radius: 2.2,
           });
         }
       }

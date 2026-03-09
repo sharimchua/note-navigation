@@ -126,6 +126,7 @@ export function PianoKeyboard() {
                 backgroundColor: isActive ? color : "hsl(var(--background))",
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
+                transition: trailMode && !isActive ? 'background-color 850ms ease-out' : 'background-color 0ms',
               }}
               onClick={() => handleKeyClick(key.note)}
             >
