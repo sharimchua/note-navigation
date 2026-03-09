@@ -69,7 +69,7 @@ export function LinearNoteMap() {
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                className={`relative z-10 flex items-center justify-center shrink-0 transition-all duration-150 ${isActive ? 'note-active' : ''}`}
+                className={`relative z-10 flex items-center justify-center shrink-0 transition-all duration-150 ${isActive ? 'note-active' : ''} ${isActive && trailMode ? 'trail-glow' : ''}`}
                 style={{
                   width: size,
                   height: size,
@@ -81,9 +81,16 @@ export function LinearNoteMap() {
                     : (isKeyLocked && n.inScale)
                       ? '0 0 0 3px hsl(var(--foreground))'
                       : 'none',
+                  color, // for currentColor in trail-glow
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >
+                {isActive && trailMode && (
+                  <span
+                    className="absolute inset-0 rounded-full trail-ripple pointer-events-none"
+                    style={{ border: `2px solid ${color}` }}
+                  />
+                )}
                 {!deEmphasize && (
                   <span
                     className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : (n.scaleLabel && n.scaleLabel.length > 1 ? 'text-[6.5px]' : 'text-[8px]')}`}
