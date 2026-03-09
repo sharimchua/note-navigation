@@ -230,7 +230,7 @@ export function StaffNotation() {
   function getChordPositions(notes: typeof activeArray) {
     const positioned = notes.map(n => ({
       ...n,
-      y: midiToY(n.midi, useFlats),
+      y: midiToY(n.midi, n.useFlat),
       x: CHORD_X,
       offsetRight: false,
     }));
