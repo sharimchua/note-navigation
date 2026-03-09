@@ -203,16 +203,19 @@ export function StaffNotation() {
     }
   }, [yToNote, playNote, toggleNote]);
 
+  const allMidis = [...activeNotes].map(n => Note.midi(n) || 60);
+  const spellingMap = smartSpellNotes(allMidis, useFlats);
+
   const activeArray = [...activeNotes].map(n => {
     const midi = Note.midi(n) || 60;
-    const pc = midi % 12;
-    const pcNames = useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES;
+    const spelling = spellingMap.get(midi) || { pc: (useFlats ? FLAT_PC_NAMES : SHARP_PC_NAMES)[midi % 12], useFlat: useFlats };
     return {
       note: n,
       midi,
-      pc: pcNames[pc],
+      pc: spelling.pc,
       color: getNoteColor(n),
       isSharp: needsAccidental(midi),
+      useFlat: spelling.useFlat,
     };
   });
 
