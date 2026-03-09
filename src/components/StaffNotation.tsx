@@ -222,7 +222,7 @@ export function StaffNotation() {
   function renderNote(n: typeof activeArray[0] & { y: number; x: number; offsetRight: boolean }, clef: "treble" | "bass") {
     const { x, y } = n;
     const ledgers = getLedgerLines(y, x, clef);
-    const scaleLabel = isKeyLocked ? getScaleLabel(n.note, scaleNotes, scaleLabelMode) : null;
+    const scaleLabel = isKeyLocked ? getScaleLabel(n.note, scaleNotes, scaleLabelMode, baseMidi) : null;
     const label = scaleLabel !== null ? scaleLabel : n.pc;
 
     return (
