@@ -164,8 +164,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const setScaleLabelMode = useCallback((mode: ScaleLabelMode) => setScaleLabelModeState(mode), []);
   const setTuning = useCallback((tuning: GuitarTuning) => setSelectedTuning(tuning), []);
-  const setLeftHandCb = useCallback((hand: HandPosition) => setLeftHand(hand), []);
-  const setRightHandCb = useCallback((hand: HandPosition) => setRightHand(hand), []);
 
   return React.createElement(HarmonicContext.Provider, {
     value: {
