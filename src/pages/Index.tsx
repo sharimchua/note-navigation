@@ -12,7 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 function MainContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { clearNotes, activeNotes } = useHarmonic();
+  const { clearNotes, activeNotes, isMuted, setMuted, isKeyLocked, scaleLabelMode, setScaleLabelMode } = useHarmonic();
 
   return (
     <div className="flex h-screen overflow-hidden relative">
