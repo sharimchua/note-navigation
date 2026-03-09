@@ -41,7 +41,7 @@ const SUB_BAR_W = 2;
 const BAR_GAP = 1;
 
 export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
-  const { activeNotes, useFlats } = useHarmonic();
+  const { activeNotes, useFlats, trailMode } = useHarmonic();
   const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
   useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
