@@ -13,10 +13,10 @@ for (let octave = 2; octave <= 6; octave++) {
 
 export function ControlSidebar() {
   const { 
-    selectedKey, selectedScale, scaleRootOffset, isKeyLocked, scaleLabelMode, midiState,
-    leftHand, rightHand, isMuted,
-    setKey, setScale, setKeyLocked, setScaleLabelMode,
-    setLeftHand, setRightHand, setMuted,
+    selectedKey, selectedScale, scaleRootOffset, isKeyLocked, midiState,
+    leftHand, rightHand,
+    setKey, setScale, setKeyLocked,
+    setLeftHand, setRightHand,
     playNote
   } = useHarmonic();
 
