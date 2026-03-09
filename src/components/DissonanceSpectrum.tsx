@@ -59,9 +59,9 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     ((Math.log2(f) - logMin) / (logMax - logMin)) * width;
 
   const svgWidth = 900;
-  const svgHeight = 220;
-  const plotTop = 24;
-  const plotBottom = 185;
+  const svgHeight = 150;
+  const plotTop = 18;
+  const plotBottom = 125;
   const plotHeight = plotBottom - plotTop;
 
   const octaveMarkers = useMemo(() => {
