@@ -51,7 +51,7 @@ export function isNoteInScale(noteName: string, scaleNotes: string[]): boolean {
 
 // Guitar tunings
 
-export const TOTAL_FRETS = 22;
+export const TOTAL_FRETS = 15;
 
 export interface GuitarTuning {
   name: string;
