@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Note } from "tonal";
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNotePitchClass } from "@/lib/music-engine";
+import { getNotePitchClass, NOTE_COLOR_KEYS, NOTE_NAMES } from "@/lib/music-engine";
 import {
   getPartialsFromNotes,
   calculatePartialInteractions,
@@ -9,14 +9,21 @@ import {
   type Partial,
 } from "@/lib/overtone-engine";
 
-const NOTE_HUES: Record<number, number> = {
-  0: 32, 1: 0, 2: 45, 3: 60, 4: 80, 5: 120,
-  6: 340, 7: 220, 8: 200, 9: 150, 10: 280, 11: 300,
-};
+// Map chroma (0-11) to the shared CSS variable note colors
+const CHROMA_COLOR_VARS: string[] = [
+  "var(--note-c)", "var(--note-cs)", "var(--note-d)", "var(--note-ds)",
+  "var(--note-e)", "var(--note-f)", "var(--note-fs)", "var(--note-g)",
+  "var(--note-gs)", "var(--note-a)", "var(--note-as)", "var(--note-b)",
+];
 
 function noteColor(pc: number, alpha = 0.85): string {
-  const hue = NOTE_HUES[pc % 12] ?? 0;
-  return `hsla(${hue}, 65%, 55%, ${alpha})`;
+  const cssVar = CHROMA_COLOR_VARS[pc % 12];
+  return `hsla(${cssVar}, ${alpha})`;
+}
+
+function noteColorSolid(pc: number): string {
+  const cssVar = CHROMA_COLOR_VARS[pc % 12];
+  return `hsl(${cssVar})`;
 }
 
 function criticalBandwidth(freq: number): number {
@@ -179,11 +186,11 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
               <stop offset="100%" stopColor="hsl(0, 0%, 100%)" stopOpacity="0.02" />
             </linearGradient>
             {activePitchClasses.map(pc => {
-              const hue = NOTE_HUES[pc % 12] ?? 0;
+              const cssVar = CHROMA_COLOR_VARS[pc % 12];
               return (
                 <linearGradient key={`grad-${pc}`} id={`nn-note-grad-${pc}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={`hsla(${hue}, 55%, 55%, 0.5)`} />
-                  <stop offset="100%" stopColor={`hsla(${hue}, 55%, 55%, 0.03)`} />
+                  <stop offset="0%" stopColor={`hsl(${cssVar})`} stopOpacity="0.5" />
+                  <stop offset="100%" stopColor={`hsl(${cssVar})`} stopOpacity="0.03" />
                 </linearGradient>
               );
             })}
@@ -214,7 +221,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                     ))}
                     {isFundamental && (
                       <>
-                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColor(pc)} opacity={0.9} />
+                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(pc)} opacity={0.9} />
                         <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
                           fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
                         >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
@@ -249,7 +256,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
       <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2 h-4">
         {activePitchClasses.map(pc => (
           <div key={pc} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColor(pc) }} />
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColorSolid(pc) }} />
             <span>{getNotePitchClass(noteNames.find(n => {
               const m = Note.midi(n);
               return m !== null && m % 12 === pc;
