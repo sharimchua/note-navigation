@@ -265,7 +265,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
       <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-muted-foreground mt-2 h-4">
         {activePitchClasses.map(pc => (
           <div key={pc} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColorSolid(pc) }} />
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: noteColorSolid(resolvedColors, pc) }} />
             <span>{getNotePitchClass(noteNames.find(n => {
               const m = Note.midi(n);
               return m !== null && m % 12 === pc;
