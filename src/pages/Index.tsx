@@ -36,44 +36,55 @@ function MainContent() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Top bar: branding + controls */}
-      <header className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border bg-card">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 border-b border-border bg-card">
         {/* Branding */}
         <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 hover:opacity-80 transition-opacity mr-2 shrink-0">
           <img src={musoIcon} alt="Note Navigation" className="w-6 h-6 rounded" />
-          <span className="text-sm font-bold text-primary font-mono">Note</span>
-          <span className="text-sm font-bold text-foreground font-mono">Navigation</span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-bold text-primary font-mono">Note</span>
+              <span className="text-sm font-bold text-foreground font-mono">Navigation</span>
+            </div>
+            <span className="text-[9px] text-muted-foreground font-mono leading-none">A Midlife Muso Tool</span>
+          </div>
         </a>
 
         {/* Key Centre dropdown */}
-        <Select value={selectedKey} onValueChange={setKey}>
-          <SelectTrigger className="w-[80px] h-8 text-xs font-mono bg-secondary/50 border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {KEY_NAMES_COF.map(note => (
-              <SelectItem key={note} value={note} className="text-xs font-mono">{note}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">Key Centre</span>
+          <Select value={selectedKey} onValueChange={setKey}>
+            <SelectTrigger className="w-[80px] h-8 text-xs font-mono bg-secondary/50 border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {KEY_NAMES_COF.map(note => (
+                <SelectItem key={note} value={note} className="text-xs font-mono">{note}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Scale Blueprint dropdown */}
-        <Select value={currentScaleValue} onValueChange={handleScaleChange}>
-          <SelectTrigger className="w-[180px] h-8 text-xs font-mono bg-secondary/50 border-border">
-            <SelectValue placeholder="No scale" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__" className="text-xs font-mono text-muted-foreground">No scale</SelectItem>
-            {SCALE_PRESETS.map(preset => {
-              const val = `${preset.type}:${preset.rootOffset ?? 0}`;
-              return (
-                <SelectItem key={val} value={val} className="text-xs font-mono">
-                  {preset.name}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">Scale Blueprint</span>
+          <Select value={currentScaleValue} onValueChange={handleScaleChange}>
+            <SelectTrigger className="w-[180px] h-8 text-xs font-mono bg-secondary/50 border-border">
+              <SelectValue placeholder="No scale" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__" className="text-xs font-mono text-muted-foreground">No scale</SelectItem>
+              {SCALE_PRESETS.map(preset => {
+                const val = `${preset.type}:${preset.rootOffset ?? 0}`;
+                return (
+                  <SelectItem key={val} value={val} className="text-xs font-mono">
+                    {preset.name}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Mute */}
         <button
