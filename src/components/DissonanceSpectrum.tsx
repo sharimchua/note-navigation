@@ -145,14 +145,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     return { line, fill, peak };
   }, [interactions, svgWidth, plotHeight, plotBottom]);
 
-  if (noteNames.length === 0) {
-    return (
-      <div className="glass-panel p-4">
-        <h3 className="engineering-label mb-3">Fundamentals &amp; Overtones</h3>
-        <p className="text-xs font-mono text-muted-foreground">Activate notes to see their harmonic spectrum.</p>
-      </div>
-    );
-  }
+  const hasNotes = noteNames.length > 0;
 
   return (
     <div className="glass-panel p-4">
