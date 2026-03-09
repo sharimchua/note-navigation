@@ -129,7 +129,7 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode) : null;
+          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
 
           const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
           if (prevWhiteIdx < 0) return null;

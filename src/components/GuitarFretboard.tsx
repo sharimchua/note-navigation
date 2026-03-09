@@ -171,7 +171,7 @@ export function GuitarFretboard() {
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
-              const scaleLabel = isKeyLocked ? getScaleLabel(note, scaleNotes, scaleLabelMode) : null;
+              const scaleLabel = isKeyLocked ? getScaleLabel(note, scaleNotes, scaleLabelMode, baseMidi) : null;
 
               const x = fret === 0 
                 ? 46 

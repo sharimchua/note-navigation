@@ -94,6 +94,10 @@ const SECOND_OFFSET = 16;
 export function StaffNotation() {
   const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
+  
+  // Use useMemo for hook to avoid calling inside callbacks without dependencies where possible
+  // Although we already import useMemo in React
+
 
   // Convert y position to the nearest diatonic note name with octave
   // Diatonic notes from C: C=0, D=1, E=2, F=3, G=4, A=5, B=6

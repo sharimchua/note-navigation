@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNoteColor, getNotePitchClass, getScaleLabel } from "@/lib/music-engine";
+import { getNoteColor, getNotePitchClass, getScaleLabel, getNoteChroma } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMemo } from "react";
@@ -14,6 +14,15 @@ export function LinearNoteMap() {
   const CIRCLE_SIZE = isMobile ? 20 : 28;
   const SMALL_CIRCLE = isMobile ? 12 : 16;
 
+  const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
+  const baseMidi = useMemo(() => {
+    let lowestMidi = LOW_MIDI;
+    while (lowestMidi % 12 !== rootChroma) {
+      lowestMidi++;
+    }
+    return lowestMidi;
+  }, [rootChroma]);
+
   const scaleChromas = useMemo(
     () => new Set(scaleNotes.map(n => Note.chroma(n)).filter((c): c is number => c !== undefined)),
     [scaleNotes]
@@ -25,7 +34,7 @@ export function LinearNoteMap() {
       const noteName = Note.fromMidi(midi);
       const pc = getNotePitchClass(noteName, useFlats);
       const inScale = scaleChromas.has(midi % 12);
-      const scaleLabel = getScaleLabel(noteName, scaleNotes, scaleLabelMode);
+      const scaleLabel = getScaleLabel(noteName, scaleNotes, scaleLabelMode, baseMidi);
 
       result.push({ midi, noteName, pc, inScale, scaleLabel });
     }
