@@ -171,10 +171,11 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
         <span className="text-xs font-mono font-bold text-foreground min-w-[3ch] text-right">{hasNotes ? `${Math.round(totalDissonance)}%` : "0%"}</span>
         <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-300"
+          className="h-full rounded-full"
             style={{
               width: `${hasNotes ? Math.min(100, totalDissonance) : 0}%`,
               background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
+              transition: trailMode ? 'width 800ms ease-out' : 'width 300ms ease-out',
             }}
           />
         </div>
