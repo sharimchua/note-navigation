@@ -3,7 +3,7 @@ import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass, GUITAR_TUNIN
 import { Note } from "tonal";
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 
-const FADE_DURATION = 850;
+const FADE_DURATION = 400;
 
 export function GuitarFretboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes, trailMode, isNoteVisible, isNotePressed, isNoteFading } = useHarmonic();
@@ -105,7 +105,7 @@ export function GuitarFretboard() {
       </div>
       <div ref={fretScrollRef} className="overflow-x-auto pb-3">
         <div style={{ minWidth: "1600px" }}>
-          <svg viewBox="0 0 1100 160" className="w-full" style={{ minHeight: "140px" }}>
+          <svg viewBox="0 0 1100 160" className="w-full" style={{ minHeight: "140px", overflow: "visible" }}>
           {/* Nut */}
           <rect x="44" y="10" width="4" height="140" fill="hsl(var(--foreground))" opacity="0.6" rx="1" />
 
@@ -214,24 +214,38 @@ export function GuitarFretboard() {
                   className="cursor-pointer" 
                   onClick={() => handleFretClick(note)}
                   style={fading && trailMode ? {
+                    opacity: 1,
                     animation: `note-fade-out ${FADE_DURATION}ms ease-out forwards`
                   } : undefined}
                 >
                   {trailMode && (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="12"
-                      fill="none"
-                      stroke={color}
-                      strokeWidth="1.5"
-                      opacity={0.5}
-                      style={fading ? {
-                        animation: `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
-                      } : {
-                        animation: 'trail-ripple 1.2s ease-out infinite'
-                      }}
-                    />
+                    <>
+                      {/* Halo ring — centered via cx/cy, animated with r change */}
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r={fading ? "16" : "12"}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth="1.5"
+                        opacity={fading ? 0 : 0.5}
+                        style={{
+                          transition: `r ${FADE_DURATION}ms ease-out, opacity ${FADE_DURATION}ms ease-out`,
+                        }}
+                      />
+                      {/* Pulsing ring for pressed notes only */}
+                      {pressed && (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="12"
+                          fill="none"
+                          stroke={color}
+                          strokeWidth="1"
+                          className="fret-ripple"
+                        />
+                      )}
+                    </>
                   )}
                   <circle
                     cx={x}

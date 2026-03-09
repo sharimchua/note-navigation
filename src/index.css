@@ -81,28 +81,17 @@
 @layer components {
   .note-active {
     animation: note-pulse 0.5s ease-in-out;
-    /* Instant appearance, slow fade-out afterglow */
     transition: opacity 0ms, background-color 0ms, box-shadow 0ms, transform 0ms;
   }
 
   .note-active.note-inactive-afterglow {
-    /* Slow fade when becoming inactive */
     transition: opacity 850ms ease-out, background-color 850ms ease-out, box-shadow 850ms ease-out, transform 850ms ease-out;
   }
 
   @keyframes note-pulse {
-    0% {
-      box-shadow: 0 0 0 0 currentColor;
-      opacity: 0.8;
-    }
-    50% {
-      box-shadow: 0 0 12px 4px currentColor;
-      opacity: 1;
-    }
-    100% {
-      box-shadow: 0 0 0 0 currentColor;
-      opacity: 1;
-    }
+    0% { box-shadow: 0 0 0 0 currentColor; opacity: 0.8; }
+    50% { box-shadow: 0 0 12px 4px currentColor; opacity: 1; }
+    100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
   }
 
   .note-dimmed {
@@ -124,7 +113,18 @@
     @apply bg-card/80 backdrop-blur-sm border border-border rounded-lg;
   }
 
-  /* Trail mode — ripple ring on active fret dots / linear notes */
+  /* Animated mode — fretboard ripple using SVG-friendly animation */
+  @keyframes fret-ripple {
+    0%   { r: 12; opacity: 0.6; }
+    70%  { r: 20; opacity: 0.1; }
+    100% { r: 22; opacity: 0; }
+  }
+
+  .fret-ripple {
+    animation: fret-ripple 1.1s ease-out infinite;
+  }
+
+  /* Trail mode — ripple ring on linear notes (HTML elements) */
   @keyframes trail-ripple {
     0%   { transform: scale(1);   opacity: 0.7; }
     70%  { transform: scale(2.2); opacity: 0.15; }
@@ -158,18 +158,11 @@
     animation: trail-glow 1.4s ease-in-out infinite;
   }
 
-  /* === Trail fade-out animations === */
+  /* === Fade-out animations (400ms for performance) === */
 
-  /* Generic note fade-out (opacity + scale shrink) */
   @keyframes note-fade-out {
     0%   { opacity: 1; }
     100% { opacity: 0; }
-  }
-
-  /* Halo expansion + fade for linear note map and fretboard */
-  @keyframes halo-fade-out {
-    0%   { opacity: 0.7; transform: scale(1); }
-    100% { opacity: 0; transform: scale(2.5); }
   }
 
   /* Piano white key fade back to natural color */
@@ -184,15 +177,20 @@
     100% { opacity: 1; background-color: hsl(var(--background)); }
   }
 
-  /* Spectrum bars shrink down to baseline */
-  @keyframes spectrum-fade-out {
-    0%   { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
   /* Individual bar shrink (SVG rect) — uses transform-box: fill-box */
   @keyframes bar-shrink {
     0%   { transform: scaleY(1); opacity: 1; }
     100% { transform: scaleY(0); opacity: 0; }
+  }
+
+  /* Staff horizontal dissipation — note splits left and right */
+  @keyframes staff-dissipate-left {
+    0%   { transform: rotate(-15deg) translateX(0); opacity: 0.6; }
+    100% { transform: rotate(-15deg) translateX(-30px) scaleX(2); opacity: 0; }
+  }
+
+  @keyframes staff-dissipate-right {
+    0%   { transform: rotate(-15deg) translateX(0); opacity: 0.6; }
+    100% { transform: rotate(-15deg) translateX(30px) scaleX(2); opacity: 0; }
   }
 }
