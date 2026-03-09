@@ -6,12 +6,20 @@ import { Note } from "tonal";
 
 export type ScaleLabelMode = "solfege" | "degree";
 
+interface NoteState {
+  note: string;
+  pressed: boolean;  // currently held down
+  fading: boolean;   // released but still visible (trail mode only)
+}
+
 interface HarmonicState {
   activeNotes: Set<string>;
-  /** Notes that should still be shown in visualizations (includes recently released notes when trailMode is on) */
-  visualNotes: string[];
-  /** 0..1 intensity for visuals; stays >0 briefly after release when trailMode is on */
-  getNoteIntensity: (note: string) => number;
+  /** Notes that should be shown in visualizations with their state */
+  noteStates: NoteState[];
+  /** Check if a note is currently pressed or fading */
+  isNoteVisible: (note: string) => boolean;
+  isNotePressed: (note: string) => boolean;
+  isNoteFading: (note: string) => boolean;
 
   selectedKey: string;
   selectedScale: string;
