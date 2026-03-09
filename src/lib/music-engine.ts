@@ -180,11 +180,31 @@ export const RELATIVE_INTERVALS = [
   { degree: "7", solfege: "Ti" },
 ] as const;
 
-export function getScaleLabel(noteName: string, scaleNotes: string[], mode: ScaleLabelMode): string | null {
+export function getScaleLabel(noteName: string, scaleNotes: string[], mode: ScaleLabelMode, baseMidi?: number): string | null {
   if (scaleNotes.length === 0) return null;
   const rootChroma = getNoteChroma(scaleNotes[0]);
   const noteChroma = getNoteChroma(noteName);
   const interval = (noteChroma - rootChroma + 12) % 12;
   const label = RELATIVE_INTERVALS[interval];
-  return mode === "solfege" ? label.solfege : label.degree;
+  
+  if (mode === "solfege") return label.solfege;
+  
+  let degreeStr = label.degree;
+  if (baseMidi !== undefined) {
+    const noteMidi = Note.midi(noteName);
+    if (noteMidi !== null) {
+      const octavesHigher = Math.floor((noteMidi - baseMidi) / 12);
+      if (octavesHigher > 0) {
+        const match = degreeStr.match(/^([b#]*)(.*)$/);
+        if (match) {
+          const acc = match[1];
+          const num = parseInt(match[2], 10);
+          if (!isNaN(num)) {
+            degreeStr = `${acc}${num + 7 * octavesHigher}`;
+          }
+        }
+      }
+    }
+  }
+  return degreeStr;
 }
