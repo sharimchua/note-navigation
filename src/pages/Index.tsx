@@ -113,8 +113,8 @@ function MainContent() {
                   ? 'border-primary/60 bg-primary/15 text-primary'
                   : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
               }`}
-              aria-label={trailMode ? "Disable trail" : "Enable trail"}
-              title={trailMode ? "Trail mode on" : "Trail mode off"}
+              aria-label={trailMode ? "Disable animated" : "Enable animated"}
+              title={trailMode ? "Animated mode on" : "Animated mode off"}
             >
               <Sparkles size={14} />
             </button>

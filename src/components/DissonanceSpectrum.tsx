@@ -9,14 +9,12 @@ import {
   type Partial,
 } from "@/lib/overtone-engine";
 
-// Map chroma (0-11) to CSS custom property names
 const CHROMA_CSS_PROPS: string[] = [
   "--note-c", "--note-cs", "--note-d", "--note-ds",
   "--note-e", "--note-f", "--note-fs", "--note-g",
   "--note-gs", "--note-a", "--note-as", "--note-b",
 ];
 
-// Resolve CSS variable HSL values to actual color strings at runtime
 function resolveNoteColors(): string[] {
   const style = getComputedStyle(document.documentElement);
   return CHROMA_CSS_PROPS.map(prop => {
@@ -39,7 +37,7 @@ function criticalBandwidth(freq: number): number {
 
 const SUB_BAR_W = 2;
 const BAR_GAP = 1;
-const FADE_DURATION = 850;
+const FADE_DURATION = 400;
 
 export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
   const { useFlats, trailMode, noteStates, isNotePressed, isNoteFading } = useHarmonic();
@@ -48,7 +46,6 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
 
   const noteNames = useMemo(() => noteStates.map(s => s.note), [noteStates]);
 
-  // Track which pitch classes are pressed vs fading
   const pcStates = useMemo(() => {
     const states = new Map<number, { pressed: boolean; fading: boolean }>();
     for (const { note, pressed, fading } of noteStates) {
@@ -58,7 +55,6 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
       if (!existing) {
         states.set(pc, { pressed, fading });
       } else {
-        // If any note of this PC is pressed, mark as pressed
         if (pressed) existing.pressed = true;
         if (fading) existing.fading = true;
       }
@@ -195,7 +191,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
             style={{
               width: `${hasNotes ? Math.min(100, totalDissonance) : 0}%`,
               background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
-              transition: trailMode ? 'width 800ms ease-out' : 'width 300ms ease-out',
+              transition: trailMode ? `width ${FADE_DURATION}ms ease-out` : 'width 300ms ease-out',
             }}
           />
         </div>
@@ -243,12 +239,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
             const isFading = state?.fading && !state?.pressed;
             
             return (
-              <g 
-                key={`bars-${pc}`}
-                style={isFading && trailMode ? {
-                  animation: `spectrum-fade-out ${FADE_DURATION}ms ease-out forwards`
-                } : undefined}
-              >
+              <g key={`bars-${pc}`}>
                 {items.map((bar, i) => {
                   const isFundamental = bar.partial.partialNumber === 1;
                   return (
@@ -264,16 +255,26 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                            rx={0.5}
                            style={isFading && trailMode ? {
                              transformBox: 'fill-box' as any,
-                             transformOrigin: 'bottom',
+                             transformOrigin: 'center bottom',
                              animation: `bar-shrink ${FADE_DURATION}ms ease-out forwards`
                            } : undefined}
                          />
                       ))}
                       {isFundamental && (
                         <>
-                          <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9} />
+                          <circle 
+                            cx={bar.cx} cy={plotTop - 6} r={7} 
+                            fill={noteColorSolid(resolvedColors, pc)} 
+                            opacity={0.9}
+                            style={isFading && trailMode ? {
+                              animation: `note-fade-out ${FADE_DURATION}ms ease-out forwards`
+                            } : undefined}
+                          />
                           <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
                             fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
+                            style={isFading && trailMode ? {
+                              animation: `note-fade-out ${FADE_DURATION}ms ease-out forwards`
+                            } : undefined}
                           >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
                             const m = Note.midi(n);
                             return m !== null && m % 12 === pc;
@@ -293,7 +294,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
           })}
 
           {dissonancePath.fill && (
-            <g style={anyFading && trailMode ? { animation: `spectrum-fade-out ${FADE_DURATION}ms ease-out forwards` } : undefined}>
+            <g style={anyFading && !hasNotes ? { animation: `note-fade-out ${FADE_DURATION}ms ease-out forwards` } : undefined}>
               <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" />
               <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} />
             </g>

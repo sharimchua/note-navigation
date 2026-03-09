@@ -6,7 +6,7 @@ import { useMemo } from "react";
 
 const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
-const FADE_DURATION = 850;
+const FADE_DURATION = 400;
 
 export function LinearNoteMap() {
   const { activeNotes, scaleNotes, isKeyLocked, scaleLabelMode, useFlats, toggleNote, playNote, trailMode, isNoteVisible, isNotePressed, isNoteFading } = useHarmonic();
@@ -45,7 +45,7 @@ export function LinearNoteMap() {
   }, [useFlats, scaleChromas, scaleNotes, scaleLabelMode]);
 
   return (
-    <div className="glass-panel p-4 overflow-visible">
+    <div className="glass-panel p-4" style={{ overflow: 'visible' }}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">
           Linear Note Map
@@ -53,8 +53,8 @@ export function LinearNoteMap() {
         <span className="text-[9px] text-muted-foreground font-mono">C3 ← C4 → C5</span>
       </div>
 
-      <div className="relative overflow-x-auto overflow-y-visible pb-3">
-        <div className="relative flex items-center justify-between mb-2 px-4 py-5" style={{ minWidth: isMobile ? 540 : undefined }}>
+      <div className="relative overflow-x-auto" style={{ overflow: 'visible' }}>
+        <div className="relative flex items-center justify-between mb-2 px-4 py-6" style={{ minWidth: isMobile ? 540 : undefined, overflow: 'visible' }}>
           <div
             className="absolute top-1/2 left-0 right-0 -translate-y-1/2"
             style={{ height: 2, background: 'hsl(var(--border))' }}
@@ -72,7 +72,7 @@ export function LinearNoteMap() {
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                className={`relative z-10 flex items-center justify-center shrink-0 ${pressed ? 'note-active' : ''}`}
+                className={`relative flex items-center justify-center shrink-0 ${pressed ? 'note-active' : ''}`}
                 style={{
                   width: size,
                   height: size,
@@ -86,21 +86,22 @@ export function LinearNoteMap() {
                       : 'none',
                   color,
                   transition: 'width 150ms, height 150ms',
+                  zIndex: visible ? 20 : 10,
+                  overflow: 'visible',
                   animation: fading && trailMode 
                     ? `note-fade-out ${FADE_DURATION}ms ease-out forwards`
                     : undefined,
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >
-                {visible && trailMode && (
+                {visible && trailMode && !fading && (
                   <span
                     className="absolute rounded-full pointer-events-none"
                     style={{ 
-                      inset: -8,
+                      inset: -10,
                       border: `2px solid ${color}`,
-                      animation: fading 
-                        ? `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
-                        : 'trail-ripple 1.2s ease-out infinite',
+                      borderRadius: '50%',
+                      animation: 'trail-ripple 1.2s ease-out infinite',
                     }}
                   />
                 )}
