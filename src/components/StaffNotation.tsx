@@ -92,7 +92,7 @@ const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
 export function StaffNotation() {
-  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleNotes } = useHarmonic();
+  const { activeNotes, selectedKey, selectedScale, useFlats, setUseFlats, toggleNote, playNote, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Convert y position to the nearest diatonic note name with octave
