@@ -150,8 +150,8 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
   return (
     <div className="glass-panel p-4">
       <div className="flex items-center gap-3 mb-3">
-        <h3 className="engineering-label shrink-0">Fundamentals &amp; Overtones</h3>
-        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Crunch:</span>
+        <h3 className="engineering-label shrink-0">Fundamentals &amp; Overtones ·</h3>
+        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Crunch</span>
         <span className="text-xs font-mono font-bold text-foreground min-w-[3ch] text-right">{hasNotes ? `${Math.round(totalDissonance)}%` : "0%"}</span>
         <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
           <div
