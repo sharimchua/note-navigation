@@ -188,8 +188,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setUseFlats,
       setMuted,
       setTuning,
-      setLeftHand: setLeftHandCb,
-      setRightHand: setRightHandCb,
       playNote,
       isNoteInCurrentScale,
     }
