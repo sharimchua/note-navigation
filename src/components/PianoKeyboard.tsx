@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getHandMidis, getScaleDegree } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getHandMidis, getScaleLabel } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
@@ -7,7 +7,7 @@ const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, leftHand, rightHand, scaleNotes } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, leftHand, rightHand, scaleNotes } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
