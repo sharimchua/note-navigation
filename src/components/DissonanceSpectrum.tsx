@@ -9,14 +9,21 @@ import {
   type Partial,
 } from "@/lib/overtone-engine";
 
-const NOTE_HUES: Record<number, number> = {
-  0: 32, 1: 0, 2: 45, 3: 60, 4: 80, 5: 120,
-  6: 340, 7: 220, 8: 200, 9: 150, 10: 280, 11: 300,
-};
+// Map chroma (0-11) to the shared CSS variable note colors
+const CHROMA_COLOR_VARS: string[] = [
+  "var(--note-c)", "var(--note-cs)", "var(--note-d)", "var(--note-ds)",
+  "var(--note-e)", "var(--note-f)", "var(--note-fs)", "var(--note-g)",
+  "var(--note-gs)", "var(--note-a)", "var(--note-as)", "var(--note-b)",
+];
 
 function noteColor(pc: number, alpha = 0.85): string {
-  const hue = NOTE_HUES[pc % 12] ?? 0;
-  return `hsla(${hue}, 65%, 55%, ${alpha})`;
+  const cssVar = CHROMA_COLOR_VARS[pc % 12];
+  return `hsla(${cssVar}, ${alpha})`;
+}
+
+function noteColorSolid(pc: number): string {
+  const cssVar = CHROMA_COLOR_VARS[pc % 12];
+  return `hsl(${cssVar})`;
 }
 
 function criticalBandwidth(freq: number): number {
