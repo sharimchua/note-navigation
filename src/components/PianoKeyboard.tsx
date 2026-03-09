@@ -108,7 +108,9 @@ export function PianoKeyboard() {
 
         {/* Black keys */}
         {PIANO_KEYS.filter(k => k.isBlack).map((key) => {
-          const isActive = activeNotes.has(key.note);
+          const pressed = activeNotes.has(key.note);
+          const intensity = getNoteIntensity(key.note);
+          const showActiveLike = intensity > 0;
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
@@ -121,15 +123,16 @@ export function PianoKeyboard() {
           return (
             <div
               key={key.midi}
-              className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${isActive ? 'note-active' : ''}`}
+              className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? 'note-active' : ''}`}
               style={{
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
-                backgroundColor: isActive ? color : "hsl(var(--background))",
+                backgroundColor: showActiveLike ? color : "hsl(var(--background))",
+                opacity: showActiveLike ? intensity : 1,
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
-                transition: trailMode && !isActive ? 'background-color 850ms ease-out' : 'background-color 0ms',
+                transition: trailMode && !pressed ? 'background-color 850ms ease-out, opacity 850ms ease-out' : 'background-color 0ms',
               }}
               onClick={() => handleKeyClick(key.note)}
             >
@@ -137,12 +140,12 @@ export function PianoKeyboard() {
                 <div 
                   className="absolute top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
                   style={{ 
-                    borderColor: isActive ? 'hsl(var(--background))' : color,
-                    backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
-                    filter: isActive ? undefined : BRIGHT_FILTER,
+                    borderColor: showActiveLike ? 'hsl(var(--background))' : color,
+                    backgroundColor: showActiveLike ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    filter: showActiveLike ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                  <span className="font-mono font-bold" style={{ color: showActiveLike ? 'hsl(var(--background))' : color, filter: showActiveLike ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
                     {scaleLabel || Note.pitchClass(key.note)}
                   </span>
                 </div>

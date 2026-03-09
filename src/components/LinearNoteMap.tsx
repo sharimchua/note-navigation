@@ -61,43 +61,49 @@ export function LinearNoteMap() {
 
           {notes.map(n => {
             const color = getNoteColor(n.pc);
-            const isActive = activeNotes.has(n.noteName);
-            const deEmphasize = isKeyLocked && !n.inScale && !isActive;
+            const pressed = activeNotes.has(n.noteName);
+            const intensity = getNoteIntensity(n.noteName);
+            const showActiveLike = intensity > 0;
+            const deEmphasize = isKeyLocked && !n.inScale && !showActiveLike;
             const size = deEmphasize ? SMALL_CIRCLE : CIRCLE_SIZE;
 
             return (
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                className={`relative z-10 flex items-center justify-center shrink-0 ${isActive ? 'note-active' : ''} ${isActive && trailMode ? 'trail-glow' : ''}`}
+                className={`relative z-10 flex items-center justify-center shrink-0 ${pressed ? 'note-active' : ''} ${pressed && trailMode ? 'trail-glow' : ''}`}
                 style={{
                   width: size,
                   height: size,
                   borderRadius: '50%',
-                  backgroundColor: color,
-                  opacity: deEmphasize ? 0.25 : isActive ? 1 : 0.6,
-                  boxShadow: isActive
-                    ? `0 0 12px ${color}`
+                  backgroundColor: showActiveLike ? color : deEmphasize ? color : color,
+                  opacity: deEmphasize ? 0.25 : showActiveLike ? intensity : 0.6,
+                  boxShadow: showActiveLike
+                    ? `0 0 ${12 * intensity}px ${color}`
                     : (isKeyLocked && n.inScale)
                       ? '0 0 0 3px hsl(var(--foreground))'
                       : 'none',
                   color, // for currentColor in trail-glow
-                  transition: trailMode && !isActive 
+                  transition: trailMode && !pressed 
                     ? 'background-color 850ms ease-out, opacity 850ms ease-out, box-shadow 850ms ease-out, width 150ms, height 150ms'
                     : 'width 150ms, height 150ms',
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >
-                {isActive && trailMode && (
+                {showActiveLike && trailMode && (
                   <span
                     className="absolute inset-0 rounded-full trail-ripple pointer-events-none"
-                    style={{ border: `2px solid ${color}` }}
+                    style={{ border: `2px solid ${color}`, opacity: intensity }}
                   />
                 )}
                 {!deEmphasize && (
                   <span
                     className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : (n.scaleLabel && n.scaleLabel.length > 1 ? 'text-[6.5px]' : 'text-[8px]')}`}
-                    style={{ color: 'hsl(var(--primary-foreground))' }}
+                    style={{ 
+                      color: 'hsl(var(--primary-foreground))',
+                      opacity: showActiveLike ? intensity : 1,
+                      transition: trailMode ? 'opacity 850ms ease-out' : undefined
+                    }}
                   >
                     {isKeyLocked && n.scaleLabel ? n.scaleLabel : n.pc}
                   </span>
