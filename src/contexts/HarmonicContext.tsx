@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo, useEffect } from "react";
 import * as Tone from "tone";
 import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning, NOTE_NAMES_FLAT } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
@@ -8,6 +8,11 @@ export type ScaleLabelMode = "solfege" | "degree";
 
 interface HarmonicState {
   activeNotes: Set<string>;
+  /** Notes that should still be shown in visualizations (includes recently released notes when trailMode is on) */
+  visualNotes: string[];
+  /** 0..1 intensity for visuals; stays >0 briefly after release when trailMode is on */
+  getNoteIntensity: (note: string) => number;
+
   selectedKey: string;
   selectedScale: string;
   scaleRootOffset: number;

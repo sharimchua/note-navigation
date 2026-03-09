@@ -41,11 +41,27 @@ const SUB_BAR_W = 2;
 const BAR_GAP = 1;
 
 export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
-  const { activeNotes, useFlats, trailMode } = useHarmonic();
+  const { useFlats, trailMode, visualNotes, getNoteIntensity } = useHarmonic();
   const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
   useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
-  const noteNames = useMemo(() => Array.from(activeNotes), [activeNotes]);
+  const noteNames = useMemo(() => visualNotes, [visualNotes]);
+
+  const pcIntensity = useMemo(() => {
+    const arr = new Array(12).fill(0) as number[];
+    for (const n of noteNames) {
+      const pc = Note.chroma(n);
+      if (pc === undefined || pc === null) continue;
+      const intensity = getNoteIntensity(n);
+      if (intensity > arr[pc]) arr[pc] = intensity;
+    }
+    return arr;
+  }, [noteNames, getNoteIntensity]);
+
+  const overallIntensity = useMemo(
+    () => pcIntensity.reduce((m, v) => Math.max(m, v), 0),
+    [pcIntensity]
+  );
 
   const { partials, noteFrequencies } = useMemo(
     () => getPartialsFromNotes(noteNames),
