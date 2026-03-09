@@ -81,6 +81,13 @@
 @layer components {
   .note-active {
     animation: note-pulse 0.5s ease-in-out;
+    /* Instant appearance, slow fade-out afterglow */
+    transition: opacity 0ms, background-color 0ms, box-shadow 0ms, transform 0ms;
+  }
+
+  .note-active.note-inactive-afterglow {
+    /* Slow fade when becoming inactive */
+    transition: opacity 850ms ease-out, background-color 850ms ease-out, box-shadow 850ms ease-out, transform 850ms ease-out;
   }
 
   @keyframes note-pulse {

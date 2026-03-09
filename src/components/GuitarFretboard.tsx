@@ -209,9 +209,11 @@ export function GuitarFretboard() {
                     <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5"
                       className="trail-ripple" style={{ transformBox: "fill-box" }} />
                   )}
-                  <circle cx={x} cy={y} r="9" fill={color} className="note-active" />
+                  <circle cx={x} cy={y} r="9" fill={color} className="note-active"
+                    style={trailMode ? { transition: 'fill 850ms ease-out, opacity 850ms ease-out' } : undefined} />
                   <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize={scaleLabel && scaleLabel.length > 1 ? "5.5" : "7"}
-                    fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold">
+                    fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold"
+                    style={trailMode ? { transition: 'opacity 850ms ease-out' } : undefined}>
                     {scaleLabel || pc}
                   </text>
                 </g>
