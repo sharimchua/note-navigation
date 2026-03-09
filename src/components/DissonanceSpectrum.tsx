@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Note } from "tonal";
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { getNotePitchClass } from "@/lib/music-engine";
 import {
