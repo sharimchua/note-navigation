@@ -241,7 +241,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                     )}
                     {!isFundamental && bar.partial.amplitude > 0.35 && (
                       <text x={bar.cx} y={plotBottom - bar.height - 3} textAnchor="middle" fontSize={6}
-                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(pc, 0.6)}
+                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6)}
                       >{bar.partial.partialNumber}×</text>
                     )}
                   </g>
