@@ -151,19 +151,21 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     <div className="glass-panel p-4">
       <h3 className="engineering-label mb-3">Fundamentals &amp; Overtones</h3>
 
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Total Crunch:</span>
-        <span className="text-sm font-mono font-bold text-foreground">{Math.round(totalDissonance)}%</span>
-        <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{
-              width: `${Math.min(100, totalDissonance)}%`,
-              background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
-            }}
-          />
+      {hasNotes && (
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Total Crunch:</span>
+          <span className="text-sm font-mono font-bold text-foreground">{Math.round(totalDissonance)}%</span>
+          <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${Math.min(100, totalDissonance)}%`,
+                background: `linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--destructive)))`,
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="overflow-x-auto w-full">
         <svg
