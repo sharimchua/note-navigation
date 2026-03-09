@@ -7,11 +7,12 @@ import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
 import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Menu, Trash2 } from "lucide-react";
+import { Menu, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 function MainContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { clearNotes, activeNotes } = useHarmonic();
+  const { clearNotes, activeNotes, isMuted, setMuted, isKeyLocked, scaleLabelMode, setScaleLabelMode } = useHarmonic();
 
   return (
     <div className="flex h-screen overflow-hidden relative">
@@ -42,17 +43,36 @@ function MainContent() {
 
       <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          {activeNotes.size > 0 && (
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            {activeNotes.size > 0 && (
+              <button
+                onClick={clearNotes}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+              >
+                <Trash2 size={12} />
+                Clear Notes
+              </button>
+            )}
             <button
-              onClick={clearNotes}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+              onClick={() => setMuted(!isMuted)}
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+                isMuted
+                  ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                  : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+              }`}
+              aria-label={isMuted ? "Unmute" : "Mute"}
             >
-              <Trash2 size={12} />
-              Clear Notes
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
             </button>
-          )}
-          <div className="text-[10px] font-mono text-muted-foreground text-right ml-auto">
+            {isKeyLocked && (
+              <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
+                <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
+                <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
+              </ToggleGroup>
+            )}
+          </div>
+          <div className="text-[10px] font-mono text-muted-foreground text-right">
             <div>Click any note to activate</div>
             <div>Colors sync across all views</div>
           </div>
