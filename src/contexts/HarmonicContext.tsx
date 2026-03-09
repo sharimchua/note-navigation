@@ -178,8 +178,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       isMuted,
       midiState,
       selectedTuning,
-      leftHand,
-      rightHand,
       toggleNote,
       setActiveNotes,
       clearNotes,
