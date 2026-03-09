@@ -143,8 +143,8 @@ function MainContent() {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
         {/* Tri-View: Staff left, instruments right */}
-        <div className="flex flex-col xl:flex-row gap-3 md:gap-4 flex-1 min-h-0">
-          <div className="xl:flex-1 xl:min-w-[340px] min-h-[480px] md:min-h-[520px] xl:min-h-0 xl:self-stretch">
+        <div className="flex flex-col xl:flex-row xl:items-stretch gap-3 md:gap-4 flex-1 min-h-0">
+          <div className="xl:flex-1 xl:min-w-[340px] min-h-[480px] md:min-h-[520px] xl:min-h-0">
             <StaffNotation />
           </div>
           <div className="xl:w-[55%] 2xl:w-[60%] flex flex-col gap-2 md:gap-3 shrink-0 xl:self-stretch">
