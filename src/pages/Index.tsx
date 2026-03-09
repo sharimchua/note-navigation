@@ -43,7 +43,7 @@ function MainContent() {
 
       <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
         {/* Header */}
-        <div className="flex items-center gap-2 justify-between">
+        <div className="flex items-center gap-2 justify-between pl-10 xl:pl-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMuted(!isMuted)}
