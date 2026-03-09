@@ -1,19 +1,33 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass, GUITAR_TUNINGS, getScaleLabel } from "@/lib/music-engine";
+import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass, GUITAR_TUNINGS, getScaleLabel, getNoteChroma } from "@/lib/music-engine";
 import { Note } from "tonal";
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 
 export function GuitarFretboard() {
   const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
   const tuningRef = useRef<HTMLDivElement>(null);
 
+  const tuningNotes = selectedTuning.notes;
+  
+  const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
+  const baseMidi = useMemo(() => {
+    let minStringMidi = 1000;
+    tuningNotes.forEach(s => {
+      const m = Note.midi(s);
+      if (m && m < minStringMidi) minStringMidi = m;
+    });
+    let lowestMidi = minStringMidi;
+    while (lowestMidi % 12 !== rootChroma) {
+      lowestMidi++;
+    }
+    return lowestMidi;
+  }, [tuningNotes, rootChroma]);
+
   const handleFretClick = useCallback((note: string) => {
     playNote(note);
     toggleNote(note);
   }, [playNote, toggleNote]);
-
-  const tuningNotes = selectedTuning.notes;
   const strings = [...tuningNotes].reverse();
   const fretWidth = 100 / (TOTAL_FRETS + 1);
   const stringSpacing = 100 / (strings.length + 1);
