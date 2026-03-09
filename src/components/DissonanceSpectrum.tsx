@@ -239,19 +239,21 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
             <g key={`bars-${pc}`}>
               {items.map((bar, i) => {
                 const isFundamental = bar.partial.partialNumber === 1;
+                const intensity = pcIntensity[pc] ?? 1;
                 return (
                    <g key={`b-${pc}-${i}`}>
                      {bar.subBars.map((sb, si) => (
                        <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
-                         fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
+                         fill={noteColor(resolvedColors, pc, (isFundamental ? 0.7 : 0.4) * intensity)} rx={0.5}
                          style={trailMode ? { transition: 'height 600ms ease-out, opacity 600ms ease-out' } : undefined}
                        />
                     ))}
                     {isFundamental && (
                       <>
-                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9} />
+                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9 * intensity} />
                         <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
                           fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
+                          opacity={intensity}
                         >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
                           const m = Note.midi(n);
                           return m !== null && m % 12 === pc;
@@ -260,7 +262,8 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
                     )}
                     {!isFundamental && bar.partial.amplitude > 0.35 && (
                       <text x={bar.cx} y={plotBottom - bar.height - 3} textAnchor="middle" fontSize={6}
-                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6)}
+                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6 * intensity)}
+                        opacity={intensity}
                       >{bar.partial.partialNumber}×</text>
                     )}
                   </g>
@@ -271,8 +274,8 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
 
           {dissonancePath.fill && (
             <>
-              <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" />
-              <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} />
+              <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" style={trailMode ? { opacity: overallIntensity } : undefined} />
+              <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} style={trailMode ? { opacity: overallIntensity } : undefined} />
             </>
           )}
 

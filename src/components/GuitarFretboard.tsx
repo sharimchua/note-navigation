@@ -164,7 +164,10 @@ export function GuitarFretboard() {
               if (!note) return null;
 
               const pc = getNotePitchClass(note, useFlats);
-              const isActive = activeNotes.has(note);
+              const pressed = activeNotes.has(note);
+              const intensity = getNoteIntensity(note);
+              const showActiveLike = intensity > 0;
+
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
@@ -174,7 +177,7 @@ export function GuitarFretboard() {
                 ? 46 
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
-              if (!isActive && dimmed) {
+              if (!showActiveLike && dimmed) {
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
@@ -182,7 +185,7 @@ export function GuitarFretboard() {
                 );
               }
 
-              if (!isActive && isKeyLocked && inScale) {
+              if (!showActiveLike && isKeyLocked && inScale) {
                 return (
                   <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                     <circle cx={x} cy={y} r="8" fill={color} opacity={0.3} />
@@ -194,7 +197,7 @@ export function GuitarFretboard() {
                 );
               }
 
-              if (!isActive) {
+              if (!showActiveLike) {
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
@@ -202,18 +205,42 @@ export function GuitarFretboard() {
                 );
               }
 
-              // Active notes
+              // Pressed or recently released notes (fade-out)
               return (
                 <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                   {trailMode && (
-                    <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5"
-                      className="trail-ripple" style={{ transformBox: "fill-box" }} />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="9"
+                      fill="none"
+                      stroke={color}
+                      strokeWidth="1.5"
+                      opacity={0.5 * intensity}
+                      className="trail-ripple"
+                      style={{ transformBox: "fill-box" }}
+                    />
                   )}
-                  <circle cx={x} cy={y} r="9" fill={color} className="note-active"
-                    style={trailMode ? { transition: 'fill 850ms ease-out, opacity 850ms ease-out' } : undefined} />
-                  <text x={x} y={y + 3} fill="hsl(var(--background))" fontSize={scaleLabel && scaleLabel.length > 1 ? "5.5" : "7"}
-                    fontFamily="JetBrains Mono" textAnchor="middle" fontWeight="bold"
-                    style={trailMode ? { transition: 'opacity 850ms ease-out' } : undefined}>
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r="9"
+                    fill={color}
+                    opacity={intensity}
+                    className={pressed ? "note-active" : undefined}
+                    style={trailMode ? { transition: 'fill 850ms ease-out, opacity 850ms ease-out' } : undefined}
+                  />
+                  <text
+                    x={x}
+                    y={y + 3}
+                    fill="hsl(var(--background))"
+                    fontSize={scaleLabel && scaleLabel.length > 1 ? "5.5" : "7"}
+                    fontFamily="JetBrains Mono"
+                    textAnchor="middle"
+                    fontWeight="bold"
+                    opacity={intensity}
+                    style={trailMode ? { transition: 'opacity 850ms ease-out' } : undefined}
+                  >
                     {scaleLabel || pc}
                   </text>
                 </g>

@@ -102,22 +102,24 @@ function MainContent() {
           </button>
         </div>
 
-        {/* Trail toggle */}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
-          <button
-            onClick={() => setTrailMode(!trailMode)}
-            className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
-              trailMode
-                ? 'border-primary/60 bg-primary/15 text-primary'
-                : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
-            }`}
-            aria-label={trailMode ? "Disable trail" : "Enable trail"}
-            title={trailMode ? "Trail mode on" : "Trail mode off"}
-          >
-            <Sparkles size={14} />
-          </button>
-        </div>
+        {/* Trail toggle (MIDI only) */}
+        {midiState.isConnected && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+            <button
+              onClick={() => setTrailMode(!trailMode)}
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+                trailMode
+                  ? 'border-primary/60 bg-primary/15 text-primary'
+                  : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+              }`}
+              aria-label={trailMode ? "Disable trail" : "Enable trail"}
+              title={trailMode ? "Trail mode on" : "Trail mode off"}
+            >
+              <Sparkles size={14} />
+            </button>
+          </div>
+        )}
 
         {/* Solfege / Degree toggle */}
         {isKeyLocked && (
