@@ -1,5 +1,5 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getHandMidis, getScaleLabel, getNoteChroma, PIANO_START_MIDI } from "@/lib/music-engine";
+import { PIANO_KEYS, getNoteColor, getScaleLabel, getNoteChroma, PIANO_START_MIDI } from "@/lib/music-engine";
 import { Note } from "tonal";
 import { useCallback, useRef, useMemo, useEffect } from "react";
 
@@ -7,7 +7,7 @@ const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, leftHand, rightHand, scaleNotes } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -17,7 +17,6 @@ export function PianoKeyboard() {
     let lowestActive = Infinity;
     activeNotes.forEach(n => { const m = Note.midi(n); if (m !== null && m < lowestActive) lowestActive = m; });
     if (!isFinite(lowestActive)) return undefined;
-    // Find the root at or below the lowest active note
     let root = lowestActive;
     while (root % 12 !== rootChroma && root >= 0) root--;
     return root >= 0 ? root : undefined;
@@ -28,23 +27,6 @@ export function PianoKeyboard() {
     toggleNote(note);
   }, [playNote, toggleNote]);
   const whiteKeyWidth = 100 / WHITE_KEYS.length;
-
-  const fingeringMap = useMemo(() => {
-    const map = new Map<number, { finger: number; hand: 'left' | 'right' }>();
-    if (leftHand.enabled) {
-      const midis = getHandMidis(leftHand.rootNote, scaleNotes, "left");
-      midis.forEach((midi, i) => {
-        map.set(midi, { finger: 5 - i, hand: 'left' });
-      });
-    }
-    if (rightHand.enabled) {
-      const midis = getHandMidis(rightHand.rootNote, scaleNotes, "right");
-      midis.forEach((midi, i) => {
-        map.set(midi, { finger: i + 1, hand: 'right' });
-      });
-    }
-    return map;
-  }, [leftHand, rightHand, scaleNotes]);
 
   useEffect(() => {
     const scrollEl = scrollRef.current;
@@ -74,7 +56,6 @@ export function PianoKeyboard() {
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
-          const fingering = fingeringMap.get(key.midi);
           const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
 
           return (
@@ -102,17 +83,6 @@ export function PianoKeyboard() {
                   </span>
                 </div>
               )}
-              {fingering && (
-                <div 
-                  className="absolute top-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ 
-                    backgroundColor: fingering.hand === 'left' ? 'hsla(217, 91%, 60%, 0.85)' : 'hsla(0, 84%, 60%, 0.85)',
-                    zIndex: 5,
-                  }}
-                >
-                  <span className="text-[9px] font-mono font-bold" style={{ color: 'hsl(var(--primary-foreground))' }}>{fingering.finger}</span>
-                </div>
-              )}
               {pc === "C" && (
                 <span 
                   className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
@@ -131,7 +101,6 @@ export function PianoKeyboard() {
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
-          const fingering = fingeringMap.get(key.midi);
           const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
 
           const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
@@ -164,17 +133,6 @@ export function PianoKeyboard() {
                   <span className="font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, filter: isActive ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
                     {scaleLabel || Note.pitchClass(key.note)}
                   </span>
-                </div>
-              )}
-              {fingering && (
-                <div 
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ 
-                    backgroundColor: fingering.hand === 'left' ? 'hsla(217, 91%, 60%, 0.85)' : 'hsla(0, 84%, 60%, 0.85)',
-                    zIndex: 5,
-                  }}
-                >
-                  <span className="text-[9px] font-mono font-bold" style={{ color: 'hsl(var(--primary-foreground))' }}>{fingering.finger}</span>
                 </div>
               )}
             </div>

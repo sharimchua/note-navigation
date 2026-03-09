@@ -1,85 +1,136 @@
 import { useState } from "react";
 import { HarmonicProvider, useHarmonic } from "@/contexts/HarmonicContext";
-import { ControlSidebar } from "@/components/ControlSidebar";
 import { PianoKeyboard } from "@/components/PianoKeyboard";
 import { GuitarFretboard } from "@/components/GuitarFretboard";
 import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
 import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Menu, Trash2, Volume2, VolumeX } from "lucide-react";
+import { Trash2, Volume2, VolumeX } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { KEY_NAMES_COF, SCALE_PRESETS } from "@/lib/music-engine";
+import musoIcon from "@/assets/midlife_muso_icon.webp";
 
 function MainContent() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { clearNotes, activeNotes, isMuted, setMuted, isKeyLocked, scaleLabelMode, setScaleLabelMode } = useHarmonic();
+  const {
+    selectedKey, selectedScale, scaleRootOffset, isKeyLocked, midiState,
+    activeNotes, isMuted, scaleLabelMode,
+    setKey, setScale, setKeyLocked, setMuted, setScaleLabelMode, clearNotes,
+    playNote,
+  } = useHarmonic();
+
+  const handleScaleChange = (value: string) => {
+    if (value === "__none__") {
+      setKeyLocked(false);
+      return;
+    }
+    const preset = SCALE_PRESETS.find(p => `${p.type}:${p.rootOffset ?? 0}` === value);
+    if (preset) {
+      setScale(preset.type, preset.rootOffset);
+      setKeyLocked(true);
+    }
+  };
+
+  const currentScaleValue = isKeyLocked ? `${selectedScale}:${scaleRootOffset}` : "__none__";
 
   return (
-    <div className="flex h-screen overflow-hidden relative">
-      {/* Sheet overlay sidebar for smaller screens (below xl) */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[280px] sm:w-[300px] overflow-y-auto p-0 bg-sidebar border-sidebar-border">
-          <SheetHeader className="sr-only">
-            <SheetTitle>Controls</SheetTitle>
-            <SheetDescription>Adjust key, scale, and display settings.</SheetDescription>
-          </SheetHeader>
-          <ControlSidebar />
-        </SheetContent>
-      </Sheet>
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Top bar: branding + controls */}
+      <header className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border bg-card">
+        {/* Branding */}
+        <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-1.5 hover:opacity-80 transition-opacity mr-2 shrink-0">
+          <img src={musoIcon} alt="Note Navigation" className="w-6 h-6 rounded" />
+          <span className="text-sm font-bold text-primary font-mono">Note</span>
+          <span className="text-sm font-bold text-foreground font-mono">Navigation</span>
+        </a>
 
-      {/* Floating burger button — visible only below xl */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="fixed top-3 left-3 z-40 w-10 h-10 rounded-lg flex xl:hidden items-center justify-center bg-card border border-border shadow-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors"
-        aria-label="Open controls"
-      >
-        <Menu size={20} />
-      </button>
+        {/* Key Centre dropdown */}
+        <Select value={selectedKey} onValueChange={setKey}>
+          <SelectTrigger className="w-[80px] h-8 text-xs font-mono bg-secondary/50 border-border">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {KEY_NAMES_COF.map(note => (
+              <SelectItem key={note} value={note} className="text-xs font-mono">{note}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Fixed sidebar for xl+ screens */}
-      <div className="hidden xl:block">
-        <ControlSidebar />
-      </div>
+        {/* Scale Blueprint dropdown */}
+        <Select value={currentScaleValue} onValueChange={handleScaleChange}>
+          <SelectTrigger className="w-[180px] h-8 text-xs font-mono bg-secondary/50 border-border">
+            <SelectValue placeholder="No scale" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__" className="text-xs font-mono text-muted-foreground">No scale</SelectItem>
+            {SCALE_PRESETS.map(preset => {
+              const val = `${preset.type}:${preset.rootOffset ?? 0}`;
+              return (
+                <SelectItem key={val} value={val} className="text-xs font-mono">
+                  {preset.name}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
 
-      <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
-        {/* Header */}
-        <div className="flex items-center gap-2 justify-between pl-10 xl:pl-0">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMuted(!isMuted)}
-              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
-                isMuted
-                  ? 'border-destructive/40 bg-destructive/10 text-destructive'
-                  : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
-              }`}
-              aria-label={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            </button>
-            {isKeyLocked && (
-              <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
-                <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
-                <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
-              </ToggleGroup>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {activeNotes.size > 0 && (
-              <button
-                onClick={clearNotes}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
-              >
-                <Trash2 size={12} />
-                Clear Notes
-              </button>
-            )}
-            <div className="text-[10px] font-mono text-muted-foreground text-right">
-              <div>Click any note to activate</div>
-              <div>Colors sync across all views</div>
-            </div>
-          </div>
+        {/* Mute */}
+        <button
+          onClick={() => setMuted(!isMuted)}
+          className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+            isMuted
+              ? 'border-destructive/40 bg-destructive/10 text-destructive'
+              : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+          }`}
+          aria-label={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        </button>
+
+        {/* Solfege / Degree toggle */}
+        {isKeyLocked && (
+          <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
+            <ToggleGroupItem value="solfege" size="sm" className="h-7 text-xs font-mono px-3">Solfege</ToggleGroupItem>
+            <ToggleGroupItem value="degree" size="sm" className="h-7 text-xs font-mono px-3">Degrees</ToggleGroupItem>
+          </ToggleGroup>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Clear notes */}
+        {activeNotes.size > 0 && (
+          <button
+            onClick={clearNotes}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+          >
+            <Trash2 size={12} />
+            Clear
+          </button>
+        )}
+
+        {/* MIDI indicator */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className={`w-2 h-2 rounded-full ${
+            midiState.isConnected
+              ? 'bg-green-500 animate-pulse'
+              : midiState.isSupported
+                ? 'bg-yellow-500'
+                : 'bg-red-500'
+          }`} />
+          <span className="text-[10px] font-mono text-muted-foreground hidden sm:inline">
+            {midiState.isConnected
+              ? midiState.deviceName
+              : midiState.isSupported
+                ? 'No MIDI'
+                : 'No MIDI'}
+          </span>
         </div>
+      </header>
 
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
         {/* Tri-View: Staff left, instruments right */}
         <div className="flex flex-col xl:flex-row gap-3 md:gap-4 flex-1 min-h-0">
           <div className="xl:flex-1 xl:min-w-[340px] min-h-[480px] md:min-h-[520px] xl:min-h-0">
@@ -96,10 +147,20 @@ function MainContent() {
         {/* Footer */}
         <div className="flex items-center justify-between text-[9px] font-mono text-muted-foreground pt-2 border-t border-border">
           <span>© Midlife Muso · Ear-First Guitar & Piano Coaching</span>
-          <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
-            className="hover:text-primary transition-colors">
-            midlifemuso.com
-          </a>
+          <div className="flex items-center gap-3">
+            <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
+              className="hover:text-primary transition-colors">
+              midlifemuso.com
+            </a>
+            <a href="https://midlifemuso.com/learning" target="_blank" rel="noopener noreferrer"
+              className="hover:text-primary transition-colors">
+              Learning Resources
+            </a>
+            <a href="https://harmonic-geometry.lovable.app" target="_blank" rel="noopener noreferrer"
+              className="hover:text-primary transition-colors">
+              Harmonic Geometry
+            </a>
+          </div>
         </div>
       </main>
     </div>
