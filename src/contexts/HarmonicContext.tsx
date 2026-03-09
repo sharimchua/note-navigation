@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
 import * as Tone from "tone";
-import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning } from "@/lib/music-engine";
+import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning, NOTE_NAMES_FLAT } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
+import { Note } from "tonal";
 
 export interface HandPosition {
   enabled: boolean;
