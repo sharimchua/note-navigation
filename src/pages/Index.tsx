@@ -5,54 +5,40 @@ import { PianoKeyboard } from "@/components/PianoKeyboard";
 import { GuitarFretboard } from "@/components/GuitarFretboard";
 import { StaffNotation } from "@/components/StaffNotation";
 import { LinearNoteMap } from "@/components/LinearNoteMap";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 const Index = () => {
-  const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <HarmonicProvider>
       <div className="flex h-screen overflow-hidden relative">
-        {/* Mobile hamburger */}
-        {isMobile && (
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="fixed top-3 left-3 z-50 p-2 rounded-md bg-card border border-border text-foreground"
-            aria-label="Toggle menu"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              {sidebarOpen ? (
-                <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              ) : (
-                <>
-                  <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </>
-              )}
-            </svg>
-          </button>
-        )}
+        {/* Sheet overlay sidebar for smaller screens (below xl) */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="w-[280px] sm:w-[300px] overflow-y-auto p-0 bg-sidebar border-sidebar-border">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Controls</SheetTitle>
+              <SheetDescription>Adjust key, scale, and display settings.</SheetDescription>
+            </SheetHeader>
+            <ControlSidebar />
+          </SheetContent>
+        </Sheet>
 
-        {/* Sidebar - overlay on mobile, static on desktop */}
-        {isMobile ? (
-          <>
-            {sidebarOpen && (
-              <div
-                className="fixed inset-0 bg-background/60 backdrop-blur-sm z-30"
-                onClick={() => setSidebarOpen(false)}
-              />
-            )}
-            <div
-              className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 ${
-                sidebarOpen ? "translate-x-0" : "-translate-x-full"
-              }`}
-            >
-              <ControlSidebar />
-            </div>
-          </>
-        ) : (
+        {/* Floating burger button — visible only below xl */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-3 left-3 z-40 w-10 h-10 rounded-lg flex xl:hidden items-center justify-center bg-card border border-border shadow-md hover:bg-accent text-muted-foreground hover:text-primary transition-colors"
+          aria-label="Open controls"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Fixed sidebar for xl+ screens */}
+        <div className="hidden xl:block">
           <ControlSidebar />
-        )}
+        </div>
 
         <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
           {/* Header hints */}
@@ -75,6 +61,7 @@ const Index = () => {
               <LinearNoteMap />
               <PianoKeyboard />
               <GuitarFretboard />
+              <DissonanceSpectrum />
             </div>
           </div>
 
