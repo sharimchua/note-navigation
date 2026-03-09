@@ -311,6 +311,16 @@ export function StaffNotation() {
     );
   }
 
+  // Compute active note Y positions for the particle layer
+  const activeNoteYs = useMemo(() => {
+    return [...activeNotes].map(note => {
+      const midi = Note.midi(note);
+      if (midi === null) return null;
+      const spelling = spellingMap.get(midi) || { useFlat: useFlats };
+      return { y: midiToY(midi, spelling.useFlat), color: getNoteColor(note) };
+    }).filter((n): n is { y: number; color: string } => n !== null);
+  }, [activeNotes, spellingMap, useFlats]);
+
   return (
     <div className="glass-panel p-4 h-full flex flex-col" style={{ minHeight: "460px" }}>
       <div className="flex items-center justify-between mb-3">
@@ -319,7 +329,16 @@ export function StaffNotation() {
           {useFlats ? "♭ Flats" : "♯ Sharps"}
         </span>
       </div>
-      <svg ref={svgRef} viewBox="0 0 200 200" className="w-full flex-1 cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleSvgClick}>
+      <div className="relative flex-1 min-h-0">
+        {trailMode && (
+          <ParticleTrailLayer
+            activeNoteYs={activeNoteYs}
+            viewBoxWidth={200}
+            viewBoxHeight={200}
+            spawnX={CHORD_X}
+          />
+        )}
+        <svg ref={svgRef} viewBox="0 0 200 200" className="w-full h-full cursor-pointer relative" style={{ zIndex: 1 }} preserveAspectRatio="xMidYMid meet" onClick={handleSvgClick}>
         {/* Staff background */}
         <rect x="28" y={TREBLE_TOP - 4} width="164" height={TREBLE_BOTTOM - TREBLE_TOP + 8} rx="2"
           fill="hsl(var(--card))" opacity="0.6" />
