@@ -189,7 +189,7 @@ export function getScaleLabel(noteName: string, scaleNotes: string[], mode: Scal
   
   if (mode === "solfege") return label.solfege;
   
-  let degreeStr = label.degree;
+  let degreeStr: string = label.degree;
   if (baseMidi !== undefined) {
     const noteMidi = Note.midi(noteName);
     if (noteMidi !== null) {
