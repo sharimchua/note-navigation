@@ -290,8 +290,10 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   return React.createElement(HarmonicContext.Provider, {
     value: {
       activeNotes,
-      visualNotes,
-      getNoteIntensity,
+      noteStates,
+      isNoteVisible,
+      isNotePressed,
+      isNoteFading,
       selectedKey,
       selectedScale,
       scaleRootOffset,

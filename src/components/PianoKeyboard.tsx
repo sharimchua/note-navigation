@@ -5,9 +5,10 @@ import { useCallback, useRef, useMemo, useEffect } from "react";
 
 const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
 const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
+const FADE_DURATION = 850;
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode, getNoteIntensity } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode, isNoteVisible, isNotePressed, isNoteFading } = useHarmonic();
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -51,9 +52,9 @@ export function PianoKeyboard() {
         >
         {/* White keys */}
         {WHITE_KEYS.map((key, i) => {
-          const pressed = activeNotes.has(key.note);
-          const intensity = getNoteIntensity(key.note);
-          const showActiveLike = intensity > 0;
+          const pressed = isNotePressed(key.note);
+          const fading = isNoteFading(key.note);
+          const visible = isNoteVisible(key.note);
           const inScale = isNoteInCurrentScale(key.note);
           const pc = Note.pitchClass(key.note);
           const color = getNoteColor(key.note);
@@ -67,29 +68,36 @@ export function PianoKeyboard() {
               style={{
                 left: `${i * whiteKeyWidth}%`,
                 width: `${whiteKeyWidth}%`,
-                backgroundColor: showActiveLike ? color : "#f5f0e8",
-                opacity: showActiveLike ? intensity : 1,
+                backgroundColor: visible ? color : "#f5f0e8",
                 zIndex: 1,
-                transition: trailMode && !pressed ? 'background-color 850ms ease-out, opacity 850ms ease-out' : 'background-color 0ms',
+                transition: 'background-color 0ms',
+                animation: fading && trailMode 
+                  ? `piano-key-fade ${FADE_DURATION}ms ease-out forwards`
+                  : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
             >
               {/* Trail shimmer bar at bottom of active key */}
-              {showActiveLike && trailMode && (
+              {visible && trailMode && (
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm trail-shimmer"
-                  style={{ background: `linear-gradient(to top, ${color}, transparent)`, opacity: intensity }}
+                  className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm"
+                  style={{ 
+                    background: `linear-gradient(to top, ${color}, transparent)`,
+                    animation: fading 
+                      ? `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
+                      : 'trail-shimmer 1.5s ease-in-out infinite',
+                  }}
                 />
               )}
               {showScaleIndicator && (
                 <div 
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
                   style={{ 
-                    borderColor: showActiveLike ? 'hsl(var(--background))' : color,
-                    backgroundColor: showActiveLike ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    borderColor: visible ? 'hsl(var(--background))' : color,
+                    backgroundColor: visible ? 'hsla(var(--background) / 0.3)' : 'transparent',
                   }}
                 >
-                  <span className="font-mono font-bold" style={{ color: showActiveLike ? 'hsl(var(--background))' : color, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                  <span className="font-mono font-bold" style={{ color: visible ? 'hsl(var(--background))' : color, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
                     {scaleLabel || pc}
                   </span>
                 </div>
@@ -97,7 +105,7 @@ export function PianoKeyboard() {
               {pc === "C" && (
                 <span 
                   className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
-                  style={{ color: showActiveLike ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
+                  style={{ color: visible ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
                 >
                   C{Note.octave(key.note)}
                 </span>
@@ -108,9 +116,9 @@ export function PianoKeyboard() {
 
         {/* Black keys */}
         {PIANO_KEYS.filter(k => k.isBlack).map((key) => {
-          const pressed = activeNotes.has(key.note);
-          const intensity = getNoteIntensity(key.note);
-          const showActiveLike = intensity > 0;
+          const pressed = isNotePressed(key.note);
+          const fading = isNoteFading(key.note);
+          const visible = isNoteVisible(key.note);
           const inScale = isNoteInCurrentScale(key.note);
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
@@ -128,11 +136,13 @@ export function PianoKeyboard() {
                 left: `${leftPos}%`,
                 width: `${whiteKeyWidth * 0.8}%`,
                 height: "60%",
-                backgroundColor: showActiveLike ? color : "hsl(var(--background))",
-                opacity: showActiveLike ? intensity : 1,
+                backgroundColor: visible ? color : "hsl(var(--background))",
                 border: "1px solid hsl(var(--border))",
                 zIndex: 2,
-                transition: trailMode && !pressed ? 'background-color 850ms ease-out, opacity 850ms ease-out' : 'background-color 0ms',
+                transition: 'background-color 0ms',
+                animation: fading && trailMode 
+                  ? `piano-key-fade-black ${FADE_DURATION}ms ease-out forwards`
+                  : undefined,
               }}
               onClick={() => handleKeyClick(key.note)}
             >
@@ -140,12 +150,12 @@ export function PianoKeyboard() {
                 <div 
                   className="absolute top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
                   style={{ 
-                    borderColor: showActiveLike ? 'hsl(var(--background))' : color,
-                    backgroundColor: showActiveLike ? 'hsla(var(--background) / 0.3)' : 'transparent',
-                    filter: showActiveLike ? undefined : BRIGHT_FILTER,
+                    borderColor: visible ? 'hsl(var(--background))' : color,
+                    backgroundColor: visible ? 'hsla(var(--background) / 0.3)' : 'transparent',
+                    filter: visible ? undefined : BRIGHT_FILTER,
                   }}
                 >
-                  <span className="font-mono font-bold" style={{ color: showActiveLike ? 'hsl(var(--background))' : color, filter: showActiveLike ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                  <span className="font-mono font-bold" style={{ color: visible ? 'hsl(var(--background))' : color, filter: visible ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
                     {scaleLabel || Note.pitchClass(key.note)}
                   </span>
                 </div>

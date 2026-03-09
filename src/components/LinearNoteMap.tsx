@@ -6,9 +6,10 @@ import { useMemo } from "react";
 
 const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
+const FADE_DURATION = 850;
 
 export function LinearNoteMap() {
-  const { activeNotes, scaleNotes, isKeyLocked, scaleLabelMode, useFlats, toggleNote, playNote, trailMode, getNoteIntensity } = useHarmonic();
+  const { activeNotes, scaleNotes, isKeyLocked, scaleLabelMode, useFlats, toggleNote, playNote, trailMode, isNoteVisible, isNotePressed, isNoteFading } = useHarmonic();
   const isMobile = useIsMobile();
 
   const CIRCLE_SIZE = isMobile ? 20 : 28;
@@ -44,7 +45,7 @@ export function LinearNoteMap() {
   }, [useFlats, scaleChromas, scaleNotes, scaleLabelMode]);
 
   return (
-    <div className="glass-panel p-4">
+    <div className="glass-panel p-4 overflow-visible">
       <div className="flex items-center justify-between mb-3">
         <h3 className="engineering-label">
           Linear Note Map
@@ -52,8 +53,8 @@ export function LinearNoteMap() {
         <span className="text-[9px] text-muted-foreground font-mono">C3 ← C4 → C5</span>
       </div>
 
-      <div className="relative overflow-x-auto pb-3">
-        <div className="relative flex items-center justify-between mb-2 px-4 py-3" style={{ minWidth: isMobile ? 540 : undefined }}>
+      <div className="relative overflow-x-auto overflow-y-visible pb-3">
+        <div className="relative flex items-center justify-between mb-2 px-4 py-5" style={{ minWidth: isMobile ? 540 : undefined }}>
           <div
             className="absolute top-1/2 left-0 right-0 -translate-y-1/2"
             style={{ height: 2, background: 'hsl(var(--border))' }}
@@ -61,39 +62,46 @@ export function LinearNoteMap() {
 
           {notes.map(n => {
             const color = getNoteColor(n.pc);
-            const pressed = activeNotes.has(n.noteName);
-            const intensity = getNoteIntensity(n.noteName);
-            const showActiveLike = intensity > 0;
-            const deEmphasize = isKeyLocked && !n.inScale && !showActiveLike;
+            const pressed = isNotePressed(n.noteName);
+            const fading = isNoteFading(n.noteName);
+            const visible = isNoteVisible(n.noteName);
+            const deEmphasize = isKeyLocked && !n.inScale && !visible;
             const size = deEmphasize ? SMALL_CIRCLE : CIRCLE_SIZE;
 
             return (
               <button
                 key={n.midi}
                 onClick={() => { toggleNote(n.noteName); playNote(n.noteName); }}
-                className={`relative z-10 flex items-center justify-center shrink-0 ${pressed ? 'note-active' : ''} ${pressed && trailMode ? 'trail-glow' : ''}`}
+                className={`relative z-10 flex items-center justify-center shrink-0 ${pressed ? 'note-active' : ''}`}
                 style={{
                   width: size,
                   height: size,
                   borderRadius: '50%',
-                  backgroundColor: showActiveLike ? color : deEmphasize ? color : color,
-                  opacity: deEmphasize ? 0.25 : showActiveLike ? intensity : 0.6,
-                  boxShadow: showActiveLike
-                    ? `0 0 ${12 * intensity}px ${color}`
+                  backgroundColor: color,
+                  opacity: deEmphasize ? 0.25 : visible ? 1 : 0.6,
+                  boxShadow: visible
+                    ? `0 0 16px 4px ${color}`
                     : (isKeyLocked && n.inScale)
                       ? '0 0 0 3px hsl(var(--foreground))'
                       : 'none',
-                  color, // for currentColor in trail-glow
-                  transition: trailMode && !pressed 
-                    ? 'background-color 850ms ease-out, opacity 850ms ease-out, box-shadow 850ms ease-out, width 150ms, height 150ms'
-                    : 'width 150ms, height 150ms',
+                  color,
+                  transition: 'width 150ms, height 150ms',
+                  animation: fading && trailMode 
+                    ? `note-fade-out ${FADE_DURATION}ms ease-out forwards`
+                    : undefined,
                 }}
                 title={`${n.pc}${Note.octave(n.noteName)}`}
               >
-                {showActiveLike && trailMode && (
+                {visible && trailMode && (
                   <span
-                    className="absolute inset-0 rounded-full trail-ripple pointer-events-none"
-                    style={{ border: `2px solid ${color}`, opacity: intensity }}
+                    className="absolute rounded-full pointer-events-none"
+                    style={{ 
+                      inset: -8,
+                      border: `2px solid ${color}`,
+                      animation: fading 
+                        ? `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
+                        : 'trail-ripple 1.2s ease-out infinite',
+                    }}
                   />
                 )}
                 {!deEmphasize && (
@@ -101,8 +109,6 @@ export function LinearNoteMap() {
                     className={`font-bold leading-none select-none ${isMobile ? 'text-[6px]' : (n.scaleLabel && n.scaleLabel.length > 1 ? 'text-[6.5px]' : 'text-[8px]')}`}
                     style={{ 
                       color: 'hsl(var(--primary-foreground))',
-                      opacity: showActiveLike ? intensity : 1,
-                      transition: trailMode ? 'opacity 850ms ease-out' : undefined
                     }}
                   >
                     {isKeyLocked && n.scaleLabel ? n.scaleLabel : n.pc}

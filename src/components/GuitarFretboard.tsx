@@ -3,8 +3,10 @@ import { TOTAL_FRETS, getFretNote, getNoteColor, getNotePitchClass, GUITAR_TUNIN
 import { Note } from "tonal";
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 
+const FADE_DURATION = 850;
+
 export function GuitarFretboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes, trailMode, getNoteIntensity } = useHarmonic();
+  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, selectedTuning, setTuning, useFlats, scaleNotes, trailMode, isNoteVisible, isNotePressed, isNoteFading } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
   const tuningRef = useRef<HTMLDivElement>(null);
 
@@ -164,10 +166,10 @@ export function GuitarFretboard() {
               if (!note) return null;
 
               const pc = getNotePitchClass(note, useFlats);
-              const pressed = activeNotes.has(note);
-              const intensity = getNoteIntensity(note);
-              const showActiveLike = intensity > 0;
-
+              const pressed = isNotePressed(note);
+              const fading = isNoteFading(note);
+              const visible = isNoteVisible(note);
+              
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
               const color = getNoteColor(note);
@@ -177,7 +179,7 @@ export function GuitarFretboard() {
                 ? 46 
                 : 48 + (fret - 0.5) * (1050 / (TOTAL_FRETS + 1));
 
-              if (!showActiveLike && dimmed) {
+              if (!visible && dimmed) {
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
@@ -185,7 +187,7 @@ export function GuitarFretboard() {
                 );
               }
 
-              if (!showActiveLike && isKeyLocked && inScale) {
+              if (!visible && isKeyLocked && inScale) {
                 return (
                   <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
                     <circle cx={x} cy={y} r="8" fill={color} opacity={0.3} />
@@ -197,7 +199,7 @@ export function GuitarFretboard() {
                 );
               }
 
-              if (!showActiveLike) {
+              if (!visible) {
                 return (
                   <circle key={`${stringIdx}-${fret}`} cx={x} cy={y} r="8" 
                     fill="transparent" className="cursor-pointer"
@@ -205,20 +207,30 @@ export function GuitarFretboard() {
                 );
               }
 
-              // Pressed or recently released notes (fade-out)
+              // Pressed or fading notes
               return (
-                <g key={`${stringIdx}-${fret}`} className="cursor-pointer" onClick={() => handleFretClick(note)}>
+                <g 
+                  key={`${stringIdx}-${fret}`} 
+                  className="cursor-pointer" 
+                  onClick={() => handleFretClick(note)}
+                  style={fading && trailMode ? {
+                    animation: `note-fade-out ${FADE_DURATION}ms ease-out forwards`
+                  } : undefined}
+                >
                   {trailMode && (
                     <circle
                       cx={x}
                       cy={y}
-                      r="9"
+                      r="12"
                       fill="none"
                       stroke={color}
                       strokeWidth="1.5"
-                      opacity={0.5 * intensity}
-                      className="trail-ripple"
-                      style={{ transformBox: "fill-box" }}
+                      opacity={0.5}
+                      style={fading ? {
+                        animation: `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
+                      } : {
+                        animation: 'trail-ripple 1.2s ease-out infinite'
+                      }}
                     />
                   )}
                   <circle
@@ -226,9 +238,7 @@ export function GuitarFretboard() {
                     cy={y}
                     r="9"
                     fill={color}
-                    opacity={intensity}
                     className={pressed ? "note-active" : undefined}
-                    style={trailMode ? { transition: 'fill 850ms ease-out, opacity 850ms ease-out' } : undefined}
                   />
                   <text
                     x={x}
@@ -238,8 +248,6 @@ export function GuitarFretboard() {
                     fontFamily="JetBrains Mono"
                     textAnchor="middle"
                     fontWeight="bold"
-                    opacity={intensity}
-                    style={trailMode ? { transition: 'opacity 850ms ease-out' } : undefined}
                   >
                     {scaleLabel || pc}
                   </text>
