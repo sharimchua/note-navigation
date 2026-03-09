@@ -428,6 +428,7 @@ export function StaffNotation() {
         {bassPositioned.map(n => renderNote(n, "bass"))}
 
       </svg>
+      </div>
     </div>
   );
 }
