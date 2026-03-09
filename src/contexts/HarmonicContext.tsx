@@ -4,11 +4,6 @@ import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning,
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
 import { Note } from "tonal";
 
-export interface HandPosition {
-  enabled: boolean;
-  rootNote: string;
-}
-
 export type ScaleLabelMode = "solfege" | "degree";
 
 interface HarmonicState {
