@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { Note } from "tonal";
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { getNotePitchClass, NOTE_COLOR_KEYS, NOTE_NAMES } from "@/lib/music-engine";
+import { getNotePitchClass } from "@/lib/music-engine";
 import {
   getPartialsFromNotes,
   calculatePartialInteractions,

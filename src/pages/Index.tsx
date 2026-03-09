@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { HarmonicProvider, useHarmonic } from "@/contexts/HarmonicContext";
 import { PianoKeyboard } from "@/components/PianoKeyboard";
 import { GuitarFretboard } from "@/components/GuitarFretboard";

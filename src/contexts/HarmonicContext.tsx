@@ -254,6 +254,11 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     onNoteOff: handleMIDINoteOff,
   });
 
+  useEffect(() => {
+    // Trail mode is only meaningful for (and only controllable with) a connected MIDI device.
+    if (!midiState.isConnected && trailMode) setTrailMode(false);
+  }, [midiState.isConnected, trailMode]);
+
   const isNoteInCurrentScale = useCallback((note: string) => {
     if (!isKeyLocked) return true;
     return isNoteInScale(note, scaleNotes);
