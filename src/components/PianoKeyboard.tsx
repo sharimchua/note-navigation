@@ -63,7 +63,7 @@ export function PianoKeyboard() {
           const color = getNoteColor(key.note);
           const showScaleIndicator = isKeyLocked && inScale;
           const fingering = fingeringMap.get(key.midi);
-          const degree = isKeyLocked ? getScaleDegree(key.note, scaleNotes) : null;
+          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode) : null;
 
           return (
             <div
@@ -85,8 +85,8 @@ export function PianoKeyboard() {
                     backgroundColor: isActive ? 'hsla(var(--background) / 0.3)' : 'transparent',
                   }}
                 >
-                  <span className="text-[7px] font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color }}>
-                    {degree || pc}
+                  <span className="font-mono font-bold" style={{ color: isActive ? 'hsl(var(--background))' : color, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
+                    {scaleLabel || pc}
                   </span>
                 </div>
               )}
