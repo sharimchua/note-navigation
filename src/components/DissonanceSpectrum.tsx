@@ -223,11 +223,12 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
               {items.map((bar, i) => {
                 const isFundamental = bar.partial.partialNumber === 1;
                 return (
-                  <g key={`b-${pc}-${i}`}>
-                    {bar.subBars.map((sb, si) => (
-                      <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
-                        fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
-                      />
+                   <g key={`b-${pc}-${i}`}>
+                     {bar.subBars.map((sb, si) => (
+                       <rect key={si} x={sb.x} y={plotBottom - sb.h} width={SUB_BAR_W} height={sb.h}
+                         fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} rx={0.5}
+                         style={trailMode ? { transition: 'height 600ms ease-out, opacity 600ms ease-out' } : undefined}
+                       />
                     ))}
                     {isFundamental && (
                       <>
