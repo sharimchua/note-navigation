@@ -180,6 +180,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       activeNotes,
       selectedKey,
       selectedScale,
+      scaleRootOffset,
       scaleNotes,
       isKeyLocked,
       scaleLabelMode,
