@@ -6,12 +6,20 @@ import { Note } from "tonal";
 
 export type ScaleLabelMode = "solfege" | "degree";
 
+interface NoteState {
+  note: string;
+  pressed: boolean;  // currently held down
+  fading: boolean;   // released but still visible (trail mode only)
+}
+
 interface HarmonicState {
   activeNotes: Set<string>;
-  /** Notes that should still be shown in visualizations (includes recently released notes when trailMode is on) */
-  visualNotes: string[];
-  /** 0..1 intensity for visuals; stays >0 briefly after release when trailMode is on */
-  getNoteIntensity: (note: string) => number;
+  /** Notes that should be shown in visualizations with their state */
+  noteStates: NoteState[];
+  /** Check if a note is currently pressed or fading */
+  isNoteVisible: (note: string) => boolean;
+  isNotePressed: (note: string) => boolean;
+  isNoteFading: (note: string) => boolean;
 
   selectedKey: string;
   selectedScale: string;
@@ -78,38 +86,21 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [isMuted, setMuted] = useState(false);
   const [trailMode, setTrailMode] = useState(false);
 
-  // Notes that have been released and should linger briefly (for visual fade)
-  const releasedAtRef = useRef<Map<string, number>>(new Map());
-  const [releaseNow, setReleaseNow] = useState(0);
-  const [releaseKick, setReleaseKick] = useState(0);
+  // Notes currently fading (released but still visible)
+  const [fadingNotes, setFadingNotes] = useState<Set<string>>(new Set());
+  const fadeTimersRef = useRef<Map<string, number>>(new Map());
 
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const audioStartedRef = useRef(false);
 
+  // Cleanup fading notes when trail mode is disabled
   useEffect(() => {
     if (!trailMode) {
-      releasedAtRef.current.clear();
-      return;
+      fadeTimersRef.current.forEach(timer => clearTimeout(timer));
+      fadeTimersRef.current.clear();
+      setFadingNotes(new Set());
     }
-    if (releasedAtRef.current.size === 0) return;
-
-    let raf = 0;
-    const tick = () => {
-      const now = performance.now();
-      let hasAny = false;
-
-      for (const [note, t0] of releasedAtRef.current) {
-        if (now - t0 >= RELEASE_FADE_MS) releasedAtRef.current.delete(note);
-        else hasAny = true;
-      }
-
-      setReleaseNow(now);
-      if (hasAny) raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [trailMode, releaseKick]);
+  }, [trailMode]);
 
   const getSynth = useCallback(() => {
     if (!synthRef.current) {
@@ -124,7 +115,6 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const scaleNotes = useMemo(() => {
     if (scaleRootOffset === 0) return getScaleNotes(selectedKey, selectedScale);
-    // Compute offset root note name
     const keyChroma = Note.chroma(selectedKey) ?? 0;
     const offsetChroma = (keyChroma + scaleRootOffset) % 12;
     const FLAT_KEYS_SET = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
@@ -133,102 +123,127 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     return getScaleNotes(offsetRoot, selectedScale);
   }, [selectedKey, selectedScale, scaleRootOffset]);
 
-  const visualNotes = useMemo(() => {
-    const s = new Set<string>(activeNotes);
+  // Build noteStates array for all visible notes
+  const noteStates = useMemo((): NoteState[] => {
+    const states: NoteState[] = [];
+    const seen = new Set<string>();
+    
+    activeNotes.forEach(note => {
+      states.push({ note, pressed: true, fading: false });
+      seen.add(note);
+    });
+    
     if (trailMode) {
-      for (const n of releasedAtRef.current.keys()) s.add(n);
+      fadingNotes.forEach(note => {
+        if (!seen.has(note)) {
+          states.push({ note, pressed: false, fading: true });
+        }
+      });
     }
-    return Array.from(s);
-  }, [activeNotes, trailMode, releaseNow]);
+    
+    return states;
+  }, [activeNotes, fadingNotes, trailMode]);
 
-  const getNoteIntensity = useCallback((note: string) => {
-    if (activeNotes.has(note)) return 1;
-    if (!trailMode) return 0;
+  const isNoteVisible = useCallback((note: string) => {
+    return activeNotes.has(note) || (trailMode && fadingNotes.has(note));
+  }, [activeNotes, fadingNotes, trailMode]);
 
-    const t0 = releasedAtRef.current.get(note);
-    if (!t0) return 0;
+  const isNotePressed = useCallback((note: string) => {
+    return activeNotes.has(note);
+  }, [activeNotes]);
 
-    const now = releaseNow || performance.now();
-    const t = (now - t0) / RELEASE_FADE_MS;
-    if (t >= 1) return 0;
+  const isNoteFading = useCallback((note: string) => {
+    return trailMode && !activeNotes.has(note) && fadingNotes.has(note);
+  }, [activeNotes, fadingNotes, trailMode]);
 
-    return Math.max(0, Math.min(1, 1 - t));
-  }, [activeNotes, trailMode, releaseNow]);
+  const startFade = useCallback((note: string) => {
+    if (!trailMode) return;
+    
+    // Clear any existing timer for this note
+    const existingTimer = fadeTimersRef.current.get(note);
+    if (existingTimer) clearTimeout(existingTimer);
+    
+    // Add to fading set
+    setFadingNotes(prev => new Set(prev).add(note));
+    
+    // Set timer to remove after fade duration
+    const timer = window.setTimeout(() => {
+      setFadingNotes(prev => {
+        const next = new Set(prev);
+        next.delete(note);
+        return next;
+      });
+      fadeTimersRef.current.delete(note);
+    }, RELEASE_FADE_MS);
+    
+    fadeTimersRef.current.set(note, timer);
+  }, [trailMode]);
+
+  const stopFade = useCallback((note: string) => {
+    const timer = fadeTimersRef.current.get(note);
+    if (timer) {
+      clearTimeout(timer);
+      fadeTimersRef.current.delete(note);
+    }
+    setFadingNotes(prev => {
+      const next = new Set(prev);
+      next.delete(note);
+      return next;
+    });
+  }, []);
 
   const addNote = useCallback((note: string) => {
-    releasedAtRef.current.delete(note);
+    stopFade(note);
     setActiveNotesState(prev => {
       const next = new Set(prev);
       next.add(note);
       return next;
     });
-  }, []);
+  }, [stopFade]);
 
   const removeNote = useCallback((note: string) => {
-    if (trailMode) {
-      releasedAtRef.current.set(note, performance.now());
-      setReleaseKick(k => k + 1);
-    }
-
     setActiveNotesState(prev => {
       const next = new Set(prev);
       next.delete(note);
       return next;
     });
-  }, [trailMode]);
+    startFade(note);
+  }, [startFade]);
 
   const toggleNote = useCallback((note: string) => {
     setActiveNotesState(prev => {
       const next = new Set(prev);
       if (next.has(note)) {
         next.delete(note);
-        if (trailMode) {
-          releasedAtRef.current.set(note, performance.now());
-          setReleaseKick(k => k + 1);
-        }
+        startFade(note);
       } else {
         next.add(note);
-        releasedAtRef.current.delete(note);
+        stopFade(note);
       }
       return next;
     });
-  }, [trailMode]);
+  }, [startFade, stopFade]);
 
   const setActiveNotes = useCallback((notes: Set<string>) => {
     setActiveNotesState(prev => {
-      if (trailMode) {
-        const now = performance.now();
-        let changed = false;
-
-        // Anything that was active but isn't anymore becomes a released visual.
-        prev.forEach(n => {
-          if (!notes.has(n)) {
-            releasedAtRef.current.set(n, now);
-            changed = true;
-          }
-        });
-
-        // Anything newly active should stop being released.
-        notes.forEach(n => {
-          if (releasedAtRef.current.delete(n)) changed = true;
-        });
-
-        if (changed) setReleaseKick(k => k + 1);
-      }
+      // Start fading for notes that were active but aren't anymore
+      prev.forEach(n => {
+        if (!notes.has(n)) startFade(n);
+      });
+      // Stop fading for notes that are now active
+      notes.forEach(n => {
+        if (!prev.has(n)) stopFade(n);
+      });
       return notes;
     });
-  }, [trailMode]);
+  }, [startFade, stopFade]);
 
   const clearNotes = useCallback(() => {
     setActiveNotesState(prev => {
-      if (trailMode && prev.size > 0) {
-        const now = performance.now();
-        prev.forEach(n => releasedAtRef.current.set(n, now));
-        setReleaseKick(k => k + 1);
-      }
+      prev.forEach(n => startFade(n));
       return new Set();
     });
-  }, [trailMode]);
+  }, [startFade]);
 
   const playNote = useCallback(async (note: string) => {
     if (isMuted) return;
@@ -275,8 +290,10 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   return React.createElement(HarmonicContext.Provider, {
     value: {
       activeNotes,
-      visualNotes,
-      getNoteIntensity,
+      noteStates,
+      isNoteVisible,
+      isNotePressed,
+      isNoteFading,
       selectedKey,
       selectedScale,
       scaleRootOffset,

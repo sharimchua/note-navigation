@@ -39,29 +39,32 @@ function criticalBandwidth(freq: number): number {
 
 const SUB_BAR_W = 2;
 const BAR_GAP = 1;
+const FADE_DURATION = 850;
 
 export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
-  const { useFlats, trailMode, visualNotes, getNoteIntensity } = useHarmonic();
+  const { useFlats, trailMode, noteStates, isNotePressed, isNoteFading } = useHarmonic();
   const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
   useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
-  const noteNames = useMemo(() => visualNotes, [visualNotes]);
+  const noteNames = useMemo(() => noteStates.map(s => s.note), [noteStates]);
 
-  const pcIntensity = useMemo(() => {
-    const arr = new Array(12).fill(0) as number[];
-    for (const n of noteNames) {
-      const pc = Note.chroma(n);
+  // Track which pitch classes are pressed vs fading
+  const pcStates = useMemo(() => {
+    const states = new Map<number, { pressed: boolean; fading: boolean }>();
+    for (const { note, pressed, fading } of noteStates) {
+      const pc = Note.chroma(note);
       if (pc === undefined || pc === null) continue;
-      const intensity = getNoteIntensity(n);
-      if (intensity > arr[pc]) arr[pc] = intensity;
+      const existing = states.get(pc);
+      if (!existing) {
+        states.set(pc, { pressed, fading });
+      } else {
+        // If any note of this PC is pressed, mark as pressed
+        if (pressed) existing.pressed = true;
+        if (fading) existing.fading = true;
+      }
     }
-    return arr;
-  }, [noteNames, getNoteIntensity]);
-
-  const overallIntensity = useMemo(
-    () => pcIntensity.reduce((m, v) => Math.max(m, v), 0),
-    [pcIntensity]
-  );
+    return states;
+  }, [noteStates]);
 
   const { partials, noteFrequencies } = useMemo(
     () => getPartialsFromNotes(noteNames),
@@ -121,14 +124,13 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
     const allBars: { pc: number; items: { cx: number; height: number; partial: Partial; subBars: { x: number; h: number }[] }[] }[] = [];
     for (const [pc, notePartials] of partialsByNote.entries()) {
       const sorted = [...notePartials].sort((a, b) => a.frequency - b.frequency);
-      const intensity = pcIntensity[pc] ?? 1;
       const items = sorted.map(p => {
         const cx = freqToX(p.frequency, svgWidth);
         const cbHz = criticalBandwidth(p.frequency);
         const xLo = freqToX(Math.max(minFreq, p.frequency - cbHz / 2), svgWidth);
         const xHi = freqToX(p.frequency + cbHz / 2, svgWidth);
         const totalW = Math.max(6, xHi - xLo);
-        const peakHeight = p.amplitude * intensity * plotHeight * 0.85;
+        const peakHeight = p.amplitude * plotHeight * 0.85;
         const numBars = Math.max(3, Math.floor(totalW / (SUB_BAR_W + BAR_GAP)));
         const mid = (numBars - 1) / 2;
         const subBars: { x: number; h: number }[] = [];
@@ -144,7 +146,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
       allBars.push({ pc, items });
     }
     return allBars;
-  }, [partialsByNote, pcIntensity, svgWidth, plotHeight]);
+  }, [partialsByNote, svgWidth, plotHeight]);
 
   const dissonancePath = useMemo(() => {
     if (interactions.length === 0) return { line: "", fill: "", peak: 0 };
@@ -179,6 +181,7 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
   }, [interactions, svgWidth, plotHeight, plotBottom]);
 
   const hasNotes = noteNames.length > 0;
+  const anyFading = noteStates.some(s => s.fading);
 
   return (
     <div className="glass-panel p-4 h-full flex flex-col overflow-hidden">
@@ -235,54 +238,65 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
             );
           })}
 
-          {noteBars.map(({ pc, items }) => (
-            <g key={`bars-${pc}`}>
-              {items.map((bar, i) => {
-                const isFundamental = bar.partial.partialNumber === 1;
-                const intensity = pcIntensity[pc] ?? 1;
-                return (
-                   <g key={`b-${pc}-${i}`}>
-                     {bar.subBars.map((sb, si) => {
-                       const fadedHeight = sb.h * intensity;
-                       return (
-                         <rect key={si} x={sb.x} y={plotBottom - fadedHeight} width={SUB_BAR_W} height={fadedHeight}
-                           fill={noteColor(resolvedColors, pc, (isFundamental ? 0.7 : 0.4))} rx={0.5}
-                           style={trailMode ? { transition: 'height 600ms ease-out, y 600ms ease-out' } : undefined}
+          {noteBars.map(({ pc, items }) => {
+            const state = pcStates.get(pc);
+            const isFading = state?.fading && !state?.pressed;
+            
+            return (
+              <g 
+                key={`bars-${pc}`}
+                style={isFading && trailMode ? {
+                  animation: `spectrum-fade-out ${FADE_DURATION}ms ease-out forwards`
+                } : undefined}
+              >
+                {items.map((bar, i) => {
+                  const isFundamental = bar.partial.partialNumber === 1;
+                  return (
+                     <g key={`b-${pc}-${i}`}>
+                       {bar.subBars.map((sb, si) => (
+                         <rect 
+                           key={si} 
+                           x={sb.x} 
+                           y={plotBottom - sb.h} 
+                           width={SUB_BAR_W} 
+                           height={sb.h}
+                           fill={noteColor(resolvedColors, pc, isFundamental ? 0.7 : 0.4)} 
+                           rx={0.5}
+                           style={isFading && trailMode ? {
+                             transformBox: 'fill-box' as any,
+                             transformOrigin: 'bottom',
+                             animation: `bar-shrink ${FADE_DURATION}ms ease-out forwards`
+                           } : undefined}
                          />
-                       );
-                    })}
-                    {isFundamental && (
-                      <>
-                        <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9 * intensity}
-                          style={trailMode ? { transition: 'opacity 600ms ease-out' } : undefined} />
-                        <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
-                          fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
-                          opacity={intensity}
-                          style={trailMode ? { transition: 'opacity 600ms ease-out' } : undefined}
-                        >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
-                          const m = Note.midi(n);
-                          return m !== null && m % 12 === pc;
-                        }) || "" : "", useFlats)}</text>
-                      </>
-                    )}
-                    {!isFundamental && bar.partial.amplitude > 0.35 && (
-                      <text x={bar.cx} y={plotBottom - (bar.height * intensity) - 3} textAnchor="middle" fontSize={6}
-                        fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6)}
-                        opacity={intensity}
-                        style={trailMode ? { transition: 'opacity 600ms ease-out, y 600ms ease-out' } : undefined}
-                      >{bar.partial.partialNumber}×</text>
-                    )}
-                  </g>
-                );
-              })}
-            </g>
-          ))}
+                      ))}
+                      {isFundamental && (
+                        <>
+                          <circle cx={bar.cx} cy={plotTop - 6} r={7} fill={noteColorSolid(resolvedColors, pc)} opacity={0.9} />
+                          <text x={bar.cx} y={plotTop - 3} textAnchor="middle" fontSize={7.5}
+                            fontFamily="'JetBrains Mono', monospace" fill="hsl(var(--background))" fontWeight={700}
+                          >{getNotePitchClass(bar.partial.fundamentalFreq > 0 ? noteNames.find(n => {
+                            const m = Note.midi(n);
+                            return m !== null && m % 12 === pc;
+                          }) || "" : "", useFlats)}</text>
+                        </>
+                      )}
+                      {!isFundamental && bar.partial.amplitude > 0.35 && (
+                        <text x={bar.cx} y={plotBottom - bar.height - 3} textAnchor="middle" fontSize={6}
+                          fontFamily="'JetBrains Mono', monospace" fill={noteColor(resolvedColors, pc, 0.6)}
+                        >{bar.partial.partialNumber}×</text>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
 
           {dissonancePath.fill && (
-            <>
-              <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" style={trailMode ? { opacity: overallIntensity } : undefined} />
-              <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} style={trailMode ? { opacity: overallIntensity } : undefined} />
-            </>
+            <g style={anyFading && trailMode ? { animation: `spectrum-fade-out ${FADE_DURATION}ms ease-out forwards` } : undefined}>
+              <path d={dissonancePath.fill} fill="url(#nn-dissonance-curve-fill)" />
+              <path d={dissonancePath.line} fill="none" stroke="hsla(0, 0%, 95%, 0.7)" strokeWidth={1.2} />
+            </g>
           )}
 
           <line x1={0} y1={plotBottom} x2={svgWidth} y2={plotBottom} stroke="hsl(var(--border))" strokeWidth={1} />

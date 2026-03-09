@@ -157,4 +157,42 @@
   .trail-glow {
     animation: trail-glow 1.4s ease-in-out infinite;
   }
+
+  /* === Trail fade-out animations === */
+
+  /* Generic note fade-out (opacity + scale shrink) */
+  @keyframes note-fade-out {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Halo expansion + fade for linear note map and fretboard */
+  @keyframes halo-fade-out {
+    0%   { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2.5); }
+  }
+
+  /* Piano white key fade back to natural color */
+  @keyframes piano-key-fade {
+    0%   { opacity: 1; }
+    100% { opacity: 1; background-color: #f5f0e8; }
+  }
+
+  /* Piano black key fade back to natural color */
+  @keyframes piano-key-fade-black {
+    0%   { opacity: 1; }
+    100% { opacity: 1; background-color: hsl(var(--background)); }
+  }
+
+  /* Spectrum bars shrink down to baseline */
+  @keyframes spectrum-fade-out {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Individual bar shrink (SVG rect) — uses transform-box: fill-box */
+  @keyframes bar-shrink {
+    0%   { transform: scaleY(1); opacity: 1; }
+    100% { transform: scaleY(0); opacity: 0; }
+  }
 }
