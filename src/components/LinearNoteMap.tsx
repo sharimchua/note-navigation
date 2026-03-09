@@ -16,12 +16,14 @@ export function LinearNoteMap() {
 
   const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
   const baseMidi = useMemo(() => {
-    let lowestMidi = LOW_MIDI;
-    while (lowestMidi % 12 !== rootChroma) {
-      lowestMidi++;
-    }
-    return lowestMidi;
-  }, [rootChroma]);
+    if (activeNotes.size === 0) return undefined;
+    let lowestActive = Infinity;
+    activeNotes.forEach(n => { const m = Note.midi(n); if (m !== null && m < lowestActive) lowestActive = m; });
+    if (!isFinite(lowestActive)) return undefined;
+    let root = lowestActive;
+    while (root % 12 !== rootChroma && root >= 0) root--;
+    return root >= 0 ? root : undefined;
+  }, [activeNotes, rootChroma]);
 
   const scaleChromas = useMemo(
     () => new Set(scaleNotes.map(n => Note.chroma(n)).filter((c): c is number => c !== undefined)),

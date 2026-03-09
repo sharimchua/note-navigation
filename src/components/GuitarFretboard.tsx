@@ -12,17 +12,14 @@ export function GuitarFretboard() {
   
   const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
   const baseMidi = useMemo(() => {
-    let minStringMidi = 1000;
-    tuningNotes.forEach(s => {
-      const m = Note.midi(s);
-      if (m && m < minStringMidi) minStringMidi = m;
-    });
-    let lowestMidi = minStringMidi;
-    while (lowestMidi % 12 !== rootChroma) {
-      lowestMidi++;
-    }
-    return lowestMidi;
-  }, [tuningNotes, rootChroma]);
+    if (activeNotes.size === 0) return undefined;
+    let lowestActive = Infinity;
+    activeNotes.forEach(n => { const m = Note.midi(n); if (m !== null && m < lowestActive) lowestActive = m; });
+    if (!isFinite(lowestActive)) return undefined;
+    let root = lowestActive;
+    while (root % 12 !== rootChroma && root >= 0) root--;
+    return root >= 0 ? root : undefined;
+  }, [activeNotes, rootChroma]);
 
   const handleFretClick = useCallback((note: string) => {
     playNote(note);
