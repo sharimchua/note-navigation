@@ -45,15 +45,6 @@ function MainContent() {
         {/* Header */}
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            {activeNotes.size > 0 && (
-              <button
-                onClick={clearNotes}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
-              >
-                <Trash2 size={12} />
-                Clear Notes
-              </button>
-            )}
             <button
               onClick={() => setMuted(!isMuted)}
               className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
@@ -72,9 +63,20 @@ function MainContent() {
               </ToggleGroup>
             )}
           </div>
-          <div className="text-[10px] font-mono text-muted-foreground text-right">
-            <div>Click any note to activate</div>
-            <div>Colors sync across all views</div>
+          <div className="flex items-center gap-3">
+            {activeNotes.size > 0 && (
+              <button
+                onClick={clearNotes}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+              >
+                <Trash2 size={12} />
+                Clear Notes
+              </button>
+            )}
+            <div className="text-[10px] font-mono text-muted-foreground text-right">
+              <div>Click any note to activate</div>
+              <div>Colors sync across all views</div>
+            </div>
           </div>
         </div>
 
