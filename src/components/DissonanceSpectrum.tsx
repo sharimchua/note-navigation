@@ -9,21 +9,28 @@ import {
   type Partial,
 } from "@/lib/overtone-engine";
 
-// Map chroma (0-11) to the shared CSS variable note colors
+// Map chroma (0-11) to CSS custom property names
 const CHROMA_CSS_PROPS: string[] = [
   "--note-c", "--note-cs", "--note-d", "--note-ds",
   "--note-e", "--note-f", "--note-fs", "--note-g",
   "--note-gs", "--note-a", "--note-as", "--note-b",
 ];
 
-function noteColor(pc: number, alpha = 0.85): string {
-  const prop = CHROMA_CSS_PROPS[pc % 12];
-  return `hsl(var(${prop}) / ${alpha})`;
+// Resolve CSS variable HSL values to actual color strings at runtime
+function resolveNoteColors(): string[] {
+  const style = getComputedStyle(document.documentElement);
+  return CHROMA_CSS_PROPS.map(prop => {
+    const val = style.getPropertyValue(prop).trim();
+    return val || "0 0% 50%";
+  });
 }
 
-function noteColorSolid(pc: number): string {
-  const prop = CHROMA_CSS_PROPS[pc % 12];
-  return `hsl(var(${prop}))`;
+function noteColor(resolved: string[], pc: number, alpha = 0.85): string {
+  return `hsla(${resolved[pc % 12].replace(/ /g, ", ")}, ${alpha})`;
+}
+
+function noteColorSolid(resolved: string[], pc: number): string {
+  return `hsl(${resolved[pc % 12].replace(/ /g, ", ")})`;
 }
 
 function criticalBandwidth(freq: number): number {
