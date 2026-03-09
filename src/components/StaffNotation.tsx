@@ -317,8 +317,9 @@ export function StaffNotation() {
       const midi = Note.midi(note);
       if (midi === null) return null;
       const spelling = spellingMap.get(midi) || { useFlat: useFlats };
-      return { y: midiToY(midi, spelling.useFlat), color: getNoteColor(note) };
-    }).filter((n): n is { y: number; color: string } => n !== null);
+      const chroma = midi % 12;
+      return { y: midiToY(midi, spelling.useFlat), chroma };
+    }).filter((n): n is { y: number; chroma: number } => n !== null);
   }, [activeNotes, spellingMap, useFlats]);
 
   return (

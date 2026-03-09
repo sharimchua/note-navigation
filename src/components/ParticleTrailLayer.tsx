@@ -1,21 +1,41 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Particle {
   x: number;
   y: number;
-  color: string;
+  chroma: number;
   opacity: number;
   radius: number;
 }
 
 interface ParticleTrailLayerProps {
-  /** The active note Y positions in SVG viewBox coordinates (mapped to canvas) */
-  activeNoteYs: { y: number; color: string }[];
+  /** The active note Y positions with chroma values */
+  activeNoteYs: { y: number; chroma: number }[];
   /** SVG viewBox dimensions so we can map to canvas pixels */
   viewBoxWidth: number;
   viewBoxHeight: number;
   /** Spawn x in viewBox coords — particles start here and drift left */
   spawnX: number;
+}
+
+// Map chroma (0-11) to CSS custom property names
+const CHROMA_CSS_PROPS: string[] = [
+  "--note-c", "--note-cs", "--note-d", "--note-ds",
+  "--note-e", "--note-f", "--note-fs", "--note-g",
+  "--note-gs", "--note-a", "--note-as", "--note-b",
+];
+
+// Resolve CSS variable HSL values to actual color strings at runtime
+function resolveNoteColors(): string[] {
+  const style = getComputedStyle(document.documentElement);
+  return CHROMA_CSS_PROPS.map(prop => {
+    const val = style.getPropertyValue(prop).trim();
+    return val || "0 0% 50%";
+  });
+}
+
+function chromaToColor(resolved: string[], chroma: number, alpha = 1): string {
+  return `hsla(${resolved[chroma % 12].replace(/ /g, ", ")}, ${alpha})`;
 }
 
 // Pixels per frame in viewBox coords
@@ -36,6 +56,10 @@ export function ParticleTrailLayer({
   const frameRef = useRef(0);
   const rafRef = useRef<number>(0);
   const propsRef = useRef({ activeNoteYs, spawnX });
+  const [resolvedColors, setResolvedColors] = useState<string[]>(() => resolveNoteColors());
+
+  // Resolve colors on mount
+  useEffect(() => { setResolvedColors(resolveNoteColors()); }, []);
 
   // Keep props ref in sync without restarting the loop
   propsRef.current = { activeNoteYs, spawnX };
@@ -62,11 +86,11 @@ export function ParticleTrailLayer({
 
       // Spawn new particles for active notes
       if (frameRef.current % SPAWN_EVERY === 0 && activeNoteYs.length > 0) {
-        for (const { y, color } of activeNoteYs) {
+        for (const { y, chroma } of activeNoteYs) {
           particlesRef.current.push({
             x: spawnX,
             y,
-            color,
+            chroma,
             opacity: 0.85,
             radius: 2.2,
           });
@@ -88,11 +112,11 @@ export function ParticleTrailLayer({
       for (const p of particlesRef.current) {
         ctx2.beginPath();
         ctx2.arc(p.x * scaleX, p.y * scaleY, p.radius * scaleX, 0, Math.PI * 2);
-        ctx2.globalAlpha = p.opacity;
-        ctx2.fillStyle = p.color;
+        const color = chromaToColor(resolvedColors, p.chroma, p.opacity);
+        ctx2.fillStyle = color;
+        ctx2.globalAlpha = 1; // Alpha is in the color
         ctx2.fill();
       }
-      ctx2.globalAlpha = 1;
 
       rafRef.current = requestAnimationFrame(loop);
     }
