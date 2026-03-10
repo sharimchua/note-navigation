@@ -240,16 +240,14 @@ export function StaffNotation() {
           />
         ))}
         
-        {/* Horizontal dissipation effect for animated mode */}
+        {/* Horizontal wave dissipation along staff line */}
         {isFading && (
           <>
-            <ellipse cx={x} cy={y} rx="8" ry="5.5" fill={n.color} opacity={0.6}
-              transform={`rotate(-15 ${x} ${y})`}
-              style={{ animation: `staff-dissipate-left ${FADE_DURATION}ms ease-out forwards` }}
+            <rect x={x - 8} y={y - 3} width="16" height="6" rx="3" fill={n.color} opacity={0.5}
+              style={{ transformOrigin: `${x}px ${y}px`, animation: `staff-dissipate-left ${FADE_DURATION}ms ease-out forwards` }}
             />
-            <ellipse cx={x} cy={y} rx="8" ry="5.5" fill={n.color} opacity={0.6}
-              transform={`rotate(-15 ${x} ${y})`}
-              style={{ animation: `staff-dissipate-right ${FADE_DURATION}ms ease-out forwards` }}
+            <rect x={x - 8} y={y - 3} width="16" height="6" rx="3" fill={n.color} opacity={0.5}
+              style={{ transformOrigin: `${x}px ${y}px`, animation: `staff-dissipate-right ${FADE_DURATION}ms ease-out forwards` }}
             />
           </>
         )}
