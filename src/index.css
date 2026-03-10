@@ -183,14 +183,14 @@
     100% { transform: scaleY(0); opacity: 0; }
   }
 
-  /* Staff horizontal dissipation — note splits left and right */
+  /* Staff horizontal wave dissipation — flat color wash along staff line */
   @keyframes staff-dissipate-left {
-    0%   { transform: rotate(-15deg) translateX(0); opacity: 0.6; }
-    100% { transform: rotate(-15deg) translateX(-30px) scaleX(2); opacity: 0; }
+    0%   { opacity: 0.5; transform: translateX(0) scaleX(1); }
+    100% { opacity: 0; transform: translateX(-40px) scaleX(3); }
   }
 
   @keyframes staff-dissipate-right {
-    0%   { transform: rotate(-15deg) translateX(0); opacity: 0.6; }
-    100% { transform: rotate(-15deg) translateX(30px) scaleX(2); opacity: 0; }
+    0%   { opacity: 0.5; transform: translateX(0) scaleX(1); }
+    100% { opacity: 0; transform: translateX(40px) scaleX(3); }
   }
 }
