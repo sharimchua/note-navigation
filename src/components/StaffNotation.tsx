@@ -79,10 +79,38 @@ const KEY_SIG_SPACING = 5;
 const CHORD_X = 120;
 const SECOND_OFFSET = 16;
 
+// Map scale types to semitone offset from parent major key
+const SCALE_TO_PARENT_OFFSET: Record<string, number> = {
+  "major": 0, "ionian": 0,
+  "dorian": 2,
+  "phrygian": 4,
+  "lydian": 5,
+  "mixolydian": 7,
+  "minor": 9, "aeolian": 9,
+  "locrian": 11,
+  "harmonic minor": 9,  // same key sig as natural minor
+  "melodic minor": 9,
+  "major pentatonic": 0,
+  "minor pentatonic": 9,
+  "blues": 9,
+};
+
+const CHROMA_TO_MAJOR_KEY_SHARP = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
+const CHROMA_TO_MAJOR_KEY_FLAT = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
+
 function getKeySignature(selectedKey: string, selectedScale: string) {
-  const keyInfo = selectedScale === "minor" ? Key.minorKey(selectedKey) : Key.majorKey(selectedKey);
+  const offset = SCALE_TO_PARENT_OFFSET[selectedScale] ?? 0;
+  const rootChroma = Note.chroma(selectedKey) ?? 0;
+  const parentChroma = (rootChroma - offset + 12) % 12;
+
+  // Find the parent major key name and get its key signature
+  // Try all 12 possible major key names to find one matching this chroma
+  const possibleRoots = ["C", "Db", "D", "Eb", "E", "F", "F#", "Gb", "G", "Ab", "A", "Bb", "B"];
+  let parentRoot = possibleRoots.find(r => (Note.chroma(r) ?? -1) === parentChroma) || "C";
+
+  const keyInfo = Key.majorKey(parentRoot);
   if (!keyInfo) return { sharps: 0, flats: 0, type: "sharp" as const };
-  const alteration = "alteration" in keyInfo ? (keyInfo as any).alteration : 0;
+  const alteration = (keyInfo as any).alteration ?? 0;
   if (alteration > 0) return { sharps: alteration, flats: 0, type: "sharp" as const };
   if (alteration < 0) return { sharps: 0, flats: Math.abs(alteration), type: "flat" as const };
   return { sharps: 0, flats: 0, type: "sharp" as const };
