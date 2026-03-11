@@ -2,6 +2,8 @@
 
 Note Navigation is an interactive web application designed to help musicians visualize music theory concepts on the fretboard, grand staff, and piano keyboard. It provides a visual representation of scales, chords, and tunings across different instruments.
 
+![Note Navigation App Demonstration](public/app_demonstration.png)
+
 ## Features
 
 Note Navigation provides several interactive views to help you conceptualize music:
