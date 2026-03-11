@@ -80,6 +80,7 @@ export const GUITAR_TUNINGS: GuitarTuning[] = [
   
   // Alternate tunings
   { name: "DADGAD", notes: ["D2", "A2", "D3", "G3", "A3", "D4"], category: "alternate" },
+  { name: "FACGCE", notes: ["F2", "A2", "C3", "G3", "C4", "E4"], category: "alternate" },
   { name: "All Fourths", notes: ["E2", "A2", "D3", "G3", "C4", "F4"], category: "alternate" },
   { name: "NST (New Standard)", notes: ["C2", "G2", "D3", "A3", "E4", "G4"], category: "alternate" },
 ];
