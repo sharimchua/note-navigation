@@ -2,22 +2,32 @@
 
 Note Navigation is an interactive web application designed to help musicians visualize music theory concepts on the fretboard, grand staff, and piano keyboard. It provides a visual representation of scales, chords, and tunings across different instruments.
 
-## Project info
+## Features
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Note Navigation provides several interactive views to help you conceptualize music:
 
-## What technologies are used for this project?
+- **Grand Staff Notation**: View how selected notes translate to traditional sheet music notation on the treble and bass clefs.
+- **Linear Note Map**: A simple scalar view to understand how pitch classes repeat across octaves.
+- **Piano Keyboard Visualization**: A responsive piano layout to see intervals and chord fingerings linearly.
+- **Interactive Guitar Fretboard**: Visualize notes, scales, and chords across the fretboard. It supports standard and alternate tunings (including Drop D, Open G, DADGAD, FACGCE, and more).
+- **Dissonance Spectrum / Overtone Visualizer**: See the mathematical relationships between frequencies and understand consonance vs. dissonance visually.
 
-This project is built with a modern web stack and several powerful third-party libraries:
+## Third-Party Attributions
 
-- **Framework**: React, Vite, TypeScript
-- **Styling**: Tailwind CSS, shadcn-ui, Radix UI Primitives
-- **Icons**: Lucide React
-- **Music Theory Engine**: [Tonal](https://github.com/tonaljs/tonal) (for scales, chords, and music theory calculations)
-- **Web Audio**: [Tone.js](https://github.com/Tonejs/Tone.js) (for audio playback and synthesis)
-- **Data Visualisation**: Recharts (for charts and data presentation)
-- **State Management**: React Query (for async data fetching)
-- **Routing**: React Router
+This project is built with a modern web stack and is made possible by the following open-source frameworks and libraries. We are grateful to the maintainers of these projects:
+
+| Dependency | Purpose | License |
+| :--- | :--- | :--- |
+| **[React](https://react.dev/)** | Core UI Framework | MIT License |
+| **[Vite](https://vitejs.dev/)** | Build Tool & Dev Server | MIT License |
+| **[TypeScript](https://www.typescriptlang.org/)** | Static Typing | Apache-2.0 / MIT |
+| **[Tailwind CSS](https://tailwindcss.com/)** | Utility-first Styling | MIT License |
+| **[shadcn-ui](https://ui.shadcn.com/)** & **[Radix UI](https://www.radix-ui.com/)** | Accessible UI Primitives | MIT License |
+| **[Lucide React](https://lucide.dev/)** | Iconography | ISC License |
+| **[Tonal](https://github.com/tonaljs/tonal)** | Music Theory Calculations, Scales, & Chords | MIT License |
+| **[Tone.js](https://github.com/Tonejs/Tone.js)** | Web Audio Playback & Synthesis | MIT License |
+| **[Recharts](https://recharts.org/)** | Data Visualisation & Charting | MIT License |
+| **[React Router](https://reactrouter.com/)** | Application Routing | MIT License |
 
 See `package.json` for a full list of dependencies.
 
