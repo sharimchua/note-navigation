@@ -24,6 +24,17 @@ export function useMIDI({ onNoteOn, onNoteOff }: UseMIDIOptions = {}) {
   const midiAccessRef = useRef<MIDIAccess | null>(null);
   const inputsRef = useRef<MIDIInput[]>([]);
 
+  // Keep refs to the latest callbacks so event handlers always call the current version,
+  // avoiding stale closures when onNoteOn/onNoteOff change (e.g. due to mute state changes)
+  // without triggering a device reconnection that would reassign input.onmidimessage.
+  const onNoteOnRef = useRef(onNoteOn);
+  const onNoteOffRef = useRef(onNoteOff);
+
+  useEffect(() => {
+    onNoteOnRef.current = onNoteOn;
+    onNoteOffRef.current = onNoteOff;
+  }, [onNoteOn, onNoteOff]);
+
   const handleMIDIMessage = useCallback((event: MIDIMessageEvent) => {
     const data = event.data;
     if (!data || data.length < 3) return;
@@ -37,13 +48,13 @@ export function useMIDI({ onNoteOn, onNoteOff }: UseMIDIOptions = {}) {
 
     // Note On (command 9) with velocity > 0
     if (command === 9 && velocity > 0) {
-      onNoteOn?.(noteName, velocity);
+      onNoteOnRef.current?.(noteName, velocity);
     }
     // Note Off (command 8) or Note On with velocity 0
     else if (command === 8 || (command === 9 && velocity === 0)) {
-      onNoteOff?.(noteName);
+      onNoteOffRef.current?.(noteName);
     }
-  }, [onNoteOn, onNoteOff]);
+  }, []);
 
   const connectInput = useCallback((input: MIDIInput) => {
     input.onmidimessage = handleMIDIMessage;
