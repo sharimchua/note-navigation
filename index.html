@@ -1,22 +1,71 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Note Navigation | Midlife Muso</title>
-    <meta name="description" content="Interactive music theory tool mapping notation, guitar fretboard, and piano keyboard in a unified tri-view engine. By Midlife Muso.">
-    <meta name="author" content="Midlife Muso" />
-    <link rel="icon" href="/favicon.webp" type="image/webp">
+    <meta name="description" content="Interactive music theory tool mapping notation, guitar fretboard, and piano keyboard in a unified tri-view engine. By Midlife Muso." />
+    <meta name="author" content="Sharim Chua — Midlife Muso" />
+    <link rel="icon" href="/favicon.webp" type="image/webp" />
+    <link rel="canonical" href="https://note-navigation.midlifemuso.com/" />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Note Navigation | Midlife Muso">
-    <meta property="og:description" content="Interactive music theory tool mapping notation, guitar fretboard, and piano keyboard in a unified tri-view engine. By Midlife Muso.">
+    <meta property="og:site_name" content="Midlife Muso" />
+    <meta property="og:locale" content="en_AU" />
+    <meta property="og:url" content="https://note-navigation.midlifemuso.com/" />
+    <meta property="og:title" content="Note Navigation | Midlife Muso" />
+    <meta property="og:description" content="Interactive music theory tool mapping notation, guitar fretboard, and piano keyboard in a unified tri-view engine. By Midlife Muso." />
+    <meta property="og:image" content="https://midlifemuso.com/images/apps/note-navigation.webp" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Note Navigation | Midlife Muso">
-    <meta name="twitter:description" content="Interactive music theory tool mapping notation, guitar fretboard, and piano keyboard in a unified tri-view engine. By Midlife Muso.">
-</head>
+    <meta name="twitter:title" content="Note Navigation | Midlife Muso" />
+    <meta name="twitter:description" content="Interactive music theory tool mapping notation, guitar fretboard, and piano keyboard in a unified tri-view engine. By Midlife Muso." />
+    <meta name="twitter:image" content="https://midlifemuso.com/images/apps/note-navigation.webp" />
+
+    <!-- Google Analytics 4 (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FXS2Y4S4RT"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-FXS2Y4S4RT');
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Note Navigation",
+        "url": "https://note-navigation.midlifemuso.com/",
+        "description": "Real-time music theory mapping environment connecting symmetrical Grand Staff notation, piano keyboard, and guitar fretboard.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "isAccessibleForFree": true,
+        "image": "https://midlifemuso.com/images/apps/note-navigation.webp",
+        "author": {
+          "@type": "Person",
+          "name": "Sharim Chua",
+          "url": "https://midlifemuso.com/about-me/"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Midlife Muso",
+          "url": "https://midlifemuso.com/"
+        }
+      }
+    </script>
+  </head>
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="padding:2rem;max-width:42rem;margin:0 auto;font-family:sans-serif;">
+        <h1>Note Navigation | Midlife Muso</h1>
+        <p>Interactive music theory tool mapping Grand Staff notation, guitar fretboard, and piano keyboard in real time. Enable JavaScript to launch the app, or visit <a href="https://midlifemuso.com/apps/">Midlife Muso Apps</a>.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
