@@ -11,9 +11,10 @@ export interface MIDIState {
 interface UseMIDIOptions {
   onNoteOn?: (note: string, velocity: number) => void;
   onNoteOff?: (note: string) => void;
+  suppressed?: boolean;
 }
 
-export function useMIDI({ onNoteOn, onNoteOff }: UseMIDIOptions = {}) {
+export function useMIDI({ onNoteOn, onNoteOff, suppressed = false }: UseMIDIOptions = {}) {
   const [state, setState] = useState<MIDIState>({
     isSupported: typeof navigator !== "undefined" && "requestMIDIAccess" in navigator,
     isConnected: false,
@@ -29,13 +30,16 @@ export function useMIDI({ onNoteOn, onNoteOff }: UseMIDIOptions = {}) {
   // without triggering a device reconnection that would reassign input.onmidimessage.
   const onNoteOnRef = useRef(onNoteOn);
   const onNoteOffRef = useRef(onNoteOff);
+  const suppressedRef = useRef(suppressed);
 
   useEffect(() => {
     onNoteOnRef.current = onNoteOn;
     onNoteOffRef.current = onNoteOff;
-  }, [onNoteOn, onNoteOff]);
+    suppressedRef.current = suppressed;
+  }, [onNoteOn, onNoteOff, suppressed]);
 
   const handleMIDIMessage = useCallback((event: MIDIMessageEvent) => {
+    if (suppressedRef.current) return;
     const data = event.data;
     if (!data || data.length < 3) return;
 

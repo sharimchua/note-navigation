@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useMem
 import * as Tone from "tone";
 import { getScaleNotes, isNoteInScale, NOTE_NAMES, GUITAR_TUNINGS, GuitarTuning, NOTE_NAMES_FLAT } from "@/lib/music-engine";
 import { useMIDI, MIDIState } from "@/hooks/use-midi";
+import { useStageBridge, type SyncableNoteNavState } from "@/hooks/useStageBridge";
 import { Note } from "tonal";
 
 export type ScaleLabelMode = "solfege" | "degree";
@@ -85,6 +86,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [selectedTuning, setSelectedTuning] = useState<GuitarTuning>(GUITAR_TUNINGS[0]);
   const [isMuted, setMuted] = useState(false);
   const [trailMode, setTrailMode] = useState(false);
+  const [suppressLocalMidi, setSuppressLocalMidi] = useState(false);
 
   // Notes currently fading (released but still visible)
   const [fadingNotes, setFadingNotes] = useState<Set<string>>(new Set());
@@ -267,7 +269,75 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const midiState = useMIDI({
     onNoteOn: handleMIDINoteOn,
     onNoteOff: handleMIDINoteOff,
+    suppressed: suppressLocalMidi,
   });
+
+  const syncableState: SyncableNoteNavState = useMemo(
+    () => ({
+      selectedKey,
+      selectedScale,
+      scaleRootOffset,
+      isKeyLocked,
+      scaleLabelMode,
+      selectedTuningName: selectedTuning.name,
+      trailMode,
+      activeNotes: Array.from(activeNotes),
+    }),
+    [
+      selectedKey,
+      selectedScale,
+      scaleRootOffset,
+      isKeyLocked,
+      scaleLabelMode,
+      selectedTuning.name,
+      trailMode,
+      activeNotes,
+    ]
+  );
+
+  const stageBridge = useStageBridge({
+    state: syncableState,
+    onSetSuppressLocalMidi: setSuppressLocalMidi,
+    onRemoteNoteOn: (note) => {
+      addNote(note);
+      void playNote(note);
+    },
+    onRemoteNoteOff: (note) => {
+      removeNote(note);
+    },
+    onRemoteClearNotes: () => {
+      clearNotes();
+    },
+    onRemotePlayNote: (note) => {
+      void playNote(note);
+    },
+    onAudioUnlocked: () => {
+      audioStartedRef.current = true;
+    },
+    applyRemoteState: (st, tuning) => {
+      if (st.selectedKey !== undefined) setSelectedKey(st.selectedKey);
+      if (st.selectedScale !== undefined) setSelectedScale(st.selectedScale);
+      if (st.scaleRootOffset !== undefined) setScaleRootOffset(st.scaleRootOffset);
+      if (st.isKeyLocked !== undefined) setKeyLocked(st.isKeyLocked);
+      if (st.scaleLabelMode !== undefined) setScaleLabelModeState(st.scaleLabelMode);
+      if (tuning) setSelectedTuning(tuning);
+      if (st.trailMode !== undefined) setTrailMode(st.trailMode);
+      if (Array.isArray(st.activeNotes)) setActiveNotes(new Set(st.activeNotes));
+    },
+  });
+
+  const playNoteWithBroadcast = useCallback(
+    async (note: string) => {
+      await playNote(note);
+      stageBridge.broadcastAction("PLAY_NOTE", { note });
+    },
+    [playNote, stageBridge]
+  );
+
+  const clearNotesWithBroadcast = useCallback(() => {
+    clearNotes();
+    stageBridge.broadcastAction("CLEAR_NOTES");
+  }, [clearNotes, stageBridge]);
 
   useEffect(() => {
     // Trail mode is only meaningful for (and only controllable with) a connected MIDI device.
@@ -307,7 +377,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       selectedTuning,
       toggleNote,
       setActiveNotes,
-      clearNotes,
+      clearNotes: clearNotesWithBroadcast,
       setKey,
       setScale,
       setKeyLocked,
@@ -316,7 +386,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       setMuted,
       setTrailMode,
       setTuning,
-      playNote,
+      playNote: playNoteWithBroadcast,
       isNoteInCurrentScale,
     }
   }, children);
