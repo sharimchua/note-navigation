@@ -1,168 +1,525 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
-import { PIANO_KEYS, getNoteColor, getScaleLabel, getNoteChroma, PIANO_START_MIDI } from "@/lib/music-engine";
+import {
+  PIANO_KEYS,
+  getDisplayNoteLabel,
+  getNoteChroma,
+} from "@/lib/music-engine";
+import {
+  encodePianoTriangles,
+  getSolfegeColor,
+  getSolfegeContrastText,
+  PIANO_RANGE_PRESETS,
+  PIANO_TRIANGLE_META,
+  type PianoTriangleType,
+} from "@/lib/pptConstants";
+import { createOnsetFromNotes } from "@/lib/phrase-model";
+import { solvePianoPhraseFingering } from "@/lib/piano-fingering";
 import { Note } from "tonal";
-import { useCallback, useRef, useMemo, useEffect } from "react";
+import { useCallback, useRef, useMemo, useState, type MouseEvent } from "react";
 
-const BRIGHT_FILTER = "saturate(1.6) brightness(1.5)";
-const WHITE_KEYS = PIANO_KEYS.filter(k => !k.isBlack);
 const FADE_DURATION = 850;
 
 export function PianoKeyboard() {
-  const { activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked, scaleLabelMode, scaleNotes, trailMode, isNoteVisible, isNotePressed, isNoteFading } = useHarmonic();
+  const {
+    activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked,
+    selectedKey, labelMode, useFlats, trailMode, isNoteVisible, isNotePressed, isNoteFading,
+    showPianoTriangles, setShowPianoTriangles,
+    phraseMode, phraseOnsets, activeStepIndex, nextOnsetNotes,
+    showFingering, showNextPreview, setPianoFingerOverride,
+  } = useHarmonic();
+  const [rangeId, setRangeId] = useState<string>("49-key");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const rootChroma = useMemo(() => scaleNotes.length > 0 ? getNoteChroma(scaleNotes[0]) : 0, [scaleNotes]);
+  const rangePreset = useMemo(
+    () => PIANO_RANGE_PRESETS.find(p => p.id === rangeId) ?? PIANO_RANGE_PRESETS[2],
+    [rangeId]
+  );
+
+  const visibleKeys = useMemo(
+    () => PIANO_KEYS.filter(k => k.midi >= rangePreset.startMidi && k.midi <= rangePreset.endMidi),
+    [rangePreset]
+  );
+  const visibleWhiteKeys = useMemo(() => visibleKeys.filter(k => !k.isBlack), [visibleKeys]);
+  const visibleBlackKeys = useMemo(() => visibleKeys.filter(k => k.isBlack), [visibleKeys]);
+  const numWhite = visibleWhiteKeys.length;
+  const whiteKeyPct = 100 / Math.max(1, numWhite);
+  const isCompact = numWhite > 35;
+
+  const tonicChroma = useMemo(() => getNoteChroma(selectedKey), [selectedKey]);
+
   const baseMidi = useMemo(() => {
     if (activeNotes.size === 0) return undefined;
     let lowestActive = Infinity;
     activeNotes.forEach(n => { const m = Note.midi(n); if (m !== null && m < lowestActive) lowestActive = m; });
     if (!isFinite(lowestActive)) return undefined;
     let root = lowestActive;
-    while (root % 12 !== rootChroma && root >= 0) root--;
+    while (root % 12 !== tonicChroma && root >= 0) root--;
     return root >= 0 ? root : undefined;
-  }, [activeNotes, rootChroma]);
+  }, [activeNotes, tonicChroma]);
 
-  const handleKeyClick = useCallback((note: string) => {
+  const activeMidisSorted = useMemo(() => {
+    const midis: number[] = [];
+    activeNotes.forEach(n => {
+      const m = Note.midi(n);
+      if (m !== null) midis.push(m);
+    });
+    return midis.sort((a, b) => a - b);
+  }, [activeNotes]);
+
+  const activeMidiSet = useMemo(() => new Set(activeMidisSorted), [activeMidisSorted]);
+  const triangleEncoding = useMemo(() => encodePianoTriangles(activeMidisSorted), [activeMidisSorted]);
+
+  const effectiveOnsets = useMemo(
+    () => (phraseMode ? phraseOnsets : [createOnsetFromNotes(Array.from(activeNotes))]),
+    [phraseMode, phraseOnsets, activeNotes]
+  );
+
+  const solvedFingerings = useMemo(
+    () => (showFingering ? solvePianoPhraseFingering(effectiveOnsets) : []),
+    [showFingering, effectiveOnsets]
+  );
+
+  const activeFingerMap = useMemo(() => {
+    const map = new Map<string, { hand: "L" | "R"; finger: 1 | 2 | 3 | 4 | 5 }>();
+    const list = solvedFingerings[phraseMode ? activeStepIndex : 0] ?? [];
+    for (const f of list) map.set(f.note, { hand: f.hand, finger: f.finger });
+    return map;
+  }, [solvedFingerings, phraseMode, activeStepIndex]);
+
+  const nextFingerMap = useMemo(() => {
+    const map = new Map<string, { hand: "L" | "R"; finger: 1 | 2 | 3 | 4 | 5 }>();
+    if (!phraseMode || !showFingering) return map;
+    const list = solvedFingerings[activeStepIndex + 1] ?? [];
+    for (const f of list) map.set(f.note, { hand: f.hand, finger: f.finger });
+    return map;
+  }, [solvedFingerings, phraseMode, showFingering, activeStepIndex]);
+
+  const handleKeyClick = useCallback((note: string, e: MouseEvent) => {
+    if (e.altKey && showFingering && phraseMode && activeNotes.has(note)) {
+      e.stopPropagation();
+      const cur = activeFingerMap.get(note);
+      const nextFinger = cur ? (((cur.finger % 5) + 1) as 1 | 2 | 3 | 4 | 5) : 1;
+      setPianoFingerOverride(activeStepIndex, note, {
+        hand: cur?.hand ?? ((Note.midi(note) ?? 60) >= 60 ? "R" : "L"),
+        finger: nextFinger,
+      });
+      return;
+    }
     playNote(note);
     toggleNote(note);
-  }, [playNote, toggleNote]);
-  const whiteKeyWidth = 100 / WHITE_KEYS.length;
+  }, [playNote, toggleNote, showFingering, phraseMode, activeNotes, activeFingerMap, setPianoFingerOverride, activeStepIndex]);
 
-  useEffect(() => {
-    const scrollEl = scrollRef.current;
-    const innerEl = containerRef.current;
-    if (!scrollEl || !innerEl) return;
-    const c4Idx = WHITE_KEYS.findIndex(k => k.midi === 60);
-    if (c4Idx < 0) return;
-    const innerWidth = innerEl.scrollWidth;
-    const visibleWidth = scrollEl.clientWidth;
-    const c4Pos = (c4Idx / WHITE_KEYS.length) * innerWidth;
-    scrollEl.scrollLeft = Math.max(0, c4Pos - visibleWidth / 2);
-  }, []);
+  const whiteIndexByMidi = useMemo(() => {
+    const map = new Map<number, number>();
+    visibleWhiteKeys.forEach((wk, idx) => {
+      map.set(wk.midi, idx);
+    });
+    return map;
+  }, [visibleWhiteKeys]);
+
+  const triangleOverlays = useMemo(() => {
+    if (!showPianoTriangles) return [];
+    const instances: {
+      id: string;
+      type: PianoTriangleType;
+      color: string;
+      pts: { midi: number; xPct: number; yPct: number; active: boolean; ptNum: number }[];
+    }[] = [];
+
+    const Y_BLACK = 32;
+    const Y_WHITE = 76;
+
+    const specs: {
+      offset: number;
+      type: PianoTriangleType;
+      computeCoords: (m1: number, m2: number, m3: number) => [{ xPct: number; yPct: number }, { xPct: number; yPct: number }, { xPct: number; yPct: number }] | null;
+    }[] = [
+      {
+        offset: 1,
+        type: "D",
+        computeCoords: (_m1, m2) => {
+          const dIdx = whiteIndexByMidi.get(m2);
+          if (dIdx === undefined) return null;
+          return [
+            { xPct: dIdx * whiteKeyPct, yPct: Y_BLACK },
+            { xPct: (dIdx + 0.5) * whiteKeyPct, yPct: Y_WHITE },
+            { xPct: (dIdx + 1.0) * whiteKeyPct, yPct: Y_BLACK },
+          ];
+        },
+      },
+      {
+        offset: 4,
+        type: "L",
+        computeCoords: (m1, m2) => {
+          const eIdx = whiteIndexByMidi.get(m1);
+          const fIdx = whiteIndexByMidi.get(m2);
+          if (eIdx === undefined || fIdx === undefined) return null;
+          return [
+            { xPct: (eIdx + 0.5) * whiteKeyPct, yPct: Y_WHITE },
+            { xPct: (fIdx + 0.85) * whiteKeyPct, yPct: Y_WHITE },
+            { xPct: (fIdx + 0.85) * whiteKeyPct, yPct: Y_BLACK },
+          ];
+        },
+      },
+      {
+        offset: 7,
+        type: "U",
+        computeCoords: (m1, _m2, m3) => {
+          const gIdx = whiteIndexByMidi.get(m1);
+          const aIdx = whiteIndexByMidi.get(m3);
+          if (gIdx === undefined || aIdx === undefined) return null;
+          return [
+            { xPct: (gIdx + 0.5) * whiteKeyPct, yPct: Y_WHITE },
+            { xPct: (gIdx + 1.0) * whiteKeyPct, yPct: Y_BLACK },
+            { xPct: (aIdx + 0.5) * whiteKeyPct, yPct: Y_WHITE },
+          ];
+        },
+      },
+      {
+        offset: 10,
+        type: "R",
+        computeCoords: (_m1, m2, m3) => {
+          const bIdx = whiteIndexByMidi.get(m2);
+          const cIdx = whiteIndexByMidi.get(m3);
+          if (bIdx === undefined || cIdx === undefined) return null;
+          return [
+            { xPct: (bIdx + 0.15) * whiteKeyPct, yPct: Y_BLACK },
+            { xPct: (bIdx + 0.15) * whiteKeyPct, yPct: Y_WHITE },
+            { xPct: (cIdx + 0.5) * whiteKeyPct, yPct: Y_WHITE },
+          ];
+        },
+      },
+    ];
+
+    for (let base = 0; base <= rangePreset.endMidi; base += 12) {
+      for (const sp of specs) {
+        const m1 = base + sp.offset;
+        const m2 = m1 + 1;
+        const m3 = m1 + 2;
+        if (m1 < rangePreset.startMidi || m3 > rangePreset.endMidi) continue;
+        const coords = sp.computeCoords(m1, m2, m3);
+        if (!coords) continue;
+
+        instances.push({
+          id: `${sp.type}-${m1}`,
+          type: sp.type,
+          color: PIANO_TRIANGLE_META[sp.type].color,
+          pts: [
+            { midi: m1, xPct: coords[0].xPct, yPct: coords[0].yPct, active: activeMidiSet.has(m1), ptNum: 1 },
+            { midi: m2, xPct: coords[1].xPct, yPct: coords[1].yPct, active: activeMidiSet.has(m2), ptNum: 2 },
+            { midi: m3, xPct: coords[2].xPct, yPct: coords[2].yPct, active: activeMidiSet.has(m3), ptNum: 3 },
+          ],
+        });
+      }
+    }
+    return instances;
+  }, [showPianoTriangles, whiteIndexByMidi, whiteKeyPct, rangePreset, activeMidiSet]);
 
   return (
-    <div className="glass-panel p-4 h-full flex flex-col">
-      <h3 className="engineering-label mb-3">Piano · 88 Keys</h3>
-      <div ref={scrollRef} className="overflow-x-auto pb-3 flex-1 min-h-0">
-        <div 
-          ref={containerRef}
-          className="relative select-none h-full"
-          style={{ minWidth: "1600px", minHeight: "120px" }}
+    <div className="glass-panel p-3 h-full flex flex-col">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="engineering-label">Piano · {rangePreset.rangeLabel}</h3>
+          <div className="flex items-center gap-0.5 bg-secondary/70 p-0.5 rounded-md border border-border">
+            {PIANO_RANGE_PRESETS.map(preset => {
+              const selected = preset.id === rangePreset.id;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setRangeId(preset.id)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                    selected
+                      ? "bg-primary/20 text-primary font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title={preset.name}
+                >
+                  {preset.shortName}
+                </button>
+              );
+            })}
+          </div>
+          {triangleEncoding && (
+            <span
+              className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary border border-border text-primary font-semibold"
+              title="PPT Piano Triangle Voicing Encoding (D=Down, L=Left, U=Up, R=Right)"
+            >
+              △ {triangleEncoding}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowPianoTriangles(!showPianoTriangles)}
+          className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
+            showPianoTriangles
+              ? "bg-primary/15 border-primary/50 text-primary font-semibold"
+              : "bg-secondary/60 border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
+          }`}
+          title="Overlay Prime Period Theory Piano Triangles (D / L / U / R)"
         >
-        {/* White keys */}
-        {WHITE_KEYS.map((key, i) => {
-          const pressed = isNotePressed(key.note);
-          const fading = isNoteFading(key.note);
-          const visible = isNoteVisible(key.note);
-          const inScale = isNoteInCurrentScale(key.note);
-          const pc = Note.pitchClass(key.note);
-          const color = getNoteColor(key.note);
-          const showScaleIndicator = isKeyLocked && inScale;
-          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
+          {showPianoTriangles ? "△ Triangles ON" : "△ Piano Triangles"}
+        </button>
+      </div>
 
-          return (
-            <div
-              key={key.midi}
-              className={`absolute top-0 bottom-0 border border-border/50 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? 'note-active' : ''}`}
-              style={{
-                left: `${i * whiteKeyWidth}%`,
-                width: `${whiteKeyWidth}%`,
-                backgroundColor: visible ? color : "#f5f0e8",
-                zIndex: 1,
-                transition: 'background-color 0ms',
-                animation: fading && trailMode 
-                  ? `piano-key-fade ${FADE_DURATION}ms ease-out forwards`
-                  : undefined,
-              }}
-              onClick={() => handleKeyClick(key.note)}
-            >
-              {/* Trail shimmer bar at bottom of active key */}
-              {visible && trailMode && (
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm"
-                  style={{ 
-                    background: `linear-gradient(to top, ${color}, transparent)`,
-                    animation: fading 
-                      ? `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
-                      : 'trail-shimmer 1.5s ease-in-out infinite',
-                  }}
-                />
-              )}
-              {showScaleIndicator && (
-                <div 
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                  style={{ 
-                    borderColor: visible ? 'hsl(var(--background))' : color,
-                    backgroundColor: visible ? 'hsla(var(--background) / 0.3)' : 'transparent',
-                  }}
-                >
-                  <span className="font-mono font-bold" style={{ color: visible ? 'hsl(var(--background))' : color, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
-                    {scaleLabel || pc}
+      <div ref={scrollRef} className="overflow-x-auto flex-1 min-h-0">
+        <div
+          className="relative select-none w-full h-full"
+          style={{
+            minWidth: numWhite > 42 ? `${numWhite * 16}px` : undefined,
+            minHeight: "120px",
+          }}
+        >
+          {/* White keys */}
+          {visibleWhiteKeys.map((key, i) => {
+            const pressed = isNotePressed(key.note);
+            const fading = isNoteFading(key.note);
+            const visible = isNoteVisible(key.note);
+            const isNext = showNextPreview && phraseMode && !visible && nextOnsetNotes.has(key.note);
+            const inScale = isNoteInCurrentScale(key.note);
+            const pc = Note.pitchClass(key.note);
+            const semitoneFromTonic = ((key.midi % 12) - tonicChroma + 12) % 12;
+            const color = getSolfegeColor(key.midi % 12, tonicChroma, { neonFi: true });
+            const contrastText = getSolfegeContrastText(semitoneFromTonic, { neonFi: true });
+            const showScaleIndicator = isKeyLocked && inScale;
+            const displayLabel = getDisplayNoteLabel(key.note, selectedKey, labelMode, useFlats, baseMidi);
+            const fingerInfo = visible ? activeFingerMap.get(key.note) : undefined;
+            const nextFingerInfo = isNext ? nextFingerMap.get(key.note) : undefined;
+
+            return (
+              <div
+                key={key.midi}
+                className={`absolute top-0 bottom-0 border border-slate-700/60 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? "note-active" : ""}`}
+                style={{
+                  left: `${i * whiteKeyPct}%`,
+                  width: `${whiteKeyPct}%`,
+                  backgroundColor: visible ? color : "#eef2f6",
+                  zIndex: 1,
+                  transition: "background-color 0ms",
+                  animation: fading && trailMode
+                    ? `piano-key-fade ${FADE_DURATION}ms ease-out forwards`
+                    : undefined,
+                }}
+                onClick={(e) => handleKeyClick(key.note, e)}
+                title={showFingering && phraseMode && visible ? `${key.note} (Alt+Click to cycle finger)` : key.note}
+              >
+                {visible && trailMode && (
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm"
+                    style={{
+                      background: `linear-gradient(to top, ${color}, transparent)`,
+                      animation: fading
+                        ? `halo-fade-out ${FADE_DURATION}ms ease-out forwards`
+                        : "trail-shimmer 1.5s ease-in-out infinite",
+                    }}
+                  />
+                )}
+                {isNext && (
+                  <div
+                    className="absolute bottom-5 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full border border-dashed border-emerald-500 bg-slate-900/80 text-emerald-300 font-mono font-bold leading-none"
+                    style={{ fontSize: isCompact ? "5.5px" : "7px" }}
+                  >
+                    {nextFingerInfo ? `→${nextFingerInfo.finger}` : "→"}
+                  </div>
+                )}
+                {fingerInfo && (
+                  <span
+                    className="absolute bottom-11 left-1/2 -translate-x-1/2 px-1 rounded bg-slate-950/85 text-white font-mono font-bold leading-tight"
+                    style={{ fontSize: isCompact ? "6px" : "7.5px" }}
+                  >
+                    {fingerInfo.hand}{fingerInfo.finger}
                   </span>
-                </div>
-              )}
-              {pc === "C" && (
-                <span 
-                  className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono"
-                  style={{ color: visible ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
-                >
-                  C{Note.octave(key.note)}
-                </span>
+                )}
+                {showScaleIndicator && (
+                  <div
+                    className={`absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border-2 flex items-center justify-center ${
+                      isCompact ? "w-3.5 h-3.5" : "w-5 h-5"
+                    }`}
+                    style={{
+                      borderColor: visible ? contrastText : color,
+                      backgroundColor: visible
+                        ? (contrastText === "#0b0d13" ? "rgba(11,13,19,0.12)" : "rgba(255,255,255,0.18)")
+                        : "rgba(15,23,42,0.06)",
+                    }}
+                  >
+                    <span
+                      className="font-mono font-bold leading-none"
+                      style={{
+                        color: visible ? contrastText : (semitoneFromTonic === 3 || semitoneFromTonic === 4 ? "#a16207" : color),
+                        fontSize: isCompact ? "5px" : displayLabel.length > 2 ? "5.5px" : displayLabel.length > 1 ? "6px" : "7px",
+                      }}
+                    >
+                      {displayLabel}
+                    </span>
+                  </div>
+                )}
+                {visible && !showScaleIndicator && (
+                  <span
+                    className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono font-bold leading-none"
+                    style={{
+                      color: contrastText,
+                      fontSize: isCompact ? "6px" : "7.5px",
+                    }}
+                  >
+                    {displayLabel}
+                  </span>
+                )}
+                {pc === "C" && (
+                  <span
+                    className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono font-semibold leading-none"
+                    style={{
+                      color: visible ? contrastText : "#475569",
+                      fontSize: isCompact ? "7px" : "9px",
+                    }}
+                  >
+                    C{Note.octave(key.note)}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Black keys */}
+          {visibleBlackKeys.map((key) => {
+            const pressed = isNotePressed(key.note);
+            const fading = isNoteFading(key.note);
+            const visible = isNoteVisible(key.note);
+            const isNext = showNextPreview && phraseMode && !visible && nextOnsetNotes.has(key.note);
+            const inScale = isNoteInCurrentScale(key.note);
+            const semitoneFromTonic = ((key.midi % 12) - tonicChroma + 12) % 12;
+            const color = getSolfegeColor(key.midi % 12, tonicChroma, { neonFi: true });
+            const contrastText = getSolfegeContrastText(semitoneFromTonic, { neonFi: true });
+            const showScaleIndicator = isKeyLocked && inScale;
+            const displayLabel = getDisplayNoteLabel(key.note, selectedKey, labelMode, useFlats, baseMidi);
+            const fingerInfo = visible ? activeFingerMap.get(key.note) : undefined;
+            const nextFingerInfo = isNext ? nextFingerMap.get(key.note) : undefined;
+
+            const prevWhiteIdx = visibleWhiteKeys.findIndex(w => w.midi > key.midi) - 1;
+            if (prevWhiteIdx < 0) return null;
+            const leftPos = (prevWhiteIdx + 0.55) * whiteKeyPct;
+
+            return (
+              <div
+                key={key.midi}
+                className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? "note-active" : ""}`}
+                style={{
+                  left: `${leftPos}%`,
+                  width: `${whiteKeyPct * 0.8}%`,
+                  height: "60%",
+                  backgroundColor: visible ? color : "#0f141e",
+                  border: "1px solid hsl(var(--border))",
+                  zIndex: 2,
+                  transition: "background-color 0ms",
+                  animation: fading && trailMode
+                    ? `piano-key-fade-black ${FADE_DURATION}ms ease-out forwards`
+                    : undefined,
+                }}
+                onClick={(e) => handleKeyClick(key.note, e)}
+                title={showFingering && phraseMode && visible ? `${key.note} (Alt+Click to cycle finger)` : key.note}
+              >
+                {isNext && (
+                  <div
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full border border-dashed border-emerald-400 bg-slate-950/90 text-emerald-300 font-mono font-bold leading-none"
+                    style={{ fontSize: isCompact ? "5px" : "6.5px" }}
+                  >
+                    {nextFingerInfo ? `→${nextFingerInfo.finger}` : "→"}
+                  </div>
+                )}
+                {fingerInfo && (
+                  <span
+                    className="absolute top-1.5 left-1/2 -translate-x-1/2 px-1 rounded bg-slate-950/90 text-white font-mono font-bold leading-tight"
+                    style={{ fontSize: isCompact ? "5.5px" : "7px" }}
+                  >
+                    {fingerInfo.hand}{fingerInfo.finger}
+                  </span>
+                )}
+                {showScaleIndicator && (
+                  <div
+                    className={`absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full border-2 flex items-center justify-center ${
+                      isCompact ? "w-3.5 h-3.5" : "w-5 h-5"
+                    }`}
+                    style={{
+                      borderColor: visible ? contrastText : color,
+                      backgroundColor: visible
+                        ? (contrastText === "#0b0d13" ? "rgba(11,13,19,0.12)" : "rgba(255,255,255,0.18)")
+                        : "rgba(11,13,19,0.65)",
+                    }}
+                  >
+                    <span
+                      className="font-mono font-bold leading-none"
+                      style={{
+                        color: visible ? contrastText : color,
+                        fontSize: isCompact ? "5px" : displayLabel.length > 2 ? "5.5px" : displayLabel.length > 1 ? "6px" : "7px",
+                      }}
+                    >
+                      {displayLabel}
+                    </span>
+                  </div>
+                )}
+                {visible && !showScaleIndicator && (
+                  <span
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono font-bold leading-none"
+                    style={{
+                      color: contrastText,
+                      fontSize: isCompact ? "5.5px" : "7px",
+                    }}
+                  >
+                    {displayLabel}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+
+          {/* PPT Piano Triangles Overlay */}
+          {showPianoTriangles && (
+            <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 4 }}>
+              <svg
+                viewBox={`0 0 ${numWhite * 100} 100`}
+                preserveAspectRatio="none"
+                className="absolute inset-0 w-full h-full"
+              >
+                {triangleOverlays.map(tri => {
+                  const hasActive = tri.pts.some(p => p.active);
+                  const d = `M ${tri.pts[0].xPct * numWhite},${tri.pts[0].yPct} L ${tri.pts[1].xPct * numWhite},${tri.pts[1].yPct} L ${tri.pts[2].xPct * numWhite},${tri.pts[2].yPct} Z`;
+                  return (
+                    <path
+                      key={tri.id}
+                      d={d}
+                      fill={hasActive ? `${tri.color}28` : "transparent"}
+                      stroke={tri.color}
+                      strokeWidth={hasActive ? 2.2 : 1.1}
+                      strokeOpacity={hasActive ? 0.92 : 0.35}
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  );
+                })}
+              </svg>
+              {triangleOverlays.flatMap(tri =>
+                tri.pts.map(p => (
+                  <div
+                    key={`${tri.id}-${p.midi}`}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-mono font-bold select-none"
+                    style={{
+                      left: `${p.xPct}%`,
+                      top: `${p.yPct}%`,
+                      width: p.active ? (isCompact ? 11 : 14) : (isCompact ? 6 : 8),
+                      height: p.active ? (isCompact ? 11 : 14) : (isCompact ? 6 : 8),
+                      backgroundColor: p.active ? tri.color : "rgba(15, 23, 42, 0.78)",
+                      border: `${p.active ? 1.5 : 1}px solid #ffffff`,
+                      opacity: p.active ? 1 : 0.55,
+                      color: "#ffffff",
+                      fontSize: isCompact ? "6.5px" : "8px",
+                    }}
+                  >
+                    {p.active ? p.ptNum : null}
+                  </div>
+                ))
               )}
             </div>
-          );
-        })}
-
-        {/* Black keys */}
-        {PIANO_KEYS.filter(k => k.isBlack).map((key) => {
-          const pressed = isNotePressed(key.note);
-          const fading = isNoteFading(key.note);
-          const visible = isNoteVisible(key.note);
-          const inScale = isNoteInCurrentScale(key.note);
-          const color = getNoteColor(key.note);
-          const showScaleIndicator = isKeyLocked && inScale;
-          const scaleLabel = isKeyLocked ? getScaleLabel(key.note, scaleNotes, scaleLabelMode, baseMidi) : null;
-
-          const prevWhiteIdx = WHITE_KEYS.findIndex(w => w.midi > key.midi) - 1;
-          if (prevWhiteIdx < 0) return null;
-          const leftPos = (prevWhiteIdx + 0.55) * whiteKeyWidth;
-
-          return (
-            <div
-              key={key.midi}
-              className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? 'note-active' : ''}`}
-              style={{
-                left: `${leftPos}%`,
-                width: `${whiteKeyWidth * 0.8}%`,
-                height: "60%",
-                backgroundColor: visible ? color : "hsl(var(--background))",
-                border: "1px solid hsl(var(--border))",
-                zIndex: 2,
-                transition: 'background-color 0ms',
-                animation: fading && trailMode 
-                  ? `piano-key-fade-black ${FADE_DURATION}ms ease-out forwards`
-                  : undefined,
-              }}
-              onClick={() => handleKeyClick(key.note)}
-            >
-              {showScaleIndicator && (
-                <div 
-                  className="absolute top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                  style={{ 
-                    borderColor: visible ? 'hsl(var(--background))' : color,
-                    backgroundColor: visible ? 'hsla(var(--background) / 0.3)' : 'transparent',
-                    filter: visible ? undefined : BRIGHT_FILTER,
-                  }}
-                >
-                  <span className="font-mono font-bold" style={{ color: visible ? 'hsl(var(--background))' : color, filter: visible ? undefined : BRIGHT_FILTER, fontSize: scaleLabel && scaleLabel.length > 1 ? "6px" : "7px" }}>
-                    {scaleLabel || Note.pitchClass(key.note)}
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+          )}
         </div>
       </div>
     </div>

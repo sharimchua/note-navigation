@@ -83,6 +83,7 @@ function mountAudioPromptPill(onTap: () => void) {
 interface UseStageBridgeOptions {
   state: SyncableNoteNavState;
   onSetSuppressLocalMidi: (suppressed: boolean) => void;
+  onSetEcoMode?: (eco: boolean) => void;
   onRemoteNoteOn: (note: string) => void;
   onRemoteNoteOff: (note: string) => void;
   onRemoteClearNotes: () => void;
@@ -94,6 +95,7 @@ interface UseStageBridgeOptions {
 export function useStageBridge({
   state,
   onSetSuppressLocalMidi,
+  onSetEcoMode,
   onRemoteNoteOn,
   onRemoteNoteOff,
   onRemoteClearNotes,
@@ -110,6 +112,7 @@ export function useStageBridge({
   const latestRef = useRef({
     state,
     onSetSuppressLocalMidi,
+    onSetEcoMode,
     onRemoteNoteOn,
     onRemoteNoteOff,
     onRemoteClearNotes,
@@ -120,6 +123,7 @@ export function useStageBridge({
   latestRef.current = {
     state,
     onSetSuppressLocalMidi,
+    onSetEcoMode,
     onRemoteNoteOn,
     onRemoteNoteOff,
     onRemoteClearNotes,
@@ -174,8 +178,17 @@ export function useStageBridge({
         case 'STAGE_INIT': {
           roleRef.current = data.role === 'teacher' ? 'teacher' : 'student';
           cur.onSetSuppressLocalMidi(Boolean(data.suppressLocalMidi));
+          if (typeof data.ecoMode === 'boolean') {
+            cur.onSetEcoMode?.(data.ecoMode);
+          }
           if (roleRef.current === 'teacher') {
             pushCurrentState();
+          }
+          break;
+        }
+        case 'STAGE_ECO_MODE': {
+          if (typeof data.ecoMode === 'boolean') {
+            cur.onSetEcoMode?.(data.ecoMode);
           }
           break;
         }

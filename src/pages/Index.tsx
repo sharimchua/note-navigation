@@ -1,23 +1,174 @@
-
+import { useEffect, useState } from "react";
 import { HarmonicProvider, useHarmonic } from "@/contexts/HarmonicContext";
-import { PianoKeyboard } from "@/components/PianoKeyboard";
-import { GuitarFretboard } from "@/components/GuitarFretboard";
-import { StaffNotation } from "@/components/StaffNotation";
-import { LinearNoteMap } from "@/components/LinearNoteMap";
-import { DissonanceSpectrum } from "@/components/DissonanceSpectrum";
-import { Trash2, Volume2, VolumeX, Sparkles } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { FlexLayoutRenderer } from "@/components/FlexLayoutRenderer";
+import { PhraseBar } from "@/components/PhraseBar";
+import { SettingsDrawer } from "@/components/SettingsDrawer";
+import {
+  Trash2,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Tags,
+  Pin,
+  ListMusic,
+  LayoutGrid,
+  Pencil,
+  Share2,
+  Check,
+  Bookmark,
+  Settings,
+} from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { KEY_NAMES_COF, SCALE_PRESETS } from "@/lib/music-engine";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { KEY_NAMES_COF, SCALE_PRESETS, type NoteLabelMode } from "@/lib/music-engine";
+import {
+  LAYOUT_PRESETS,
+  countCells,
+  updateCellModule,
+  splitCellNode,
+  removeCellNode,
+} from "@/lib/layout-models";
+import {
+  buildShareUrl,
+  encodeShareSlug,
+  decodeShareSlug,
+  loadSavedLessons,
+  saveLessonEntry,
+  deleteSavedLessonEntry,
+  type SavedLessonEntry,
+} from "@/lib/share-slug";
 import musoIcon from "@/assets/midlife_muso_icon.webp";
 
 function MainContent() {
   const {
     selectedKey, selectedScale, scaleRootOffset, isKeyLocked, midiState,
-    activeNotes, isMuted, scaleLabelMode, trailMode,
-    setKey, setScale, setKeyLocked, setMuted, setScaleLabelMode, clearNotes,
-    playNote, setTrailMode,
+    activeNotes, isMuted, isHoldEnabled, labelMode, trailMode, ecoMode, isStageEmbedded,
+    phraseMode, isPlayingPhrase, layoutPresetId, layoutRoot, midiLearnAction,
+    setKey, setScale, setKeyLocked, setMuted, toggleHold, setLabelMode, clearNotes,
+    setTrailMode, setPhraseMode, stepPrev, stepNext, stepForwardOrAdd,
+    addPhraseStep, duplicatePhraseStep, removePhraseStep, playPhrase, stopPhrasePlayback,
+    cancelMidiLearn,
+    setLayoutPreset, setCustomLayout, getShareSnapshot, hydrateFromSnapshot,
   } = useHarmonic();
+
+  const [isLayoutEdit, setIsLayoutEdit] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [lessonsOpen, setLessonsOpen] = useState(false);
+  const [lessonName, setLessonName] = useState("");
+  const [savedLessons, setSavedLessons] = useState<SavedLessonEntry[]>(() => loadSavedLessons());
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (midiLearnAction && e.key === "Escape") {
+        e.preventDefault();
+        cancelMidiLearn();
+        return;
+      }
+
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const isInteractiveControl =
+        target && (target.tagName === "BUTTON" || target.tagName === "A");
+
+      if (e.code === "KeyH" || e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        toggleHold();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        clearNotes();
+      } else if (phraseMode && e.key === "ArrowLeft") {
+        e.preventDefault();
+        stepPrev();
+      } else if (phraseMode && e.key === "ArrowRight") {
+        e.preventDefault();
+        stepNext();
+      } else if (phraseMode && e.key === "Enter" && !isInteractiveControl) {
+        e.preventDefault();
+        stepForwardOrAdd();
+      } else if (phraseMode && (e.code === "KeyN" || e.key === "+" || e.key === "=")) {
+        e.preventDefault();
+        addPhraseStep();
+      } else if (phraseMode && e.code === "KeyD") {
+        e.preventDefault();
+        duplicatePhraseStep();
+      } else if (phraseMode && e.code === "Space" && !isInteractiveControl) {
+        e.preventDefault();
+        if (isPlayingPhrase) {
+          stopPhrasePlayback();
+        } else {
+          playPhrase();
+        }
+      } else if (phraseMode && e.key === "Delete") {
+        e.preventDefault();
+        removePhraseStep();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    toggleHold,
+    clearNotes,
+    phraseMode,
+    stepPrev,
+    stepNext,
+    stepForwardOrAdd,
+    addPhraseStep,
+    duplicatePhraseStep,
+    removePhraseStep,
+    isPlayingPhrase,
+    playPhrase,
+    stopPhrasePlayback,
+    midiLearnAction,
+    cancelMidiLearn,
+  ]);
+
+  const handleCopyShareUrl = async () => {
+    const url = buildShareUrl(getShareSnapshot());
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1800);
+    } catch {
+      // Fallback: update address bar without reload so the user can copy directly
+      window.history.replaceState(null, "", url);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1800);
+    }
+  };
+
+  const handleSaveLesson = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = lessonName.trim();
+    if (!trimmed) return;
+    const slug = encodeShareSlug(getShareSnapshot());
+    const next = saveLessonEntry(trimmed, slug);
+    setSavedLessons(next);
+    setLessonName("");
+  };
+
+  const handleLoadLesson = (entry: SavedLessonEntry) => {
+    const snapshot = decodeShareSlug(entry.slug);
+    if (snapshot) {
+      hydrateFromSnapshot(snapshot);
+      setLessonsOpen(false);
+    }
+  };
+
+  const handleDeleteLesson = (id: string) => {
+    setSavedLessons(deleteSavedLessonEntry(id));
+  };
 
   const handleScaleChange = (value: string) => {
     if (value === "__none__") {
@@ -32,29 +183,36 @@ function MainContent() {
   };
 
   const currentScaleValue = isKeyLocked ? `${selectedScale}:${scaleRootOffset}` : "__none__";
+  const showTrailToggle = midiState.isConnected || isStageEmbedded;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className={`flex flex-col h-screen overflow-hidden bg-background text-foreground ${ecoMode ? "eco-mode" : ""}`}>
       {/* Top bar: branding + controls */}
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 border-b border-border bg-card">
-        {/* Branding */}
-        <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 hover:opacity-80 transition-opacity mr-2 shrink-0">
-          <img src={musoIcon} alt="Note Navigation" className="w-6 h-6 rounded" />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-bold text-primary font-mono">Note</span>
-              <span className="text-sm font-bold text-foreground font-mono">Navigation</span>
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 border-b border-border bg-card/95 shrink-0">
+        {/* Branding (hidden when embedded inside Muso Stage) */}
+        {!isStageEmbedded && (
+          <a
+            href="https://midlifemuso.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 hover:opacity-85 transition-opacity mr-2 shrink-0"
+          >
+            <img src={musoIcon} alt="Note Navigation" className="w-6 h-6 rounded" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1 leading-tight">
+                <span className="text-sm font-bold text-primary font-sans tracking-tight">Note</span>
+                <span className="text-sm font-bold text-foreground font-sans tracking-tight">Navigation</span>
+              </div>
+              <span className="text-[9px] text-muted-foreground font-sans leading-none">A Midlife Muso Tool</span>
             </div>
-            <span className="text-[9px] text-muted-foreground font-mono leading-none">A Midlife Muso Tool</span>
-          </div>
-        </a>
+          </a>
+        )}
 
         {/* Key Centre dropdown */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">Key Centre</span>
+          <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase tracking-wider">Key Centre</span>
           <Select value={selectedKey} onValueChange={setKey}>
-            <SelectTrigger className="w-[80px] h-8 text-xs font-mono bg-secondary/50 border-border">
+            <SelectTrigger className="w-[82px] h-8 text-xs font-mono bg-secondary/70 border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -67,9 +225,9 @@ function MainContent() {
 
         {/* Scale Blueprint dropdown */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">Scale Blueprint</span>
+          <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase tracking-wider">Scale Blueprint</span>
           <Select value={currentScaleValue} onValueChange={handleScaleChange}>
-            <SelectTrigger className="w-[180px] h-8 text-xs font-mono bg-secondary/50 border-border">
+            <SelectTrigger className="w-[180px] h-8 text-xs font-mono bg-secondary/70 border-border">
               <SelectValue placeholder="No scale" />
             </SelectTrigger>
             <SelectContent>
@@ -86,123 +244,351 @@ function MainContent() {
           </Select>
         </div>
 
+        {/* Label Mode dropdown (always available) */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase tracking-wider">Labels</span>
+          <Select value={labelMode} onValueChange={(v) => setLabelMode(v as NoteLabelMode)}>
+            <SelectTrigger className="w-[155px] h-8 text-xs font-mono bg-secondary/70 border-border">
+              <div className="flex items-center gap-1.5 truncate">
+                <Tags size={12} className="text-muted-foreground shrink-0" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="notes" className="text-xs font-mono">Notes (A–G)</SelectItem>
+              <SelectItem value="tri" className="text-xs font-mono">Tri (△)</SelectItem>
+              <SelectItem value="solfege" className="text-xs font-mono">Solfège (Do–Ti)</SelectItem>
+              <SelectItem value="degree" className="text-xs font-mono">Degrees (1–7)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Mute */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+          <span className="text-[9px] font-sans text-muted-foreground uppercase tracking-wider">&nbsp;</span>
           <button
             onClick={() => setMuted(!isMuted)}
             className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
               isMuted
-                ? 'border-destructive/40 bg-destructive/10 text-destructive'
-                : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+                ? "border-destructive/40 bg-destructive/10 text-destructive"
+                : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
             }`}
             aria-label={isMuted ? "Unmute" : "Mute"}
+            title={isMuted ? "Unmute audio" : "Mute audio"}
           >
             {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
         </div>
 
-        {/* Trail toggle (MIDI only) */}
-        {midiState.isConnected && (
+        {/* Hold MIDI toggle (H) */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-sans text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+          <button
+            type="button"
+            onClick={toggleHold}
+            className={`flex items-center gap-1 px-2 h-8 rounded-md border text-xs font-mono transition-all ${
+              isHoldEnabled
+                ? "border-primary/60 bg-primary/15 text-primary font-semibold"
+                : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+            }`}
+            aria-pressed={isHoldEnabled}
+            title="Hold MIDI notes (H) · Press Esc to clear"
+          >
+            <Pin size={12} />
+            <span className="hidden sm:inline">Hold</span>
+            <kbd className="text-[9px] opacity-70">H</kbd>
+          </button>
+        </div>
+
+        {/* Trail toggle */}
+        {showTrailToggle && (
           <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
+            <span className="text-[9px] font-sans text-muted-foreground uppercase tracking-wider">&nbsp;</span>
             <button
               onClick={() => setTrailMode(!trailMode)}
               className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
                 trailMode
-                  ? 'border-primary/60 bg-primary/15 text-primary'
-                  : 'border-border bg-secondary/50 text-muted-foreground hover:text-primary hover:border-primary/50'
+                  ? "border-primary/60 bg-primary/15 text-primary"
+                  : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
               }`}
-              aria-label={trailMode ? "Disable animated" : "Enable animated"}
-              title={trailMode ? "Animated mode on" : "Animated mode off"}
+              aria-label={trailMode ? "Disable animated trail" : "Enable animated trail"}
+              title={trailMode ? "Animated trail on" : "Animated trail off"}
             >
               <Sparkles size={14} />
             </button>
           </div>
         )}
 
-        {/* Solfege / Degree toggle */}
-        {isKeyLocked && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">&nbsp;</span>
-            <ToggleGroup type="single" value={scaleLabelMode} onValueChange={(v) => v && setScaleLabelMode(v as any)} className="justify-start">
-              <ToggleGroupItem value="solfege" size="sm" className="h-8 text-xs font-mono px-3">Solfege</ToggleGroupItem>
-              <ToggleGroupItem value="degree" size="sm" className="h-8 text-xs font-mono px-3">Degrees</ToggleGroupItem>
-            </ToggleGroup>
+        {/* Phrase mode toggle */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase tracking-wider">Mode</span>
+          <button
+            type="button"
+            onClick={() => setPhraseMode(!phraseMode)}
+            className={`flex items-center gap-1.5 px-2.5 h-8 rounded-md border text-xs font-mono transition-all ${
+              phraseMode
+                ? "border-primary/60 bg-primary/15 text-primary font-semibold"
+                : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+            }`}
+            aria-pressed={phraseMode}
+            title="Toggle multi-step Phrase / Sequence stepper"
+          >
+            <ListMusic size={13} />
+            <span>Phrase</span>
+          </button>
+        </div>
+
+        {/* Layout preset + edit toggle */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase tracking-wider">Layout</span>
+          <div className="flex items-center gap-1">
+            <Select
+              value={layoutPresetId}
+              onValueChange={(v) => {
+                if (v !== "custom") {
+                  setLayoutPreset(v);
+                }
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-8 text-xs font-mono bg-secondary/70 border-border">
+                <div className="flex items-center gap-1.5 truncate">
+                  <LayoutGrid size={12} className="text-muted-foreground shrink-0" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {LAYOUT_PRESETS.map(p => (
+                  <SelectItem key={p.id} value={p.id} className="text-xs font-mono">
+                    {p.name}
+                  </SelectItem>
+                ))}
+                {layoutPresetId === "custom" && (
+                  <SelectItem value="custom" className="text-xs font-mono text-primary">
+                    Custom Layout
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+
+            <button
+              type="button"
+              onClick={() => setIsLayoutEdit(e => !e)}
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+                isLayoutEdit
+                  ? "border-primary/60 bg-primary/15 text-primary"
+                  : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+              }`}
+              aria-pressed={isLayoutEdit}
+              title={isLayoutEdit ? "Finish editing layout cells" : "Customise layout cells"}
+            >
+              <Pencil size={13} />
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Share URL & Saved Lessons */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase tracking-wider">Save</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleCopyShareUrl}
+              className={`flex items-center gap-1 px-2 h-8 rounded-md border text-xs font-mono transition-all ${
+                shareCopied
+                  ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-400"
+                  : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+              }`}
+              title="Copy shareable link with key, layout, phrase & fingerings"
+            >
+              {shareCopied ? <Check size={12} /> : <Share2 size={12} />}
+              <span className="hidden md:inline">{shareCopied ? "Copied" : "Share"}</span>
+            </button>
+
+            <Popover open={lessonsOpen} onOpenChange={setLessonsOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={`flex items-center gap-1 px-2 h-8 rounded-md border text-xs font-mono transition-all ${
+                    lessonsOpen
+                      ? "border-primary/60 bg-primary/15 text-primary"
+                      : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+                  }`}
+                  title="Save or load local lessons"
+                >
+                  <Bookmark size={12} />
+                  <span className="hidden md:inline">Lessons</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-3 bg-card border-border">
+                <div className="flex flex-col gap-2.5">
+                  <div className="text-xs font-sans font-semibold text-foreground">
+                    Saved Lessons &amp; Presets
+                  </div>
+                  <form onSubmit={handleSaveLesson} className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={lessonName}
+                      onChange={e => setLessonName(e.target.value)}
+                      placeholder="Lesson title..."
+                      className="flex-1 h-7 px-2 rounded border border-border bg-secondary/60 text-xs font-sans text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!lessonName.trim()}
+                      className="h-7 px-2.5 rounded border border-primary/50 bg-primary/15 text-primary text-xs font-mono hover:bg-primary/25 disabled:opacity-40"
+                    >
+                      Save
+                    </button>
+                  </form>
+
+                  <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+                    {savedLessons.length === 0 ? (
+                      <div className="text-[11px] font-sans text-muted-foreground py-2 text-center">
+                        No saved lessons yet.
+                      </div>
+                    ) : (
+                      savedLessons.map(entry => (
+                        <div
+                          key={entry.id}
+                          className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-secondary/40 hover:bg-secondary/70 transition-colors"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleLoadLesson(entry)}
+                            className="flex-1 text-left text-xs font-sans text-foreground truncate hover:text-primary"
+                            title={`Load "${entry.name}"`}
+                          >
+                            {entry.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLesson(entry.id)}
+                            className="text-muted-foreground hover:text-destructive p-0.5 shrink-0"
+                            title="Delete saved lesson"
+                            aria-label={`Delete ${entry.name}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
 
         {/* Spacer */}
         <div className="flex-1" />
 
         {/* Clear notes */}
-        {activeNotes.size > 0 && (
+        {(activeNotes.size > 0 || isHoldEnabled) && (
           <button
             onClick={clearNotes}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+            title="Cancel hold and clear all notes (Esc)"
           >
             <Trash2 size={12} />
-            Clear
+            <span>Clear</span>
+            <kbd className="text-[9px] opacity-75">Esc</kbd>
           </button>
         )}
 
-        {/* MIDI indicator */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className={`w-2 h-2 rounded-full ${
-            midiState.isConnected
-              ? 'bg-green-500 animate-pulse'
-              : midiState.isSupported
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
-          }`} />
-          <span className="text-[10px] font-mono text-muted-foreground hidden sm:inline">
-            {midiState.isConnected
-              ? midiState.deviceName
-              : midiState.isSupported
-                ? 'No MIDI'
-                : 'No MIDI'}
-          </span>
-        </div>
+        {/* MIDI & Phrase Settings */}
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          className={`flex items-center gap-1 px-2 h-8 rounded-md border text-xs font-mono transition-all shrink-0 ${
+            settingsOpen
+              ? "border-primary/60 bg-primary/15 text-primary"
+              : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+          }`}
+          title="MIDI settings, pedal bindings & shortcuts"
+          aria-label="Open MIDI & Phrase Settings"
+        >
+          <Settings size={13} />
+          <span className="hidden lg:inline">Settings</span>
+        </button>
+
+        {/* Local MIDI indicator (hidden when embedded in Stage, which owns central MIDI) */}
+        {!isStageEmbedded && (
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="flex items-center gap-1.5 px-1.5 py-1 rounded hover:bg-secondary/60 transition-colors shrink-0"
+            title="Configure MIDI device & bindings"
+          >
+            <div className={`w-2 h-2 rounded-full ${
+              midiState.isConnected
+                ? "bg-emerald-400 animate-pulse"
+                : midiState.isSupported
+                  ? "bg-amber-400"
+                  : "bg-rose-500"
+            }`} />
+            <span className="text-[10px] font-mono text-muted-foreground hidden sm:inline">
+              {midiState.isConnected ? midiState.deviceName : "No MIDI"}
+            </span>
+          </button>
+        )}
       </header>
+
+      {/* Phrase / Sequence Stepper Bar */}
+      <PhraseBar onOpenMidiSettings={() => setSettingsOpen(true)} />
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4 min-h-0">
-        {/* Tri-View: Staff left, instruments right */}
-        <div className="flex flex-col xl:flex-row xl:items-stretch gap-3 md:gap-4 flex-1 min-h-0">
-          <div className="xl:flex-1 xl:min-w-[340px] min-h-[480px] md:min-h-[520px] xl:min-h-0">
-            <StaffNotation />
-          </div>
-          <div className="xl:w-[55%] 2xl:w-[60%] flex flex-col gap-2 md:gap-3 shrink-0 xl:self-stretch">
-            <LinearNoteMap />
-            <div className="h-[200px] shrink-0">
-              <PianoKeyboard />
-            </div>
-            <GuitarFretboard />
-            <div className="min-h-0 flex-1 shrink">
-              <DissonanceSpectrum />
-            </div>
-          </div>
+        <div className="flex-1 min-h-0 flex flex-col">
+          <FlexLayoutRenderer
+            node={layoutRoot}
+            isEditMode={isLayoutEdit}
+            canDelete={countCells(layoutRoot) > 1}
+            onSwitchModule={(cellId, mod) => setCustomLayout(updateCellModule(layoutRoot, cellId, mod))}
+            onSplitCell={(cellId, dir, newModule) =>
+              setCustomLayout(splitCellNode(layoutRoot, cellId, dir, newModule))
+            }
+            onRemoveCell={(cellId) => {
+              const next = removeCellNode(layoutRoot, cellId);
+              if (next) setCustomLayout(next);
+            }}
+          />
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between text-[9px] font-mono text-muted-foreground pt-2 border-t border-border">
-          <span>© Midlife Muso · Ear-First Guitar & Piano Coaching</span>
-          <div className="flex items-center gap-3">
-            <a href="https://midlifemuso.com" target="_blank" rel="noopener noreferrer"
-              className="hover:text-primary transition-colors">
-              midlifemuso.com
-            </a>
-            <a href="https://midlifemuso.com/learning" target="_blank" rel="noopener noreferrer"
-              className="hover:text-primary transition-colors">
-              Learning Resources
-            </a>
-            <a href="https://harmonic-geometry.lovable.app" target="_blank" rel="noopener noreferrer"
-              className="hover:text-primary transition-colors">
-              Harmonic Geometry
-            </a>
+        {/* Footer (hidden when embedded inside Muso Stage) */}
+        {!isStageEmbedded && (
+          <div className="flex items-center justify-between text-[10px] font-sans text-muted-foreground pt-2 border-t border-border">
+            <span>© Midlife Muso · Ear-First Guitar &amp; Piano Coaching</span>
+            <div className="flex items-center gap-3 font-mono">
+              <a
+                href="https://midlifemuso.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors"
+              >
+                midlifemuso.com
+              </a>
+              <a
+                href="https://midlifemuso.com/learning"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors"
+              >
+                Learning Resources
+              </a>
+              <a
+                href="https://harmonic-geometry.midlifemuso.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors"
+              >
+                Harmonic Geometry
+              </a>
+            </div>
           </div>
-        </div>
+        )}
       </main>
+
+      <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
