@@ -47,7 +47,9 @@ export function GuitarFretboard() {
   const [tuningOpen, setTuningOpen] = useState(false);
   const [editingPosKey, setEditingPosKey] = useState<string | null>(null);
   const [defaultStringStep, setDefaultStringStep] = useState<number>(5);
-  const [visibleFrets, setVisibleFrets] = useState<number>(12);
+  const [visibleFrets, setVisibleFrets] = useState<number>(() =>
+    typeof window !== "undefined" && window.innerWidth < 768 ? 6 : 12
+  );
   const [visibleStart, setVisibleStart] = useState<number>(0);
   const [fretWindowSize, setFretWindowSize] = useState<number>(5);
   const [windowStart, setWindowStart] = useState<number>(1);
@@ -255,15 +257,23 @@ export function GuitarFretboard() {
         return;
       }
       const cur = activePickByString.get(stringIdx)?.symbol;
-      let nextSym: GuitarRightHandSymbol;
       if (guitarRightHandMode === "fingerstyle") {
         const order: GuitarRightHandSymbol[] = ["p", "i", "m", "a"];
         const idx = cur ? order.indexOf(cur) : -1;
-        nextSym = order[(idx + 1) % order.length];
+        if (idx === order.length - 1) {
+          clearGuitarPickOverride(activeStepIndex, stringIdx);
+          return;
+        }
+        const nextSym = order[idx + 1];
+        setGuitarPickOverride(activeStepIndex, stringIdx, { stringIdx, symbol: nextSym });
       } else {
-        nextSym = cur === "D" ? "U" : "D";
+        if (cur === "U") {
+          clearGuitarPickOverride(activeStepIndex, stringIdx);
+          return;
+        }
+        const nextSym: GuitarRightHandSymbol = cur === "D" ? "U" : "D";
+        setGuitarPickOverride(activeStepIndex, stringIdx, { stringIdx, symbol: nextSym });
       }
-      setGuitarPickOverride(activeStepIndex, stringIdx, { stringIdx, symbol: nextSym });
     },
     [phraseMode, activeStepIndex, activePickByString, guitarRightHandMode, setGuitarPickOverride, clearGuitarPickOverride]
   );
@@ -482,10 +492,11 @@ export function GuitarFretboard() {
               onClick={() => setTuningOpen(!tuningOpen)}
               className="text-[10px] font-semibold uppercase tracking-wider font-mono text-primary hover:text-primary/80 transition-colors cursor-pointer border-b border-dashed border-primary/40"
             >
-              {selectedTuning.name}
+              <span className="sm:hidden">{selectedTuning.name.split(" (")[0]}</span>
+              <span className="hidden sm:inline">{selectedTuning.name}</span>
             </button>
             {tuningOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[200px] max-h-[280px] overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[210px] max-h-[280px] overflow-y-auto">
                 {tuningCategories.map(cat => {
                   const tunings = GUITAR_TUNINGS.filter(t => t.category === cat.category);
                   if (tunings.length === 0) return null;
@@ -511,11 +522,30 @@ export function GuitarFretboard() {
                     </div>
                   );
                 })}
+                <div className="sm:hidden border-t border-border mt-1 pt-1.5 px-3 pb-1.5 space-y-1">
+                  <div className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">
+                    Default String Step
+                  </div>
+                  <select
+                    value={defaultStringStep}
+                    onChange={(e) => setDefaultStringStep(Number(e.target.value))}
+                    className="w-full bg-secondary/70 border border-border text-foreground rounded px-1.5 py-1 text-[11px] font-mono"
+                  >
+                    {DEFAULT_STRING_STEP_OPTIONS.map(st => {
+                      const meta = getIntervalMeta(st);
+                      return (
+                        <option key={st} value={st}>
+                          {meta.name} ({st}st)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
               </div>
             )}
           </div>
 
-          <label className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+          <label className="hidden sm:flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
             <span className="uppercase tracking-wider">Step</span>
             <select
               value={defaultStringStep}
@@ -1214,6 +1244,7 @@ export function GuitarFretboard() {
                       }}
                     >
                       <title>Click to edit finger (0–4 / Auto)</title>
+                      <circle r={Math.max(12, badgeR * 1.6)} fill="transparent" />
                       <circle
                         r={badgeR}
                         fill="#090d16"

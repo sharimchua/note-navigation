@@ -15,7 +15,9 @@ import {
 import { createOnsetFromNotes } from "@/lib/phrase-model";
 import { solvePianoPhraseFingering } from "@/lib/piano-fingering";
 import { Note } from "tonal";
-import { useCallback, useRef, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useRef, useMemo, useState, useEffect, type MouseEvent } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useContainerSize } from "@/hooks/use-container-size";
 
 const FADE_DURATION = 850;
 
@@ -28,9 +30,13 @@ export function PianoKeyboard() {
     showFingering, showNextPreview, pianoComfortSpan,
     setPianoFingerOverride, clearPianoFingerOverride,
   } = useHarmonic();
-  const [rangeId, setRangeId] = useState<string>("49-key");
+  const isMobile = useIsMobile();
+  const [rangeId, setRangeId] = useState<string>(() =>
+    typeof window !== "undefined" && window.innerWidth < 768 ? "25-key" : "49-key"
+  );
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerSize = useContainerSize(scrollRef, { width: 340, height: 150 });
 
   const rangePreset = useMemo(
     () => PIANO_RANGE_PRESETS.find(p => p.id === rangeId) ?? PIANO_RANGE_PRESETS[2],
@@ -45,7 +51,24 @@ export function PianoKeyboard() {
   const visibleBlackKeys = useMemo(() => visibleKeys.filter(k => k.isBlack), [visibleKeys]);
   const numWhite = visibleWhiteKeys.length;
   const whiteKeyPct = 100 / Math.max(1, numWhite);
-  const isCompact = numWhite > 35;
+  const minWhiteKeyPx = isMobile ? 22 : 16;
+  const requiredTrackWidth = numWhite * minWhiteKeyPx;
+  const shouldScroll = requiredTrackWidth > containerSize.width;
+  const effectiveWhiteKeyPx = Math.max(containerSize.width, requiredTrackWidth) / Math.max(1, numWhite);
+  const isCompact = effectiveWhiteKeyPx < 26;
+
+  // Auto-centre around C4 when switching to a scrollable keyboard range
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !shouldScroll) return;
+    const c4Idx = visibleWhiteKeys.findIndex(k => k.midi === 60);
+    if (c4Idx === -1) return;
+    const frame = window.requestAnimationFrame(() => {
+      const targetCenter = ((c4Idx + 0.5) / numWhite) * el.scrollWidth;
+      el.scrollLeft = Math.max(0, Math.round(targetCenter - el.clientWidth / 2));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [rangeId, shouldScroll, visibleWhiteKeys, numWhite]);
 
   const tonicChroma = useMemo(() => getNoteChroma(selectedKey), [selectedKey]);
 
@@ -244,7 +267,9 @@ export function PianoKeyboard() {
     <div className="glass-panel p-3 h-full flex flex-col">
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="engineering-label">Piano · {rangePreset.rangeLabel}</h3>
+          <h3 className="engineering-label">
+            Piano<span className="hidden sm:inline"> · {rangePreset.rangeLabel}</span>
+          </h3>
           <div className="flex items-center gap-0.5 bg-secondary/70 p-0.5 rounded-md border border-border">
             {PIANO_RANGE_PRESETS.map(preset => {
               const selected = preset.id === rangePreset.id;
@@ -347,7 +372,12 @@ export function PianoKeyboard() {
           }`}
           title="Overlay Prime Period Theory Piano Triangles (D / L / U / R)"
         >
-          {showPianoTriangles ? "△ Triangles ON" : "△ Piano Triangles"}
+          {showPianoTriangles ? "△ ON" : (
+            <>
+              <span className="sm:hidden">△ Tri</span>
+              <span className="hidden sm:inline">△ Piano Triangles</span>
+            </>
+          )}
         </button>
         </div>
       </div>
@@ -356,8 +386,8 @@ export function PianoKeyboard() {
         <div
           className="flex flex-col select-none w-full h-full"
           style={{
-            minWidth: numWhite > 42 ? `${numWhite * 16}px` : undefined,
-            minHeight: "120px",
+            minWidth: shouldScroll ? `${requiredTrackWidth}px` : undefined,
+            minHeight: "110px",
           }}
         >
           {/* Top Gutter: Current Fingering (L/R 1–5) */}

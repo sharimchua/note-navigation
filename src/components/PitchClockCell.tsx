@@ -207,6 +207,7 @@ export function PitchClockCell() {
                 opacity={!node.inScale && !node.isActive && !node.isNext ? 0.28 : 1}
               >
                 <title>{`${node.sampleNote} · ${node.syllable}`}</title>
+                <circle cx={node.x} cy={node.y} r={17} fill="transparent" />
                 {node.isNext && !node.isActive && (
                   <circle
                     cx={node.x}

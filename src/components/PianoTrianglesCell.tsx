@@ -163,6 +163,7 @@ export function PianoTrianglesCell() {
                       }}
                     >
                       <title>{`${noteName} (${label})`}</title>
+                      <circle cx={cx} cy={cy} r={15} fill="transparent" />
                       {isNext && !isActive && (
                         <circle
                           cx={cx}

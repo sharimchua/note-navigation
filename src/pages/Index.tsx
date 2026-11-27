@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { HarmonicProvider, useHarmonic } from "@/contexts/HarmonicContext";
 import { FlexLayoutRenderer } from "@/components/FlexLayoutRenderer";
+import { MobileWorkspaceDeck } from "@/components/MobileWorkspaceDeck";
+import { MobileControlsDrawer } from "@/components/MobileControlsDrawer";
 import { PhraseBar } from "@/components/PhraseBar";
 import { SettingsDrawer } from "@/components/SettingsDrawer";
 import {
@@ -17,6 +19,7 @@ import {
   Check,
   Bookmark,
   Settings,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -53,6 +56,7 @@ function MainContent() {
 
   const [isLayoutEdit, setIsLayoutEdit] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [lessonsOpen, setLessonsOpen] = useState(false);
   const [lessonName, setLessonName] = useState("");
@@ -148,13 +152,18 @@ function MainContent() {
     }
   };
 
-  const handleSaveLesson = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = lessonName.trim();
+  const saveLessonByName = (name: string) => {
+    const trimmed = name.trim();
     if (!trimmed) return;
     const slug = encodeShareSlug(getShareSnapshot());
     const next = saveLessonEntry(trimmed, slug);
     setSavedLessons(next);
+  };
+
+  const handleSaveLesson = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lessonName.trim()) return;
+    saveLessonByName(lessonName);
     setLessonName("");
   };
 
@@ -186,9 +195,107 @@ function MainContent() {
   const showTrailToggle = midiState.isConnected || isStageEmbedded;
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden bg-background text-foreground ${ecoMode ? "eco-mode" : ""}`}>
-      {/* Top bar: branding + controls */}
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 border-b border-border bg-card/95 shrink-0">
+    <div className={`flex flex-col h-screen supports-[height:100dvh]:h-[100dvh] overflow-hidden bg-background text-foreground ${ecoMode ? "eco-mode" : ""}`}>
+      {/* Mobile compact 1-row header */}
+      <header className="md:hidden flex items-center gap-1.5 px-2.5 py-2 border-b border-border bg-card/95 shrink-0">
+        {!isStageEmbedded && (
+          <a
+            href="https://midlifemuso.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center shrink-0 hover:opacity-85 transition-opacity"
+            title="Midlife Muso — Note Navigation"
+          >
+            <img src={musoIcon} alt="Note Navigation" className="w-7 h-7 rounded" />
+          </a>
+        )}
+
+        <Select value={selectedKey} onValueChange={setKey}>
+          <SelectTrigger
+            className="w-[62px] h-8 px-2 text-xs font-mono bg-secondary/70 border-border shrink-0"
+            aria-label="Key Centre"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {KEY_NAMES_COF.map(note => (
+              <SelectItem key={note} value={note} className="text-xs font-mono">{note}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={currentScaleValue} onValueChange={handleScaleChange}>
+          <SelectTrigger
+            className="flex-1 min-w-0 max-w-[180px] h-8 px-2 text-xs font-mono bg-secondary/70 border-border"
+            aria-label="Scale Blueprint"
+          >
+            <SelectValue placeholder="No scale" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__" className="text-xs font-mono text-muted-foreground">No scale</SelectItem>
+            {SCALE_PRESETS.map(preset => {
+              const val = `${preset.type}:${preset.rootOffset ?? 0}`;
+              return (
+                <SelectItem key={val} value={val} className="text-xs font-mono">
+                  {preset.name}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        <div className="flex-1 min-w-0" />
+
+        <button
+          type="button"
+          onClick={() => setMuted(!isMuted)}
+          className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all shrink-0 touch-manipulation ${
+            isMuted
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-border bg-secondary/70 text-muted-foreground hover:text-primary"
+          }`}
+          aria-label={isMuted ? "Unmute" : "Mute"}
+          title={isMuted ? "Unmute audio" : "Mute audio"}
+        >
+          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        </button>
+
+        {(activeNotes.size > 0 || isHoldEnabled) && (
+          <button
+            type="button"
+            onClick={clearNotes}
+            className="flex items-center justify-center w-8 h-8 rounded-md border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all shrink-0 touch-manipulation"
+            aria-label="Clear notes"
+            title="Clear all notes"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setMobileControlsOpen(true)}
+          className={`relative flex items-center gap-1 px-2.5 h-8 rounded-md border text-xs font-mono transition-all shrink-0 touch-manipulation ${
+            mobileControlsOpen
+              ? "border-primary/60 bg-primary/15 text-primary"
+              : "border-border bg-secondary/70 text-foreground hover:border-primary/50"
+          }`}
+          aria-label="Open controls and settings"
+          title="Labels, Phrase, Presets, Share & MIDI"
+        >
+          <SlidersHorizontal size={14} />
+          {(isHoldEnabled || phraseMode || midiState.isConnected) && (
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                midiState.isConnected ? "bg-emerald-400" : "bg-primary"
+              }`}
+            />
+          )}
+        </button>
+      </header>
+
+      {/* Tablet & Desktop top bar: branding + full controls */}
+      <header className="hidden md:flex flex-wrap items-end gap-x-3 gap-y-1.5 px-3 py-2 border-b border-border bg-card/95 shrink-0">
         {/* Branding (hidden when embedded inside Muso Stage) */}
         {!isStageEmbedded && (
           <a
@@ -264,59 +371,50 @@ function MainContent() {
         </div>
 
         {/* Mute */}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-sans text-muted-foreground uppercase tracking-wider">&nbsp;</span>
-          <button
-            onClick={() => setMuted(!isMuted)}
-            className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
-              isMuted
-                ? "border-destructive/40 bg-destructive/10 text-destructive"
-                : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
-            }`}
-            aria-label={isMuted ? "Unmute" : "Mute"}
-            title={isMuted ? "Unmute audio" : "Mute audio"}
-          >
-            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          </button>
-        </div>
+        <button
+          onClick={() => setMuted(!isMuted)}
+          className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+            isMuted
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+          }`}
+          aria-label={isMuted ? "Unmute" : "Mute"}
+          title={isMuted ? "Unmute audio" : "Mute audio"}
+        >
+          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        </button>
 
         {/* Hold MIDI toggle (H) */}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] font-sans text-muted-foreground uppercase tracking-wider">&nbsp;</span>
-          <button
-            type="button"
-            onClick={toggleHold}
-            className={`flex items-center gap-1 px-2 h-8 rounded-md border text-xs font-mono transition-all ${
-              isHoldEnabled
-                ? "border-primary/60 bg-primary/15 text-primary font-semibold"
-                : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
-            }`}
-            aria-pressed={isHoldEnabled}
-            title="Hold MIDI notes (H) · Press Esc to clear"
-          >
-            <Pin size={12} />
-            <span className="hidden sm:inline">Hold</span>
-            <kbd className="text-[9px] opacity-70">H</kbd>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={toggleHold}
+          className={`flex items-center gap-1 px-2 h-8 rounded-md border text-xs font-mono transition-all ${
+            isHoldEnabled
+              ? "border-primary/60 bg-primary/15 text-primary font-semibold"
+              : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+          }`}
+          aria-pressed={isHoldEnabled}
+          title="Hold MIDI notes (H) · Press Esc to clear"
+        >
+          <Pin size={12} />
+          <span className="hidden sm:inline">Hold</span>
+          <kbd className="text-[9px] opacity-70">H</kbd>
+        </button>
 
         {/* Trail toggle */}
         {showTrailToggle && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-sans text-muted-foreground uppercase tracking-wider">&nbsp;</span>
-            <button
-              onClick={() => setTrailMode(!trailMode)}
-              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
-                trailMode
-                  ? "border-primary/60 bg-primary/15 text-primary"
-                  : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
-              }`}
-              aria-label={trailMode ? "Disable animated trail" : "Enable animated trail"}
-              title={trailMode ? "Animated trail on" : "Animated trail off"}
-            >
-              <Sparkles size={14} />
-            </button>
-          </div>
+          <button
+            onClick={() => setTrailMode(!trailMode)}
+            className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
+              trailMode
+                ? "border-primary/60 bg-primary/15 text-primary"
+                : "border-border bg-secondary/70 text-muted-foreground hover:text-primary hover:border-primary/50"
+            }`}
+            aria-label={trailMode ? "Disable animated trail" : "Enable animated trail"}
+            title={trailMode ? "Animated trail on" : "Animated trail off"}
+          >
+            <Sparkles size={14} />
+          </button>
         )}
 
         {/* Phrase mode toggle */}
@@ -536,9 +634,14 @@ function MainContent() {
       {/* Phrase / Sequence Stepper Bar */}
       <PhraseBar onOpenMidiSettings={() => setSettingsOpen(true)} />
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4 min-h-0">
-        <div className="flex-1 min-h-0 flex flex-col">
+      {/* Mobile workspace deck (< 768px) */}
+      <div className="flex-1 min-h-0 flex flex-col md:hidden">
+        <MobileWorkspaceDeck isEditMode={isLayoutEdit} />
+      </div>
+
+      {/* Tablet & Desktop main content */}
+      <main className="hidden md:flex flex-1 overflow-y-auto p-3 md:p-4 flex-col gap-3 md:gap-4 min-h-0">
+        <div className="xl:flex-1 xl:min-h-0 flex flex-col">
           <FlexLayoutRenderer
             node={layoutRoot}
             isEditMode={isLayoutEdit}
@@ -556,9 +659,9 @@ function MainContent() {
 
         {/* Footer (hidden when embedded inside Muso Stage) */}
         {!isStageEmbedded && (
-          <div className="flex items-center justify-between text-[10px] font-sans text-muted-foreground pt-2 border-t border-border">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-sans text-muted-foreground pt-2 border-t border-border shrink-0">
             <span>© Midlife Muso · Ear-First Guitar &amp; Piano Coaching</span>
-            <div className="flex items-center gap-3 font-mono">
+            <div className="flex flex-wrap items-center gap-3 font-mono">
               <a
                 href="https://midlifemuso.com"
                 target="_blank"
@@ -587,6 +690,18 @@ function MainContent() {
           </div>
         )}
       </main>
+
+      <MobileControlsDrawer
+        open={mobileControlsOpen}
+        onOpenChange={setMobileControlsOpen}
+        onOpenMidiSettings={() => setSettingsOpen(true)}
+        savedLessons={savedLessons}
+        onSaveLesson={saveLessonByName}
+        onLoadLesson={handleLoadLesson}
+        onDeleteLesson={handleDeleteLesson}
+        onCopyShareUrl={handleCopyShareUrl}
+        shareCopied={shareCopied}
+      />
 
       <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>

@@ -3,7 +3,7 @@ import { getNotePitchClass, getDisplayNoteLabel, getNoteChroma } from "@/lib/mus
 import { getSolfegeColor, getSolfegeContrastText } from "@/lib/pptConstants";
 import { Note } from "tonal";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 
 const LOW_MIDI = 48;
 const HIGH_MIDI = 72;
@@ -15,9 +15,21 @@ export function LinearNoteMap() {
     toggleNote, playNote, trailMode, isNoteVisible, isNotePressed, isNoteFading,
   } = useHarmonic();
   const isMobile = useIsMobile();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const CIRCLE_SIZE = isMobile ? 20 : 28;
-  const SMALL_CIRCLE = isMobile ? 12 : 16;
+  const CIRCLE_SIZE = isMobile ? 26 : 28;
+  const SMALL_CIRCLE = 16;
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !isMobile) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (el.scrollWidth > el.clientWidth) {
+        el.scrollLeft = Math.round((el.scrollWidth - el.clientWidth) / 2);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isMobile]);
 
   const tonicChroma = useMemo(() => getNoteChroma(selectedKey), [selectedKey]);
 
@@ -51,7 +63,7 @@ export function LinearNoteMap() {
   }, [useFlats, scaleChromas, selectedKey, labelMode, baseMidi, tonicChroma]);
 
   return (
-    <div className="glass-panel p-3 h-full flex flex-col" style={{ overflow: "visible" }}>
+    <div className="glass-panel p-3 h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-1 shrink-0">
         <h3 className="engineering-label">
           Linear Note Map
@@ -59,10 +71,10 @@ export function LinearNoteMap() {
         <span className="text-[9px] text-muted-foreground font-mono">C3 ← C4 → C5</span>
       </div>
 
-      <div className="relative flex-1 min-h-0 flex items-center overflow-x-auto" style={{ overflow: "visible" }}>
+      <div ref={scrollRef} className="relative flex-1 min-h-0 flex items-center overflow-x-auto no-scrollbar">
         <div
-          className="relative flex items-center justify-between px-4 py-2 w-full"
-          style={{ minWidth: isMobile ? 540 : undefined, overflow: "visible" }}
+          className="relative flex items-center justify-between px-4 py-3.5 w-full"
+          style={{ minWidth: isMobile ? 640 : undefined }}
         >
           <div
             className="absolute top-1/2 left-0 right-0 -translate-y-1/2"
@@ -123,12 +135,12 @@ export function LinearNoteMap() {
                 {!deEmphasize && (
                   <span
                     className={`font-mono font-bold leading-none select-none ${
-                      isMobile
-                        ? "text-[6px]"
-                        : n.displayLabel.length > 2
-                          ? "text-[6px]"
-                          : n.displayLabel.length > 1
-                            ? "text-[7px]"
+                      n.displayLabel.length > 2
+                        ? "text-[6.5px]"
+                        : n.displayLabel.length > 1
+                          ? "text-[7.5px]"
+                          : isMobile
+                            ? "text-[8px]"
                             : "text-[8.5px]"
                     }`}
                     style={{ color: textColor }}

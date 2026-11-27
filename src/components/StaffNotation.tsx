@@ -1,5 +1,6 @@
 import { useCallback, useRef, useMemo, useEffect } from "react";
 import { useHarmonic } from "@/contexts/HarmonicContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   getNoteColor,
   getNoteChroma,
@@ -133,19 +134,21 @@ function getKeySignature(selectedKey: string, selectedScale: string) {
 function PptTriangleKeySignature({
   tonicPc,
   intervals,
+  compact = false,
 }: {
   tonicPc: number;
   intervals: number[];
+  compact?: boolean;
 }) {
   const segments = useMemo(
     () => getScaleTetrachordChainTriangles(tonicPc, intervals),
     [tonicPc, intervals]
   );
 
-  const triSize = 20;
-  const gap = 4;
-  const padX = 4;
-  const padY = 4;
+  const triSize = compact ? 16 : 20;
+  const gap = compact ? 3 : 4;
+  const padX = compact ? 2 : 4;
+  const padY = compact ? 3 : 4;
   const totalW = padX * 2 + segments.length * triSize + Math.max(0, segments.length - 1) * gap;
   const totalH = triSize + padY * 2;
 
@@ -300,6 +303,7 @@ export function StaffNotation() {
     toggleNote, playNote, labelMode, trailMode, noteStates,
   } = useHarmonic();
   const svgRef = useRef<SVGSVGElement>(null);
+  const isMobile = useIsMobile();
 
   const prevClefMapRef = useRef<Map<string, ClefChoice>>(new Map());
   const lastMelodyContextRef = useRef<MelodyContext | null>(null);
@@ -756,13 +760,22 @@ export function StaffNotation() {
         ? "♭ Flats"
         : "♯ Sharps";
 
+  const minNoteY = positionedNotes.length > 0 ? Math.min(...positionedNotes.map(n => n.y)) - 14 : trebleTopY - 14;
+  const maxNoteY = positionedNotes.length > 0 ? Math.max(...positionedNotes.map(n => n.y)) + 14 : bassBottomY + 14;
+  const vbMinY = Math.max(0, Math.floor(Math.min(trebleTopY - 18, minNoteY)));
+  const vbMaxY = Math.min(SVG_H, Math.ceil(Math.max(bassBottomY + 18, maxNoteY)));
+  const vbHeight = Math.max(120, vbMaxY - vbMinY);
+
   return (
-    <div className="glass-panel p-3 h-full flex flex-col" style={{ minHeight: "200px" }}>
-      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <h3 className="engineering-label">Grand Staff</h3>
+    <div className="glass-panel p-2.5 sm:p-3 h-full flex flex-col">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+          <h3 className="engineering-label">
+            <span className="sm:hidden">Staff</span>
+            <span className="hidden sm:inline">Grand Staff</span>
+          </h3>
           {pptNoteheads && (
-            <PptTriangleKeySignature tonicPc={tonicChroma} intervals={scaleIntervals} />
+            <PptTriangleKeySignature tonicPc={tonicChroma} intervals={scaleIntervals} compact={isMobile} />
           )}
         </div>
         <div className="flex items-center gap-1.5">
@@ -814,7 +827,7 @@ export function StaffNotation() {
       <div className="relative flex-1 min-h-0">
         <svg
           ref={svgRef}
-          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+          viewBox={`0 ${vbMinY} ${SVG_W} ${vbHeight}`}
           className="w-full h-full cursor-pointer relative"
           style={{ zIndex: 1 }}
           preserveAspectRatio="xMidYMid meet"

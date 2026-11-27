@@ -245,3 +245,24 @@
     --weight-spread: 0.2;
   }
 }
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .xl-cell-min-w {
+    min-width: var(--cell-min-w, 0px);
+  }
+}
+
+@media (max-width: 767px) and (orientation: landscape) and (max-height: 520px) {
+  .mobile-split-deck {
+    flex-direction: row !important;
+  }
+}

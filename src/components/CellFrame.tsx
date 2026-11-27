@@ -14,7 +14,7 @@ import {
 } from "@/lib/layout-models";
 import { Columns, Rows, Trash2 } from "lucide-react";
 
-const MODULE_COMPONENTS: Record<NoteNavModuleType, React.ComponentType> = {
+export const MODULE_COMPONENTS: Record<NoteNavModuleType, React.ComponentType> = {
   staff: StaffNotation,
   linear: LinearNoteMap,
   piano: PianoKeyboard,

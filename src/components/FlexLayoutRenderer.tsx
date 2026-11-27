@@ -16,6 +16,16 @@ interface FlexLayoutRendererProps {
   onRemoveCell: (cellId: string) => void;
 }
 
+const MODULE_MIN_HEIGHT: Record<NoteNavModuleType, number> = {
+  staff: 220,
+  "pitch-clock": 220,
+  fretboard: 190,
+  piano: 170,
+  spectrum: 165,
+  "piano-triangles": 155,
+  linear: 96,
+};
+
 export const FlexLayoutRenderer: React.FC<FlexLayoutRendererProps> = ({
   node,
   parentDirection,
@@ -27,14 +37,15 @@ export const FlexLayoutRenderer: React.FC<FlexLayoutRendererProps> = ({
 }) => {
   if (node.type === "cell") {
     const isInColumn = parentDirection === "column";
-    const minH = isInColumn ? Math.max(node.minSize ?? 90, 90) : 120;
-    const minW = !isInColumn && node.minSize ? `${node.minSize}px` : undefined;
+    const baseMinH = MODULE_MIN_HEIGHT[node.module] ?? 120;
+    const minH = isInColumn ? Math.max(node.minSize ?? baseMinH, baseMinH) : baseMinH;
+    const minW = !isInColumn && node.minSize ? `${node.minSize}px` : "0px";
     return (
       <div
-        className="layout-flex-node relative min-w-0 min-h-0 flex flex-col"
+        className="layout-flex-node xl-cell-min-w relative min-w-0 min-h-0 flex flex-col"
         style={{
           ["--node-flex" as string]: node.flex ?? 1,
-          minWidth: minW,
+          ["--cell-min-w" as string]: minW,
           minHeight: `${minH}px`,
         }}
       >
@@ -53,7 +64,7 @@ export const FlexLayoutRenderer: React.FC<FlexLayoutRendererProps> = ({
   const isRow = node.direction === "row";
   return (
     <div
-      className={`layout-flex-node relative w-full h-full flex min-w-0 min-h-0 ${
+      className={`layout-flex-node relative w-full h-auto xl:h-full flex min-w-0 min-h-0 ${
         isRow ? "flex-col xl:flex-row" : "flex-col"
       }`}
       style={{

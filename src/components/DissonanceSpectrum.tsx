@@ -208,24 +208,27 @@ export const DissonanceSpectrum = React.memo(function DissonanceSpectrum() {
 
   return (
     <div className="glass-panel p-3 h-full flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
-        <h3 className="engineering-label shrink-0">Fundamentals &amp; Overtones</h3>
+      <div className="flex items-center justify-between flex-wrap gap-1.5 sm:gap-2 mb-1.5">
+        <h3 className="engineering-label shrink-0">
+          <span className="sm:hidden">Overtones</span>
+          <span className="hidden sm:inline">Fundamentals &amp; Overtones</span>
+        </h3>
         {coincidence && primeFamilyKey && primeColor && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
             <span
-              className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary/80 border border-border text-foreground"
+              className="text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded bg-secondary/80 border border-border text-foreground"
               title="Just Intonation integer ratio approximation for this voicing"
             >
-              JI Ratio: <strong className="text-primary">{coincidence.integerRatioString}</strong>
+              JI: <strong className="text-primary">{coincidence.integerRatioString}</strong>
             </span>
             <span
-              className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary/80 border border-border text-muted-foreground"
+              className="text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded bg-secondary/80 border border-border text-muted-foreground"
               title="Prime Period Theory Coincidence Super-Cycle: root periods required for all tones to realign"
             >
               Cycle: <strong className="text-foreground">{coincidence.rootTurnsToAlign}×</strong>
             </span>
             <span
-              className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold"
+              className="text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded font-semibold"
               style={{
                 backgroundColor: `${primeColor}22`,
                 color: primeColor,
