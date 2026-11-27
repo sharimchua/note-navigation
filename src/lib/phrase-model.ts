@@ -1,7 +1,24 @@
+export type GuitarRightHandSymbol = "p" | "i" | "m" | "a" | "D" | "U";
+
+export type GuitarRightHandMode =
+  | "off"
+  | "fingerstyle"
+  | "flatpick-alt"
+  | "flatpick-econ";
+
+export type PhraseMidiMode = "capture" | "play-over" | "off";
+
+export type PianoComfortSpan = 9 | 12 | 14;
+
 export interface GuitarFingerOverride {
   stringIdx: number;
   fret: number;
   finger: number; // 0 = open, 1..4 = fretting fingers
+}
+
+export interface GuitarPickOverride {
+  stringIdx: number;
+  symbol: GuitarRightHandSymbol;
 }
 
 export interface PianoFingerOverride {
@@ -12,6 +29,8 @@ export interface PianoFingerOverride {
 export interface OnsetFingering {
   /** Keyed by `${stringIdx}:${fret}` or note name */
   guitar?: Record<string, GuitarFingerOverride>;
+  /** Keyed by `${stringIdx}` */
+  guitarPick?: Record<string, GuitarPickOverride>;
   /** Keyed by note name (e.g. "C4") */
   piano?: Record<string, PianoFingerOverride>;
 }

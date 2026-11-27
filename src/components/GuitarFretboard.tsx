@@ -17,8 +17,13 @@ import {
   ensureWindowVisible,
   computeStringVibrationSegments,
 } from "@/lib/fretboard-window";
-import { createOnsetFromNotes } from "@/lib/phrase-model";
-import { solveGuitarPhraseFingering, type GuitarNoteFingering } from "@/lib/guitar-fingering";
+import { createOnsetFromNotes, type GuitarRightHandSymbol } from "@/lib/phrase-model";
+import {
+  solveGuitarPhraseFingering,
+  solveGuitarPhraseWithDiagnostics,
+  type GuitarNoteFingering,
+} from "@/lib/guitar-fingering";
+import { solveGuitarRightHand, type GuitarRightHandNote } from "@/lib/guitar-right-hand";
 import { getSolfegeColor, getSolfegeContrastText } from "@/lib/pptConstants";
 import { useContainerSize } from "@/hooks/use-container-size";
 import { computeFretboardGeometry } from "@/lib/cell-geometry";
@@ -31,13 +36,16 @@ const VISIBLE_SPAN_OPTIONS = [4, 5, 6, 8, 10, 12, 15, 18];
 
 export function GuitarFretboard() {
   const {
-    activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked,
+    activeNotes, overlayNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked,
     selectedKey, labelMode, selectedTuning, setTuning, useFlats,
     trailMode, isNoteVisible, isNotePressed, isNoteFading,
-    phraseMode, phraseOnsets, activeStepIndex, nextOnsetNotes,
-    showFingering, showNextPreview, setGuitarFingerOverride,
+    phraseMode, phraseOnsets, activeStepIndex, nextStepIndex, loopPhrase, nextOnsetNotes,
+    showFingering, showNextPreview, guitarRightHandMode,
+    setGuitarFingerOverride, clearGuitarFingerOverride,
+    setGuitarPickOverride, clearGuitarPickOverride,
   } = useHarmonic();
   const [tuningOpen, setTuningOpen] = useState(false);
+  const [editingPosKey, setEditingPosKey] = useState<string | null>(null);
   const [defaultStringStep, setDefaultStringStep] = useState<number>(5);
   const [visibleFrets, setVisibleFrets] = useState<number>(12);
   const [visibleStart, setVisibleStart] = useState<number>(0);
@@ -144,13 +152,59 @@ export function GuitarFretboard() {
     [phraseMode, phraseOnsets, activeNoteList]
   );
 
-  const solvedFingerings = useMemo(
+  const { grips: solvedFingerings, diagnostics: fingerDiagnostics } = useMemo(
     () =>
-      showFingering || (phraseMode && showNextPreview)
-        ? solveGuitarPhraseFingering(tuningNotes, effectiveOnsets, windowStart, fretWindowSize)
-        : [],
-    [showFingering, phraseMode, showNextPreview, tuningNotes, effectiveOnsets, windowStart, fretWindowSize]
+      showFingering || (phraseMode && showNextPreview) || activeNoteList.length > 0
+        ? solveGuitarPhraseWithDiagnostics(tuningNotes, effectiveOnsets, windowStart, fretWindowSize, {
+            loop: loopPhrase,
+          })
+        : { grips: [], diagnostics: [] },
+    [
+      showFingering,
+      phraseMode,
+      showNextPreview,
+      activeNoteList.length,
+      tuningNotes,
+      effectiveOnsets,
+      windowStart,
+      fretWindowSize,
+      loopPhrase,
+    ]
   );
+
+  const activeDiagnosis = fingerDiagnostics[phraseMode ? activeStepIndex : 0];
+  const nextDiagnosis =
+    phraseMode && showNextPreview && nextStepIndex !== null
+      ? fingerDiagnostics[nextStepIndex]
+      : undefined;
+
+  const rightHandSolved = useMemo(
+    () =>
+      showFingering && guitarRightHandMode !== "off"
+        ? solveGuitarRightHand(solvedFingerings, effectiveOnsets, guitarRightHandMode, loopPhrase)
+        : [],
+    [showFingering, guitarRightHandMode, solvedFingerings, effectiveOnsets, loopPhrase]
+  );
+
+  const nextWindowStart = useMemo(() => {
+    if (!phraseMode || !showNextPreview || nextStepIndex === null) return null;
+    const nextNotes = phraseOnsets[nextStepIndex]?.notes ?? [];
+    if (nextNotes.length === 0) return null;
+    const wins = findDistinctFretWindows(tuningNotes, nextNotes, fretWindowSize, MAX_FRET);
+    if (wins.length === 0) return null;
+    if (wins.some(w => w.startFret === windowStart)) return windowStart;
+    // Pick valid block with smallest shift from current windowStart
+    let best = wins[0].startFret;
+    let bestDist = Math.abs(best - windowStart);
+    for (const w of wins) {
+      const d = Math.abs(w.startFret - windowStart);
+      if (d < bestDist) {
+        bestDist = d;
+        best = w.startFret;
+      }
+    }
+    return best;
+  }, [phraseMode, showNextPreview, nextStepIndex, phraseOnsets, tuningNotes, fretWindowSize, windowStart]);
 
   const activeFingerByPos = useMemo(() => {
     const map = new Map<string, GuitarNoteFingering>();
@@ -161,11 +215,86 @@ export function GuitarFretboard() {
 
   const nextFingerByPos = useMemo(() => {
     const map = new Map<string, GuitarNoteFingering>();
-    if (!phraseMode || !showNextPreview) return map;
-    const list = solvedFingerings[activeStepIndex + 1] ?? [];
+    if (!phraseMode || !showNextPreview || nextStepIndex === null) return map;
+    if (nextWindowStart !== null && nextWindowStart !== windowStart) {
+      const nextOnset = phraseOnsets[nextStepIndex];
+      const res = nextOnset
+        ? solveGuitarPhraseWithDiagnostics(tuningNotes, [nextOnset], nextWindowStart, fretWindowSize)
+        : null;
+      if (!res || !res.diagnostics[0]?.playable) return map;
+      for (const f of res.grips[0] ?? []) map.set(`${f.stringIdx}:${f.fret}`, f);
+      return map;
+    }
+    if (nextDiagnosis && !nextDiagnosis.playable) return map;
+    const list = solvedFingerings[nextStepIndex] ?? [];
     for (const f of list) map.set(`${f.stringIdx}:${f.fret}`, f);
     return map;
-  }, [solvedFingerings, phraseMode, showNextPreview, activeStepIndex]);
+  }, [solvedFingerings, phraseMode, showNextPreview, nextStepIndex, nextWindowStart, windowStart, phraseOnsets, tuningNotes, fretWindowSize, nextDiagnosis]);
+
+  const activePickByString = useMemo(() => {
+    const map = new Map<number, GuitarRightHandNote>();
+    const list = rightHandSolved[phraseMode ? activeStepIndex : 0] ?? [];
+    for (const p of list) map.set(p.stringIdx, p);
+    return map;
+  }, [rightHandSolved, phraseMode, activeStepIndex]);
+
+  const nextPickByString = useMemo(() => {
+    const map = new Map<number, GuitarRightHandNote>();
+    if (!phraseMode || !showNextPreview || nextStepIndex === null) return map;
+    const list = rightHandSolved[nextStepIndex] ?? [];
+    for (const p of list) map.set(p.stringIdx, p);
+    return map;
+  }, [rightHandSolved, phraseMode, showNextPreview, nextStepIndex]);
+
+  const handleCycleRightHand = useCallback(
+    (stringIdx: number, e: ReactMouseEvent) => {
+      e.stopPropagation();
+      if (!phraseMode) return;
+      if (e.altKey) {
+        clearGuitarPickOverride(activeStepIndex, stringIdx);
+        return;
+      }
+      const cur = activePickByString.get(stringIdx)?.symbol;
+      let nextSym: GuitarRightHandSymbol;
+      if (guitarRightHandMode === "fingerstyle") {
+        const order: GuitarRightHandSymbol[] = ["p", "i", "m", "a"];
+        const idx = cur ? order.indexOf(cur) : -1;
+        nextSym = order[(idx + 1) % order.length];
+      } else {
+        nextSym = cur === "D" ? "U" : "D";
+      }
+      setGuitarPickOverride(activeStepIndex, stringIdx, { stringIdx, symbol: nextSym });
+    },
+    [phraseMode, activeStepIndex, activePickByString, guitarRightHandMode, setGuitarPickOverride, clearGuitarPickOverride]
+  );
+
+  const handleStepStringTuning = useCallback(
+    (originalStringIdx: number, deltaSemitones: -1 | 1) => {
+      const curNote = tuningNotes[originalStringIdx];
+      const curMidi = Note.midi(curNote);
+      if (curMidi === null) return;
+      const nextMidi = Math.max(24, Math.min(84, curMidi + deltaSemitones));
+      if (nextMidi === curMidi) return;
+
+      const nextNote = Note.fromMidi(nextMidi);
+      const nextNotes = [...tuningNotes];
+      nextNotes[originalStringIdx] = nextNote;
+
+      const matchedPreset = GUITAR_TUNINGS.find(
+        t =>
+          t.notes.length === nextNotes.length &&
+          t.notes.every((n, i) => Note.midi(n) === Note.midi(nextNotes[i]))
+      );
+      setTuning(
+        matchedPreset ?? {
+          name: "Custom",
+          notes: nextNotes,
+          category: "alternate",
+        }
+      );
+    },
+    [tuningNotes, setTuning]
+  );
 
   const handleFretClick = useCallback((note: string, stringIdx: number, fret: number, e: ReactMouseEvent) => {
     if (e.altKey && showFingering && phraseMode && isNoteVisible(note)) {
@@ -216,22 +345,48 @@ export function GuitarFretboard() {
   }, [visibleStart, geom.neckLeft, geom.fretWidth]);
 
   const windowEnd = windowStart + fretWindowSize - 1;
-  const windowBandBounds = useMemo(() => {
-    const clampedLo = Math.max(visibleStartFret, windowStart);
-    const clampedHi = Math.min(visibleEndFret, windowEnd);
-    if (clampedLo > clampedHi) return null;
+  const computeBlockBounds = useCallback(
+    (start: number, end: number) => {
+      const clampedLo = Math.max(visibleStartFret, start);
+      const clampedHi = Math.min(visibleEndFret, end);
+      if (clampedLo > clampedHi) return null;
 
-    let x1: number;
-    let x2: number;
-    if (visibleStart === 0) {
-      x1 = clampedLo === 0 ? geom.openX - geom.noteRadius - 2 : geom.neckLeft + (clampedLo - 1) * geom.fretWidth;
-      x2 = clampedHi === 0 ? geom.openX + geom.noteRadius + 2 : geom.neckLeft + clampedHi * geom.fretWidth;
-    } else {
-      x1 = geom.neckLeft + (clampedLo - visibleStart) * geom.fretWidth;
-      x2 = geom.neckLeft + (clampedHi - visibleStart + 1) * geom.fretWidth;
+      let x1: number;
+      let x2: number;
+      if (visibleStart === 0) {
+        x1 = clampedLo === 0 ? geom.openX - geom.noteRadius - 2 : geom.neckLeft + (clampedLo - 1) * geom.fretWidth;
+        x2 = clampedHi === 0 ? geom.openX + geom.noteRadius + 2 : geom.neckLeft + clampedHi * geom.fretWidth;
+      } else {
+        x1 = geom.neckLeft + (clampedLo - visibleStart) * geom.fretWidth;
+        x2 = geom.neckLeft + (clampedHi - visibleStart + 1) * geom.fretWidth;
+      }
+      return { x1, width: Math.max(12, x2 - x1) };
+    },
+    [visibleStart, visibleStartFret, visibleEndFret, geom.openX, geom.noteRadius, geom.neckLeft, geom.fretWidth]
+  );
+
+  const windowBandBounds = useMemo(
+    () => computeBlockBounds(windowStart, windowEnd),
+    [computeBlockBounds, windowStart, windowEnd]
+  );
+
+  const nextWindowEnd = nextWindowStart !== null ? nextWindowStart + fretWindowSize - 1 : null;
+  const nextWindowBandBounds = useMemo(() => {
+    if (nextWindowStart === null || nextWindowEnd === null || nextWindowStart === windowStart) {
+      return null;
     }
-    return { x1, width: Math.max(12, x2 - x1) };
-  }, [visibleStart, visibleStartFret, visibleEndFret, windowStart, windowEnd, geom.openX, geom.noteRadius, geom.neckLeft, geom.fretWidth]);
+    return computeBlockBounds(nextWindowStart, nextWindowEnd);
+  }, [computeBlockBounds, nextWindowStart, nextWindowEnd, windowStart]);
+
+  const nextShiftText = useMemo(() => {
+    if (nextWindowStart === null || nextWindowEnd === null || nextWindowStart === windowStart) {
+      return null;
+    }
+    const delta = nextWindowStart - windowStart;
+    const arrow = delta > 0 ? "↑" : "↓";
+    const sign = delta > 0 ? `+${delta}` : `${delta}`;
+    return `Next: Shift ${arrow} F${nextWindowStart}–F${nextWindowEnd} (${sign}f)`;
+  }, [nextWindowStart, nextWindowEnd, windowStart]);
 
   const visibleMidisSet = useMemo(() => {
     const set = new Set<number>();
@@ -380,8 +535,78 @@ export function GuitarFretboard() {
           </label>
         </div>
 
-        {/* Right: Visible Span, Window Size, and Distinct-Position Stepper */}
+        {/* Right: Unplayable Warning, Next Shift Banner, Finger Editor, Visible Span, Window Size, Stepper */}
         <div className="flex items-center gap-2 flex-wrap">
+          {activeDiagnosis && !activeDiagnosis.playable && activeDiagnosis.reason && (
+            <span
+              className="px-2 py-0.5 rounded border border-rose-500/60 bg-rose-500/15 text-rose-300 text-[10px] font-mono font-semibold"
+              title="Showing closest partial grip — revoice the unreachable chord tone(s) or change tuning"
+            >
+              {activeDiagnosis.reason}
+            </span>
+          )}
+          {nextDiagnosis && !nextDiagnosis.playable && nextDiagnosis.reason && (
+            <span
+              className="px-2 py-0.5 rounded border border-amber-500/50 bg-amber-500/10 text-amber-300 text-[10px] font-mono"
+              title="Next step cannot be voiced simultaneously in this tuning/span"
+            >
+              Next unplayable
+            </span>
+          )}
+          {nextShiftText && (!nextDiagnosis || nextDiagnosis.playable) && (
+            <span
+              className="px-2 py-0.5 rounded border border-amber-400/60 bg-amber-500/15 text-amber-300 text-[10px] font-mono font-semibold"
+              title="Next phrase step requires shifting the fret block"
+            >
+              {nextShiftText}
+            </span>
+          )}
+
+          {showFingering && phraseMode && editingPosKey && (() => {
+            const cur = activeFingerByPos.get(editingPosKey);
+            if (!cur) return null;
+            return (
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/50 bg-secondary text-[10px] font-mono">
+                <span className="text-primary font-bold">{cur.note}:</span>
+                {[0, 1, 2, 3, 4].map(f => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() =>
+                      setGuitarFingerOverride(activeStepIndex, editingPosKey, {
+                        stringIdx: cur.stringIdx,
+                        fret: cur.fret,
+                        finger: f,
+                      })
+                    }
+                    className={`px-1 rounded ${
+                      cur.finger === f ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearGuitarFingerOverride(activeStepIndex, editingPosKey);
+                    setEditingPosKey(null);
+                  }}
+                  className="px-1 text-muted-foreground hover:text-foreground"
+                  title="Reset to auto fingering"
+                >
+                  Auto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingPosKey(null)}
+                  className="px-1 text-muted-foreground hover:text-foreground"
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })()}
           <label className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
             <span className="uppercase tracking-wider">Span</span>
             <select
@@ -465,6 +690,34 @@ export function GuitarFretboard() {
           className="w-full h-full block"
           preserveAspectRatio="xMidYMid meet"
         >
+          {/* Next-Step Shifted Ghost Block */}
+          {nextWindowBandBounds && nextWindowStart !== null && nextWindowEnd !== null && (
+            <g>
+              <rect
+                x={nextWindowBandBounds.x1}
+                y={geom.blockBandY + 2}
+                width={nextWindowBandBounds.width}
+                height={Math.max(20, geom.blockBandHeight - 4)}
+                rx={4}
+                fill="rgba(251, 191, 36, 0.06)"
+                stroke="rgba(251, 191, 36, 0.72)"
+                strokeWidth={1.2}
+                strokeDasharray="4 3"
+              />
+              <text
+                x={nextWindowBandBounds.x1 + nextWindowBandBounds.width / 2}
+                y={geom.blockLabelY}
+                textAnchor="middle"
+                fontSize={Math.max(8, Math.min(10.5, geom.stringGap * 0.26))}
+                fontFamily="JetBrains Mono"
+                fontWeight="600"
+                fill="rgba(251, 191, 36, 0.9)"
+              >
+                Next ({nextWindowStart}–{nextWindowEnd})
+              </text>
+            </g>
+          )}
+
           {/* Vertical Fret Block Highlight Band */}
           {windowBandBounds && (
             <g>
@@ -678,22 +931,62 @@ export function GuitarFretboard() {
             );
           })}
 
-          {/* String labels */}
+          {/* String tuning labels & per-string semitone steppers (◀ / ▶) */}
           {strings.map((openNote, i) => {
             const y = getStringY(i);
-            const pc = Note.pitchClass(openNote);
+            const originalStringIdx = strings.length - 1 - i;
+            const pc = getNotePitchClass(openNote, useFlats);
+            const labelFont = Math.max(9.5, Math.min(12.5, geom.stringGap * 0.34));
             return (
-              <text
-                key={`label-${i}`}
-                x={geom.labelX}
-                y={y + 4}
-                fill="hsl(var(--muted-foreground))"
-                fontSize={Math.max(10, Math.min(13, geom.stringGap * 0.36))}
-                fontFamily="JetBrains Mono"
-                textAnchor="middle"
-              >
-                {pc}
-              </text>
+              <g key={`label-${i}`}>
+                <g
+                  className="cursor-pointer opacity-55 hover:opacity-100 transition-opacity"
+                  onClick={() => handleStepStringTuning(originalStringIdx, -1)}
+                >
+                  <title>{`Tune string ${originalStringIdx + 1} (${openNote}) down 1 semitone`}</title>
+                  <rect x={2} y={y - 9} width={13} height={18} fill="transparent" />
+                  <text
+                    x={8.5}
+                    y={y + 3}
+                    fill="hsl(var(--muted-foreground))"
+                    fontSize="8.5"
+                    fontFamily="JetBrains Mono"
+                    textAnchor="middle"
+                  >
+                    −
+                  </text>
+                </g>
+
+                <text
+                  x={geom.labelX}
+                  y={y + 3.5}
+                  fill="hsl(var(--foreground))"
+                  fontSize={labelFont}
+                  fontFamily="JetBrains Mono"
+                  fontWeight="600"
+                  textAnchor="middle"
+                >
+                  {pc}
+                </text>
+
+                <g
+                  className="cursor-pointer opacity-55 hover:opacity-100 transition-opacity"
+                  onClick={() => handleStepStringTuning(originalStringIdx, 1)}
+                >
+                  <title>{`Tune string ${originalStringIdx + 1} (${openNote}) up 1 semitone`}</title>
+                  <rect x={33} y={y - 9} width={13} height={18} fill="transparent" />
+                  <text
+                    x={39.5}
+                    y={y + 3}
+                    fill="hsl(var(--muted-foreground))"
+                    fontSize="8.5"
+                    fontFamily="JetBrains Mono"
+                    textAnchor="middle"
+                  >
+                    +
+                  </text>
+                </g>
+              </g>
             );
           })}
 
@@ -712,6 +1005,9 @@ export function GuitarFretboard() {
               const fading = isNoteFading(note);
               const visible = isNoteVisible(note);
 
+              const isOverlayHit = overlayNotes.has(note) && activeNotes.has(note);
+              const isOverlayExtra = overlayNotes.has(note) && !activeNotes.has(note);
+
               const posKey = `${originalStringIdx}:${fret}`;
               const activeFinger = visible ? activeFingerByPos.get(posKey) : undefined;
               const nextFinger = nextFingerByPos.get(posKey);
@@ -719,7 +1015,14 @@ export function GuitarFretboard() {
                 showNextPreview &&
                 phraseMode &&
                 !visible &&
-                (Boolean(nextFinger) || (nextOnsetNotes.has(note) && (fret === 0 || (fret >= windowStart && fret <= windowEnd))));
+                Boolean(nextFinger);
+
+              const hasSolvedGrip = activeFingerByPos.size > 0;
+              const isNonGripOccurrence =
+                visible &&
+                hasSolvedGrip &&
+                !activeFinger &&
+                !overlayNotes.has(note);
 
               const inScale = isNoteInCurrentScale(note);
               const dimmed = isKeyLocked && !inScale;
@@ -737,7 +1040,7 @@ export function GuitarFretboard() {
               const x = getFretCenterX(fret);
               const fontSize = labelFontForLen(displayLabel.length);
               const textYOffset = fontSize * 0.36;
-              const badgeR = Math.max(5.5, geom.noteRadius * 0.48);
+              const badgeR = Math.max(7, geom.noteRadius * 0.56);
 
               if (!visible && isNextPrep) {
                 return (
@@ -750,17 +1053,17 @@ export function GuitarFretboard() {
                     <circle
                       cx={x}
                       cy={y}
-                      r={geom.noteRadius * 1.02}
-                      fill="rgba(15, 23, 42, 0.78)"
+                      r={geom.noteRadius * 1.05}
+                      fill="rgba(15, 23, 42, 0.85)"
                       stroke="#34d399"
-                      strokeWidth="1.4"
+                      strokeWidth="1.6"
                       strokeDasharray="2.5 2"
                     />
                     <text
                       x={x}
-                      y={y + fontSize * 0.34}
+                      y={y + fontSize * 0.36}
                       fill="#6ee7b7"
-                      fontSize={geom.noteRadius * 0.68}
+                      fontSize={Math.max(8, geom.noteRadius * 0.78)}
                       fontFamily="JetBrains Mono"
                       textAnchor="middle"
                       fontWeight="bold"
@@ -832,22 +1135,24 @@ export function GuitarFretboard() {
               }
 
               const dotFill = isFi ? "#141414" : color;
-              const dotStroke = activeFinger?.isAnchor
-                ? "#34d399"
-                : isTonic
-                  ? "#ffffff"
-                  : isFi
-                    ? "#38BDF8"
-                    : "rgba(255,255,255,0.65)";
+              const dotStroke = isOverlayExtra
+                ? "#22d3ee"
+                : isOverlayHit || activeFinger?.isAnchor
+                  ? "#34d399"
+                  : isTonic
+                    ? "#ffffff"
+                    : isFi
+                      ? "#38BDF8"
+                      : "rgba(255,255,255,0.65)";
 
               return (
                 <g
                   key={`${stringIdx}-${fret}`}
                   className="cursor-pointer"
                   onClick={(e) => handleFretClick(note, originalStringIdx, fret, e)}
-                  opacity={deEmphasiseOutsideWindow ? 0.45 : 1}
+                  opacity={isNonGripOccurrence ? 0.22 : deEmphasiseOutsideWindow ? 0.45 : 1}
                   style={fading && trailMode ? {
-                    opacity: deEmphasiseOutsideWindow ? 0.45 : 1,
+                    opacity: isNonGripOccurrence ? 0.22 : deEmphasiseOutsideWindow ? 0.45 : 1,
                     animation: `note-fade-out ${FADE_DURATION}ms ease-out forwards`,
                   } : undefined}
                 >
@@ -885,7 +1190,7 @@ export function GuitarFretboard() {
                     r={geom.noteRadius}
                     fill={dotFill}
                     stroke={dotStroke}
-                    strokeWidth={activeFinger?.isAnchor ? 2 : isTonic ? 1.6 : 1}
+                    strokeWidth={isOverlayExtra || isOverlayHit || activeFinger?.isAnchor ? 2.2 : isTonic ? 1.6 : 1}
                     className={pressed ? "note-active" : undefined}
                   />
                   <text
@@ -900,7 +1205,15 @@ export function GuitarFretboard() {
                     {displayLabel}
                   </text>
                   {showFingering && activeFinger && (
-                    <g transform={`translate(${x + geom.noteRadius * 0.8}, ${y - geom.noteRadius * 0.75})`}>
+                    <g
+                      transform={`translate(${x + geom.noteRadius * 0.8}, ${y - geom.noteRadius * 0.75})`}
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingPosKey(prev => (prev === posKey ? null : posKey));
+                      }}
+                    >
+                      <title>Click to edit finger (0–4 / Auto)</title>
                       <circle
                         r={badgeR}
                         fill="#090d16"
@@ -910,7 +1223,7 @@ export function GuitarFretboard() {
                       <text
                         y={badgeR * 0.38}
                         textAnchor="middle"
-                        fontSize={badgeR * 1.15}
+                        fontSize={badgeR * 1.25}
                         fontFamily="JetBrains Mono"
                         fontWeight="bold"
                         fill={activeFinger.isAnchor ? "#6ee7b7" : "#f8fafc"}
@@ -922,6 +1235,79 @@ export function GuitarFretboard() {
                 </g>
               );
             });
+          })}
+
+          {/* Right-hand picking / fingerstyle badges at bridge end of strings */}
+          {showFingering && guitarRightHandMode !== "off" && strings.map((_openNote, stringIdx) => {
+            const y = getStringY(stringIdx);
+            const originalStringIdx = strings.length - 1 - stringIdx;
+            const pick = activePickByString.get(originalStringIdx);
+            const nextPick = nextPickByString.get(originalStringIdx);
+            if (!pick && !nextPick) return null;
+
+            const badgeX = geom.bridgeX - 11;
+            if (pick) {
+              return (
+                <g
+                  key={`rh-${stringIdx}`}
+                  transform={`translate(${badgeX}, ${y})`}
+                  className="cursor-pointer"
+                  onClick={(e) => handleCycleRightHand(originalStringIdx, e)}
+                >
+                  <title>{`Right-hand: ${pick.displaySymbol} (Click to cycle · Alt+Click for Auto)`}</title>
+                  <rect
+                    x={-10}
+                    y={-8}
+                    width={20}
+                    height={16}
+                    rx={3}
+                    fill="#090d16"
+                    stroke={pick.isAnchor ? "#34d399" : "#fbbf24"}
+                    strokeWidth={1.1}
+                  />
+                  <text
+                    y={3.6}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fontFamily="JetBrains Mono"
+                    fontWeight="bold"
+                    fill={pick.isAnchor ? "#6ee7b7" : "#fde68a"}
+                  >
+                    {pick.displaySymbol}
+                  </text>
+                </g>
+              );
+            }
+
+            if (nextPick) {
+              return (
+                <g key={`rh-next-${stringIdx}`} transform={`translate(${badgeX}, ${y})`}>
+                  <title>{`Next right-hand prep: ${nextPick.displaySymbol}`}</title>
+                  <rect
+                    x={-9}
+                    y={-6.5}
+                    width={18}
+                    height={13}
+                    rx={3}
+                    fill="rgba(15, 23, 42, 0.85)"
+                    stroke="#34d399"
+                    strokeWidth={0.9}
+                    strokeDasharray="2 1.5"
+                  />
+                  <text
+                    y={3}
+                    textAnchor="middle"
+                    fontSize="7.5"
+                    fontFamily="JetBrains Mono"
+                    fontWeight="bold"
+                    fill="#6ee7b7"
+                  >
+                    {`→${nextPick.displaySymbol}`}
+                  </text>
+                </g>
+              );
+            }
+            return null;
           })}
 
           {/* Fret numbers */}

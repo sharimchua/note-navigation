@@ -33,11 +33,11 @@ export function computeFretboardGeometry(
   const svgWidth = Math.max(320, Math.round(containerWidth));
   const svgHeight = Math.max(130, Math.round(containerHeight));
 
-  const labelX = 16;
-  const nutX = 44;
+  const labelX = 24;
+  const nutX = 58;
   const nutW = 4;
-  const neckLeft = 48;
-  const openX = 46;
+  const neckLeft = 62;
+  const openX = 60;
   const bridgeX = svgWidth - 8;
   const neckRight = Math.max(neckLeft + 120, bridgeX - 20);
   const neckW = neckRight - neckLeft;

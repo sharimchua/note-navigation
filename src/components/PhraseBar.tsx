@@ -1,5 +1,6 @@
 import { useHarmonic } from "@/contexts/HarmonicContext";
 import { formatMidiTrigger } from "@/lib/midi-bindings";
+import type { GuitarRightHandMode, PhraseMidiMode, PianoComfortSpan } from "@/lib/phrase-model";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,23 +14,35 @@ import {
   ArrowRight,
   RotateCcw,
   Footprints,
+  Repeat,
+  Sparkles,
 } from "lucide-react";
 
 interface PhraseBarProps {
   onOpenMidiSettings?: () => void;
 }
 
+const MIDI_MODE_LABELS: { id: PhraseMidiMode; label: string; title: string }[] = [
+  { id: "capture", label: "Write", title: "MIDI writes/overwrites notes in the active step" },
+  { id: "play-over", label: "Demo", title: "Play MIDI over the saved chord without modifying it" },
+  { id: "off", label: "Off", title: "Ignore MIDI note input (pedal bindings still work)" },
+];
+
 export function PhraseBar({ onOpenMidiSettings }: PhraseBarProps = {}) {
   const {
     phraseMode,
     phraseOnsets,
     activeStepIndex,
+    loopPhrase,
     isRecordingPhrase,
     isPlayingPhrase,
     showFingering,
     showNextPreview,
+    guitarRightHandMode,
+    pianoComfortSpan,
     midiSettings,
     setActiveStepIndex,
+    setLoopPhrase,
     stepPrev,
     stepForwardOrAdd,
     addPhraseStep,
@@ -41,6 +54,10 @@ export function PhraseBar({ onOpenMidiSettings }: PhraseBarProps = {}) {
     stopPhrasePlayback,
     setShowFingering,
     setShowNextPreview,
+    setGuitarRightHandMode,
+    setPianoComfortSpan,
+    setPhraseMidiMode,
+    setPhraseAutoAdvance,
   } = useHarmonic();
 
   if (!phraseMode) return null;
@@ -64,7 +81,7 @@ export function PhraseBar({ onOpenMidiSettings }: PhraseBarProps = {}) {
         <button
           type="button"
           onClick={stepPrev}
-          disabled={activeStepIndex <= 0}
+          disabled={activeStepIndex <= 0 && !(loopPhrase && phraseOnsets.length > 1)}
           className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
           title="Previous step (←)"
           aria-label="Previous phrase step"
@@ -178,6 +195,68 @@ export function PhraseBar({ onOpenMidiSettings }: PhraseBarProps = {}) {
           <kbd className="text-[9px] opacity-70 hidden md:inline">Space</kbd>
         </button>
 
+        <button
+          type="button"
+          onClick={() => setLoopPhrase(!loopPhrase)}
+          className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-mono transition-colors ${
+            loopPhrase
+              ? "border-primary/60 bg-primary/15 text-primary font-semibold"
+              : "border-border bg-card text-muted-foreground hover:text-foreground"
+          }`}
+          aria-pressed={loopPhrase}
+          title="Loop phrase (wrap last step → first step for playback and transition prep)"
+        >
+          <Repeat size={10} />
+          <span className="hidden sm:inline">Loop</span>
+        </button>
+
+        {/* MIDI Phrase Input Mode: Write / Demo (Play Over) / Off */}
+        <div
+          className="flex items-center bg-card border border-border rounded p-0.5 gap-0.5"
+          title="MIDI input behaviour during Phrase mode"
+        >
+          <span className="text-[9px] font-mono text-muted-foreground px-1 hidden xl:inline">MIDI:</span>
+          {MIDI_MODE_LABELS.map(m => {
+            const active = midiSettings.phraseMidiMode === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setPhraseMidiMode(m.id)}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                  active
+                    ? m.id === "play-over"
+                      ? "bg-cyan-500/20 text-cyan-300 font-semibold"
+                      : m.id === "off"
+                        ? "bg-rose-500/20 text-rose-300 font-semibold"
+                        : "bg-primary/20 text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={m.title}
+              >
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {midiSettings.phraseMidiMode === "play-over" && (
+          <button
+            type="button"
+            onClick={() => setPhraseAutoAdvance(!midiSettings.phraseAutoAdvance)}
+            className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-mono transition-colors ${
+              midiSettings.phraseAutoAdvance
+                ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-300 font-semibold"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={midiSettings.phraseAutoAdvance}
+            title="Auto-advance to next step once all target chord notes are matched"
+          >
+            <Sparkles size={10} />
+            <span>Auto-Next</span>
+          </button>
+        )}
+
         {onOpenMidiSettings && (
           <button
             type="button"
@@ -198,7 +277,7 @@ export function PhraseBar({ onOpenMidiSettings }: PhraseBarProps = {}) {
       <div className="flex-1" />
 
       {/* Ergonomic overlays: Fingering + Next-Note Lookahead */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <button
           type="button"
           onClick={() => setShowFingering(!showFingering)}
@@ -207,11 +286,38 @@ export function PhraseBar({ onOpenMidiSettings }: PhraseBarProps = {}) {
               ? "border-primary/60 bg-primary/15 text-primary font-semibold"
               : "border-border bg-card text-muted-foreground hover:text-foreground"
           }`}
-          title="Show piano (L/R 1–5) & guitar (0–4) fingerings with lookahead"
+          title="Show piano (L/R 1–5) & guitar (0–4) fingerings with transition solver"
         >
           <Hand size={11} />
           <span>Fingering</span>
         </button>
+
+        {showFingering && (
+          <>
+            <select
+              value={guitarRightHandMode}
+              onChange={(e) => setGuitarRightHandMode(e.target.value as GuitarRightHandMode)}
+              className="h-6 px-1.5 rounded border border-border bg-card text-[10px] font-mono text-foreground cursor-pointer focus:outline-none focus:border-primary"
+              title="Guitar right-hand picking / fingerstyle strategy"
+            >
+              <option value="off">RH: Off</option>
+              <option value="fingerstyle">RH: PIMA</option>
+              <option value="flatpick-alt">RH: Alt ↓↑</option>
+              <option value="flatpick-econ">RH: Econ ↓↑</option>
+            </select>
+
+            <select
+              value={pianoComfortSpan}
+              onChange={(e) => setPianoComfortSpan(Number(e.target.value) as PianoComfortSpan)}
+              className="h-6 px-1.5 rounded border border-border bg-card text-[10px] font-mono text-foreground cursor-pointer focus:outline-none focus:border-primary"
+              title="Student piano hand comfort span"
+            >
+              <option value={9}>Hand: Small (M6)</option>
+              <option value={12}>Hand: Std (Oct)</option>
+              <option value={14}>Hand: Wide (M9)</option>
+            </select>
+          </>
+        )}
 
         <button
           type="button"

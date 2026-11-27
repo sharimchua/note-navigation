@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { getScaleTetrachordChainTriangles } from "./pptConstants";
-import { solveGuitarPhraseFingering } from "./guitar-fingering";
+import {
+  solveGuitarPhraseFingering,
+  solveGuitarPhraseWithDiagnostics,
+} from "./guitar-fingering";
+import { solveGuitarRightHand } from "./guitar-right-hand";
 import { solvePianoPhraseFingering } from "./piano-fingering";
 import { encodeShareSlug, decodeShareSlug, type NoteNavShareSnapshot } from "./share-slug";
 import { createOnsetFromNotes, type PhraseOnset } from "./phrase-model";
@@ -67,6 +71,53 @@ describe("Guitar phrase fingering solver with lookahead & overrides", () => {
     expect(c3Step1?.fret).toBe(3);
     expect(c3Step1?.finger).toBe(4);
     expect(c3Step1?.isAnchor).toBe(true);
+  });
+
+  it("voices simultaneous chord notes on distinct strings strictly within the active block", () => {
+    const chord = createOnsetFromNotes(["G2", "C3", "E3", "G3", "C4", "E4"]);
+    const solved = solveGuitarPhraseFingering(standardTuning, [chord], 1, 3);
+    const strings = solved[0].map(n => n.stringIdx);
+    expect(solved[0]).toHaveLength(6);
+    expect(new Set(strings).size).toBe(6);
+    for (const n of solved[0]) {
+      expect(n.fret === 0 || (n.fret >= 1 && n.fret <= 3)).toBe(true);
+    }
+
+    // Close piano-voiced triad ["C4", "E4", "G4"] in F1–F4 falls back to pitch-class grip inside F1–F4, never > 4
+    const pianoTriad = createOnsetFromNotes(["C4", "E4", "G4"]);
+    const triadSolved = solveGuitarPhraseFingering(standardTuning, [pianoTriad], 1, 4);
+    expect(triadSolved[0]).toHaveLength(3);
+    expect(new Set(triadSolved[0].map(n => n.stringIdx)).size).toBe(3);
+    for (const n of triadSolved[0]) {
+      expect(n.fret === 0 || (n.fret >= 1 && n.fret <= 4)).toBe(true);
+    }
+  });
+
+  it("diagnoses physically impossible grips, returns closest partial grip, and names missing tone", () => {
+    // 7 distinct pitch classes cannot be voiced simultaneously on 6 strings: returns closest 6-note partial grip
+    const sevenNote = createOnsetFromNotes(["C3", "D3", "E3", "F3", "G3", "A3", "B3"]);
+    const res7 = solveGuitarPhraseWithDiagnostics(standardTuning, [sevenNote], 1, 4);
+    expect(res7.diagnostics[0].playable).toBe(false);
+    expect(res7.diagnostics[0].unreachableNotes.length).toBeGreaterThanOrEqual(1);
+    expect(res7.grips[0].length).toBeLessThanOrEqual(6);
+
+    // In F10..F12 on standard tuning, both F and F# only exist on the G string, so ["F4", "F#4"] cannot be voiced simultaneously
+    const unplayableInBlock = createOnsetFromNotes(["F4", "F#4"]);
+    const res = solveGuitarPhraseWithDiagnostics(standardTuning, [unplayableInBlock], 10, 3);
+    expect(res.diagnostics[0].playable).toBe(false);
+    expect(res.diagnostics[0].unreachableNotes).toHaveLength(1);
+    expect(res.grips[0]).toHaveLength(1);
+
+    // Cmin7 3rd inversion closed voicing (Bb in bass) is impossible as 4 notes in standard tuning,
+    // so it returns the closest 3-note partial grip and calls out the 1 dropped tone
+    const cmin7Inv3 = createOnsetFromNotes(["Bb3", "C4", "Eb4", "G4"]);
+    for (const start of [1, 3, 5, 8]) {
+      const r = solveGuitarPhraseWithDiagnostics(standardTuning, [cmin7Inv3], start, 5);
+      expect(r.diagnostics[0].playable).toBe(false);
+      expect(r.diagnostics[0].unreachableNotes).toHaveLength(1);
+      expect(r.grips[0].length).toBe(3);
+      expect(new Set(r.grips[0].map(g => g.stringIdx)).size).toBe(3);
+    }
   });
 });
 
@@ -150,5 +201,105 @@ describe("Shareable URL slug codec round-trip", () => {
     const decoded = decodeShareSlug(slug);
     expect(decoded).toEqual(snapshot);
     expect(decodeShareSlug("not-valid-base64!!!")).toBeNull();
+  });
+
+  it("preserves loopPhrase, guitarRightHandMode, pianoComfortSpan, and guitarPick overrides", () => {
+    const snapshot: NoteNavShareSnapshot = {
+      v: 1,
+      selectedKey: "G",
+      selectedScale: "major",
+      scaleRootOffset: 0,
+      isKeyLocked: true,
+      labelMode: "notes",
+      accidentalPreference: "auto",
+      pptNoteheads: true,
+      staffLayoutMode: "joined",
+      showPianoTriangles: false,
+      showFingering: true,
+      phraseMode: true,
+      loopPhrase: true,
+      guitarRightHandMode: "fingerstyle",
+      pianoComfortSpan: 9,
+      activeStepIndex: 0,
+      phraseOnsets: [
+        {
+          id: "g-1",
+          notes: ["G2", "B2", "D3", "G3"],
+          fingering: {
+            guitarPick: {
+              "0": { stringIdx: 0, symbol: "p" },
+              "2": { stringIdx: 2, symbol: "m" },
+            },
+          },
+        },
+      ],
+      tuningName: "Custom",
+      tuningNotes: ["D2", "A2", "D3", "G3", "B3", "D4"],
+      layoutPresetId: "classic",
+    };
+
+    const decoded = decodeShareSlug(encodeShareSlug(snapshot));
+    expect(decoded).toEqual(snapshot);
+  });
+});
+
+describe("Guitar right-hand technique solver (PIMA & Flatpick)", () => {
+  const standardTuning = ["E2", "A2", "D3", "G3", "B3", "E4"];
+
+  it("assigns p-i-m-a bottom-to-top for fingerstyle chords and respects overrides", () => {
+    const onsets: PhraseOnset[] = [
+      createOnsetFromNotes(["E2", "G3", "B3", "E4"]),
+      {
+        ...createOnsetFromNotes(["A2", "G3", "B3", "E4"]),
+        fingering: {
+          guitarPick: {
+            "5": { stringIdx: 5, symbol: "m" },
+          },
+        },
+      },
+    ];
+    const lh = solveGuitarPhraseFingering(standardTuning, onsets, 1, 5, { loop: true });
+    const rh = solveGuitarRightHand(lh, onsets, "fingerstyle", true);
+
+    expect(rh[0].map(n => n.symbol)).toEqual(["p", "i", "m", "a"]);
+    expect(rh[1].find(n => n.stringIdx === 5)?.symbol).toBe("m");
+    // Shared B3 (string 4) keeps m -> m across loop
+    expect(rh[0].find(n => n.stringIdx === 4)?.isAnchor).toBe(true);
+  });
+
+  it("alternates D/U in flatpick-alt and sweeps toward target string in flatpick-econ", () => {
+    const onsets: PhraseOnset[] = [
+      createOnsetFromNotes(["E2"]),
+      createOnsetFromNotes(["A2"]),
+      createOnsetFromNotes(["D3"]),
+      createOnsetFromNotes(["A2"]),
+    ];
+    const lh = solveGuitarPhraseFingering(standardTuning, onsets, 1, 5);
+    const alt = solveGuitarRightHand(lh, onsets, "flatpick-alt");
+    const econ = solveGuitarRightHand(lh, onsets, "flatpick-econ");
+
+    expect(alt.map(step => step[0].symbol)).toEqual(["D", "U", "D", "U"]);
+    // Economy: E2 (D) -> A2 (treble-ward sweep D) -> D3 (treble-ward sweep D) -> A2 (bass-ward sweep U)
+    expect(econ.map(step => step[0].symbol)).toEqual(["D", "D", "D", "U"]);
+  });
+});
+
+describe("Transition-aware Piano solver with loop & hand span", () => {
+  it("adapts next onset fingering after a manual override and marks loop anchors", () => {
+    const step1 = createOnsetFromNotes(["C4"]);
+    step1.fingering = { piano: { C4: { hand: "R", finger: 1 } } };
+    const step2 = createOnsetFromNotes(["D4"]);
+    const step3 = createOnsetFromNotes(["C4"]);
+
+    const solved = solvePianoPhraseFingering([step1, step2, step3], {
+      loop: true,
+      maxComfortSpan: 9,
+    });
+
+    expect(solved[0][0]).toMatchObject({ note: "C4", hand: "R", finger: 1 });
+    // After C4 with R1, stepping up to D4 naturally picks R2
+    expect(solved[1][0]).toMatchObject({ note: "D4", hand: "R", finger: 2 });
+    // Loop anchor: step 3 C4 R1 matches step 1 C4 R1
+    expect(solved[2][0].isAnchor).toBe(true);
   });
 });

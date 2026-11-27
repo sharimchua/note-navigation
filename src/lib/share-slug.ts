@@ -1,6 +1,10 @@
 import type { NoteLabelMode, AccidentalPreference } from "@/lib/music-engine";
 import type { StaffLayoutMode } from "@/lib/staff-clef-assignment";
-import type { PhraseOnset } from "@/lib/phrase-model";
+import type {
+  PhraseOnset,
+  GuitarRightHandMode,
+  PianoComfortSpan,
+} from "@/lib/phrase-model";
 import type { LayoutNode } from "@/lib/layout-models";
 
 export interface NoteNavShareSnapshot {
@@ -16,9 +20,13 @@ export interface NoteNavShareSnapshot {
   showPianoTriangles: boolean;
   showFingering: boolean;
   phraseMode: boolean;
+  loopPhrase?: boolean;
+  guitarRightHandMode?: GuitarRightHandMode;
+  pianoComfortSpan?: PianoComfortSpan;
   activeStepIndex: number;
   phraseOnsets: PhraseOnset[];
   tuningName: string;
+  tuningNotes?: string[];
   layoutPresetId: string;
   customLayout?: LayoutNode;
 }
@@ -77,9 +85,24 @@ export function decodeShareSlug(slug: string): NoteNavShareSnapshot | null {
       showPianoTriangles: Boolean(parsed.showPianoTriangles),
       showFingering: Boolean(parsed.showFingering),
       phraseMode: Boolean(parsed.phraseMode),
+      loopPhrase: typeof parsed.loopPhrase === "boolean" ? parsed.loopPhrase : undefined,
+      guitarRightHandMode:
+        parsed.guitarRightHandMode === "fingerstyle" ||
+        parsed.guitarRightHandMode === "flatpick-alt" ||
+        parsed.guitarRightHandMode === "flatpick-econ" ||
+        parsed.guitarRightHandMode === "off"
+          ? parsed.guitarRightHandMode
+          : undefined,
+      pianoComfortSpan:
+        parsed.pianoComfortSpan === 9 || parsed.pianoComfortSpan === 12 || parsed.pianoComfortSpan === 14
+          ? parsed.pianoComfortSpan
+          : undefined,
       activeStepIndex: typeof parsed.activeStepIndex === "number" ? parsed.activeStepIndex : 0,
       phraseOnsets: Array.isArray(parsed.phraseOnsets) ? parsed.phraseOnsets : [],
       tuningName: typeof parsed.tuningName === "string" ? parsed.tuningName : "Standard",
+      tuningNotes: Array.isArray(parsed.tuningNotes)
+        ? parsed.tuningNotes.filter((n): n is string => typeof n === "string")
+        : undefined,
       layoutPresetId: typeof parsed.layoutPresetId === "string" ? parsed.layoutPresetId : "classic",
       customLayout: parsed.customLayout,
     };

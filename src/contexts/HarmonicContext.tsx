@@ -16,7 +16,11 @@ import {
   createOnsetFromNotes,
   type PhraseOnset,
   type GuitarFingerOverride,
+  type GuitarPickOverride,
   type PianoFingerOverride,
+  type GuitarRightHandMode,
+  type PhraseMidiMode,
+  type PianoComfortSpan,
 } from "@/lib/phrase-model";
 import {
   LAYOUT_PRESETS,
@@ -84,11 +88,16 @@ interface HarmonicState {
   phraseMode: boolean;
   phraseOnsets: PhraseOnset[];
   activeStepIndex: number;
+  nextStepIndex: number | null;
+  loopPhrase: boolean;
   isRecordingPhrase: boolean;
   isPlayingPhrase: boolean;
   nextOnsetNotes: Set<string>;
+  overlayNotes: Set<string>;
   showFingering: boolean;
   showNextPreview: boolean;
+  guitarRightHandMode: GuitarRightHandMode;
+  pianoComfortSpan: PianoComfortSpan;
 
   // Modular layout state
   layoutPresetId: string;
@@ -120,6 +129,7 @@ interface HarmonicState {
   // Phrase & fingering actions
   setPhraseMode: (on: boolean) => void;
   setActiveStepIndex: (index: number, audition?: boolean) => void;
+  setLoopPhrase: (on: boolean) => void;
   stepPrev: () => void;
   stepNext: () => void;
   stepForwardOrAdd: () => void;
@@ -132,8 +142,17 @@ interface HarmonicState {
   stopPhrasePlayback: () => void;
   setShowFingering: (on: boolean) => void;
   setShowNextPreview: (on: boolean) => void;
+  setGuitarRightHandMode: (mode: GuitarRightHandMode) => void;
+  setPianoComfortSpan: (span: PianoComfortSpan) => void;
   setGuitarFingerOverride: (onsetIdx: number, posKey: string, override: GuitarFingerOverride) => void;
+  clearGuitarFingerOverride: (onsetIdx: number, posKey: string) => void;
+  setGuitarPickOverride: (onsetIdx: number, stringIdx: number, override: GuitarPickOverride) => void;
+  clearGuitarPickOverride: (onsetIdx: number, stringIdx: number) => void;
   setPianoFingerOverride: (onsetIdx: number, note: string, override: PianoFingerOverride) => void;
+  clearPianoFingerOverride: (onsetIdx: number, note: string) => void;
+  setPhraseMidiMode: (mode: PhraseMidiMode) => void;
+  setPhraseAutoAdvance: (on: boolean) => void;
+  setPhraseMatchPitchClassOnly: (on: boolean) => void;
 
   // MIDI Settings & Bindings
   midiSettings: MidiBindingsConfig;
@@ -217,10 +236,14 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const [phraseMode, setPhraseModeState] = useState<boolean>(false);
   const [phraseOnsets, setPhraseOnsets] = useState<PhraseOnset[]>(() => [createEmptyOnset()]);
   const [activeStepIndex, setActiveStepIndexState] = useState<number>(0);
+  const [loopPhrase, setLoopPhrase] = useState<boolean>(false);
   const [isRecordingPhrase, setRecordingPhraseState] = useState<boolean>(false);
   const [isPlayingPhrase, setIsPlayingPhrase] = useState<boolean>(false);
+  const [overlayNotes, setOverlayNotesState] = useState<Set<string>>(new Set());
   const [showFingering, setShowFingering] = useState<boolean>(false);
   const [showNextPreview, setShowNextPreview] = useState<boolean>(true);
+  const [guitarRightHandMode, setGuitarRightHandMode] = useState<GuitarRightHandMode>("off");
+  const [pianoComfortSpan, setPianoComfortSpan] = useState<PianoComfortSpan>(12);
 
   // MIDI Settings & Learn state
   const [midiSettings, setMidiSettings] = useState<MidiBindingsConfig>(() => loadMidiSettings());
@@ -232,6 +255,11 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const isApplyingStepRef = useRef(false);
   const hadMidiReleaseSinceStepRef = useRef(false);
   const phrasePlayTimersRef = useRef<number[]>([]);
+  const autoAdvanceTimerRef = useRef<number | null>(null);
+  const hasFreshMidiOnStepRef = useRef(false);
+  const overlayNotesRef = useRef<Set<string>>(new Set());
+  const loopPhraseRef = useRef(loopPhrase);
+  loopPhraseRef.current = loopPhrase;
   const midiSettingsRef = useRef(midiSettings);
   midiSettingsRef.current = midiSettings;
   const midiLearnActionRef = useRef(midiLearnAction);
@@ -306,6 +334,22 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       bindings: partial.bindings ? { ...prev.bindings, ...partial.bindings } : prev.bindings,
     }));
   }, []);
+
+  const setPhraseMidiMode = useCallback((mode: PhraseMidiMode) => {
+    updateMidiSettings({ phraseMidiMode: mode });
+    if (mode !== "play-over") {
+      overlayNotesRef.current = new Set();
+      setOverlayNotesState(new Set());
+    }
+  }, [updateMidiSettings]);
+
+  const setPhraseAutoAdvance = useCallback((on: boolean) => {
+    updateMidiSettings({ phraseAutoAdvance: on });
+  }, [updateMidiSettings]);
+
+  const setPhraseMatchPitchClassOnly = useCallback((on: boolean) => {
+    updateMidiSettings({ phraseMatchPitchClassOnly: on });
+  }, [updateMidiSettings]);
 
   const setMidiBinding = useCallback((action: MidiBindingActionId, trigger: MidiTrigger | null) => {
     setMidiSettings(prev => ({
@@ -383,6 +427,18 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       seen.add(note);
     });
 
+    overlayNotes.forEach(note => {
+      if (!seen.has(note)) {
+        states.push({
+          note,
+          pressed: true,
+          fading: false,
+          seq: noteSeqMapRef.current.get(note) ?? 0,
+        });
+        seen.add(note);
+      }
+    });
+
     if (trailMode) {
       fadingNotes.forEach(note => {
         if (!seen.has(note)) {
@@ -397,19 +453,19 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     }
 
     return states;
-  }, [activeNotes, fadingNotes, trailMode]);
+  }, [activeNotes, overlayNotes, fadingNotes, trailMode]);
 
   const isNoteVisible = useCallback((note: string) => {
-    return activeNotes.has(note) || (trailMode && fadingNotes.has(note));
-  }, [activeNotes, fadingNotes, trailMode]);
+    return activeNotes.has(note) || overlayNotes.has(note) || (trailMode && fadingNotes.has(note));
+  }, [activeNotes, overlayNotes, fadingNotes, trailMode]);
 
   const isNotePressed = useCallback((note: string) => {
-    return activeNotes.has(note);
-  }, [activeNotes]);
+    return activeNotes.has(note) || overlayNotes.has(note);
+  }, [activeNotes, overlayNotes]);
 
   const isNoteFading = useCallback((note: string) => {
-    return trailMode && !activeNotes.has(note) && fadingNotes.has(note);
-  }, [activeNotes, fadingNotes, trailMode]);
+    return trailMode && !activeNotes.has(note) && !overlayNotes.has(note) && fadingNotes.has(note);
+  }, [activeNotes, overlayNotes, fadingNotes, trailMode]);
 
   const recordNoteSeq = useCallback((note: string) => {
     if (!noteSeqMapRef.current.has(note)) {
@@ -516,12 +572,18 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     });
   }, [phraseMode, activeNotes, activeStepIndex]);
 
+  const nextStepIndex = useMemo(() => {
+    if (!phraseMode || phraseOnsets.length <= 1) return null;
+    if (activeStepIndex + 1 < phraseOnsets.length) return activeStepIndex + 1;
+    return loopPhrase ? 0 : null;
+  }, [phraseMode, phraseOnsets.length, activeStepIndex, loopPhrase]);
+
   const nextOnsetNotes = useMemo(() => {
-    if (!phraseMode || activeStepIndex + 1 >= phraseOnsets.length) {
+    if (nextStepIndex === null) {
       return new Set<string>();
     }
-    return new Set(phraseOnsets[activeStepIndex + 1].notes);
-  }, [phraseMode, phraseOnsets, activeStepIndex]);
+    return new Set(phraseOnsets[nextStepIndex]?.notes ?? []);
+  }, [nextStepIndex, phraseOnsets]);
 
   const stopPhrasePlayback = useCallback(() => {
     phrasePlayTimersRef.current.forEach(id => clearTimeout(id));
@@ -531,10 +593,24 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
   const clearNotes = useCallback(() => {
     stopPhrasePlayback();
+    if (autoAdvanceTimerRef.current !== null) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
     physicalMidiNotesRef.current.clear();
     latchedMidiNotesRef.current.clear();
     isHoldEnabledRef.current = false;
     setHoldEnabledState(false);
+
+    const hadOverlay = overlayNotesRef.current.size > 0;
+    overlayNotesRef.current = new Set();
+    setOverlayNotesState(new Set());
+
+    // In Play Over mode, Esc clears live demo notes first without erasing the saved chord
+    if (phraseRecRef.current.phraseMode && midiSettingsRef.current.phraseMidiMode === "play-over" && hadOverlay) {
+      return;
+    }
+
     setActiveNotesState(prev => {
       prev.forEach(n => startFade(n));
       return new Set();
@@ -581,6 +657,11 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const resetPhraseCaptureClock = useCallback(() => {
     lastMidiNoteOnAtRef.current = 0;
     lastMidiCaptureStepRef.current = -1;
+    hasFreshMidiOnStepRef.current = false;
+    if (autoAdvanceTimerRef.current !== null) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
   }, []);
 
   const loadStepNotes = useCallback((onset: PhraseOnset | undefined, audition = false) => {
@@ -610,6 +691,8 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     } else {
       setRecordingPhraseState(false);
       stopPhrasePlayback();
+      overlayNotesRef.current = new Set();
+      setOverlayNotesState(new Set());
     }
   }, [activeNotes, stopPhrasePlayback]);
 
@@ -622,14 +705,18 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   const stepPrev = useCallback(() => {
     if (activeStepIndex > 0) {
       setActiveStepIndex(activeStepIndex - 1, true);
+    } else if (loopPhrase && phraseOnsets.length > 1) {
+      setActiveStepIndex(phraseOnsets.length - 1, true);
     }
-  }, [activeStepIndex, setActiveStepIndex]);
+  }, [activeStepIndex, loopPhrase, phraseOnsets.length, setActiveStepIndex]);
 
   const stepNext = useCallback(() => {
     if (activeStepIndex + 1 < phraseOnsets.length) {
       setActiveStepIndex(activeStepIndex + 1, true);
+    } else if (loopPhrase && phraseOnsets.length > 1) {
+      setActiveStepIndex(0, true);
     }
-  }, [activeStepIndex, phraseOnsets.length, setActiveStepIndex]);
+  }, [activeStepIndex, loopPhrase, phraseOnsets.length, setActiveStepIndex]);
 
   const stepForwardOrAdd = useCallback(() => {
     const rec = phraseRecRef.current;
@@ -721,21 +808,26 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     if (phraseOnsets.length === 0) return;
     stopPhrasePlayback();
     setIsPlayingPhrase(true);
-    const STEP_MS = 600;
-    const timers: number[] = [];
+    const STEP_MS = 650;
 
-    phraseOnsets.forEach((onset, idx) => {
-      const id = window.setTimeout(() => {
-        setActiveStepIndexState(idx);
-        loadStepNotes(onset, true);
-        if (idx === phraseOnsets.length - 1) {
-          const endId = window.setTimeout(() => setIsPlayingPhrase(false), STEP_MS);
-          phrasePlayTimersRef.current.push(endId);
-        }
-      }, idx * STEP_MS);
-      timers.push(id);
-    });
-    phrasePlayTimersRef.current = timers;
+    const scheduleStep = (idx: number) => {
+      setActiveStepIndexState(idx);
+      loadStepNotes(phraseOnsets[idx], true);
+
+      const nextIdx = idx + 1;
+      if (nextIdx < phraseOnsets.length) {
+        const id = window.setTimeout(() => scheduleStep(nextIdx), STEP_MS);
+        phrasePlayTimersRef.current.push(id);
+      } else if (loopPhraseRef.current && phraseOnsets.length > 1) {
+        const id = window.setTimeout(() => scheduleStep(0), STEP_MS);
+        phrasePlayTimersRef.current.push(id);
+      } else {
+        const endId = window.setTimeout(() => setIsPlayingPhrase(false), STEP_MS);
+        phrasePlayTimersRef.current.push(endId);
+      }
+    };
+
+    scheduleStep(0);
   }, [phraseOnsets, stopPhrasePlayback, loadStepNotes]);
 
   const setGuitarFingerOverride = useCallback((
@@ -758,6 +850,56 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const clearGuitarFingerOverride = useCallback((onsetIdx: number, posKey: string) => {
+    setPhraseOnsets(prev => prev.map((onset, idx) => {
+      if (idx !== onsetIdx || !onset.fingering?.guitar) return onset;
+      const nextGuitar = { ...onset.fingering.guitar };
+      delete nextGuitar[posKey];
+      return {
+        ...onset,
+        fingering: {
+          ...onset.fingering,
+          guitar: nextGuitar,
+        },
+      };
+    }));
+  }, []);
+
+  const setGuitarPickOverride = useCallback((
+    onsetIdx: number,
+    stringIdx: number,
+    override: GuitarPickOverride
+  ) => {
+    setPhraseOnsets(prev => prev.map((onset, idx) => {
+      if (idx !== onsetIdx) return onset;
+      return {
+        ...onset,
+        fingering: {
+          ...onset.fingering,
+          guitarPick: {
+            ...(onset.fingering?.guitarPick ?? {}),
+            [String(stringIdx)]: override,
+          },
+        },
+      };
+    }));
+  }, []);
+
+  const clearGuitarPickOverride = useCallback((onsetIdx: number, stringIdx: number) => {
+    setPhraseOnsets(prev => prev.map((onset, idx) => {
+      if (idx !== onsetIdx || !onset.fingering?.guitarPick) return onset;
+      const nextPick = { ...onset.fingering.guitarPick };
+      delete nextPick[String(stringIdx)];
+      return {
+        ...onset,
+        fingering: {
+          ...onset.fingering,
+          guitarPick: nextPick,
+        },
+      };
+    }));
+  }, []);
+
   const setPianoFingerOverride = useCallback((
     onsetIdx: number,
     note: string,
@@ -773,6 +915,21 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
             ...(onset.fingering?.piano ?? {}),
             [note]: override,
           },
+        },
+      };
+    }));
+  }, []);
+
+  const clearPianoFingerOverride = useCallback((onsetIdx: number, note: string) => {
+    setPhraseOnsets(prev => prev.map((onset, idx) => {
+      if (idx !== onsetIdx || !onset.fingering?.piano) return onset;
+      const nextPiano = { ...onset.fingering.piano };
+      delete nextPiano[note];
+      return {
+        ...onset,
+        fingering: {
+          ...onset.fingering,
+          piano: nextPiano,
         },
       };
     }));
@@ -857,6 +1014,68 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
 
     const rec = phraseRecRef.current;
     const now = Date.now();
+    const currentPhraseMidiMode = midiSettingsRef.current.phraseMidiMode;
+
+    if (rec.phraseMode && currentPhraseMidiMode === "off") {
+      physicalMidiNotesRef.current.delete(note);
+      return;
+    }
+
+    // Play Over (Demo / Practice) mode: live MIDI overlays without mutating saved phraseOnsets
+    if (rec.phraseMode && currentPhraseMidiMode === "play-over" && !rec.isRecordingPhrase) {
+      hasFreshMidiOnStepRef.current = true;
+      recordNoteSeq(note);
+      stopFade(note);
+      const nextOverlay = new Set(overlayNotesRef.current);
+      nextOverlay.add(note);
+      overlayNotesRef.current = nextOverlay;
+      setOverlayNotesState(nextOverlay);
+      playNote(note);
+
+      if (midiSettingsRef.current.phraseAutoAdvance && autoAdvanceTimerRef.current === null) {
+        const targetNotes = rec.phraseOnsets[rec.activeStepIndex]?.notes ?? [];
+        if (targetNotes.length > 0 && hasFreshMidiOnStepRef.current) {
+          const matchPcOnly = midiSettingsRef.current.phraseMatchPitchClassOnly;
+          const allMatched = matchPcOnly
+            ? targetNotes.every(tn => {
+                const tm = Note.midi(tn);
+                if (tm === null) return false;
+                const tpc = ((tm % 12) + 12) % 12;
+                for (const on of nextOverlay) {
+                  const om = Note.midi(on);
+                  if (om !== null && ((om % 12) + 12) % 12 === tpc) return true;
+                }
+                return false;
+              })
+            : targetNotes.every(tn => {
+                const tm = Note.midi(tn);
+                if (nextOverlay.has(tn)) return true;
+                if (tm === null) return false;
+                for (const on of nextOverlay) {
+                  if (Note.midi(on) === tm) return true;
+                }
+                return false;
+              });
+
+          if (allMatched) {
+            const hasNext =
+              rec.activeStepIndex + 1 < rec.phraseOnsets.length ||
+              (loopPhraseRef.current && rec.phraseOnsets.length > 1);
+            if (hasNext) {
+              hasFreshMidiOnStepRef.current = false;
+              const targetIdx =
+                rec.activeStepIndex + 1 < rec.phraseOnsets.length ? rec.activeStepIndex + 1 : 0;
+              autoAdvanceTimerRef.current = window.setTimeout(() => {
+                autoAdvanceTimerRef.current = null;
+                setActiveStepIndexState(targetIdx);
+                loadStepNotes(phraseRecRef.current.phraseOnsets[targetIdx], false);
+              }, 200);
+            }
+          }
+        }
+      }
+      return;
+    }
 
     // Case 1: Explicit Rec MIDI auto-advance mode
     if (rec.isRecordingPhrase && rec.phraseMode) {
@@ -912,7 +1131,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     // Case 3: Standard free play
     addNote(note);
     playNote(note);
-  }, [addNote, playNote, setActiveNotes, setMidiBinding]);
+  }, [addNote, playNote, setActiveNotes, setMidiBinding, recordNoteSeq, stopFade, loadStepNotes]);
 
   const handleMIDINoteOff = useCallback((note: string, midiNumber?: number) => {
     const midi = midiNumber ?? (Note.midi(note) ?? -1);
@@ -924,18 +1143,38 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     if (physicalMidiNotesRef.current.size === 0) {
       hadMidiReleaseSinceStepRef.current = true;
     }
+
+    const rec = phraseRecRef.current;
+    if (rec.phraseMode && midiSettingsRef.current.phraseMidiMode === "off") {
+      return;
+    }
+
+    if (rec.phraseMode && midiSettingsRef.current.phraseMidiMode === "play-over" && !rec.isRecordingPhrase) {
+      if (isHoldEnabledRef.current) {
+        latchedMidiNotesRef.current.add(note);
+        return;
+      }
+      if (overlayNotesRef.current.has(note)) {
+        const nextOverlay = new Set(overlayNotesRef.current);
+        nextOverlay.delete(note);
+        overlayNotesRef.current = nextOverlay;
+        setOverlayNotesState(nextOverlay);
+        startFade(note);
+      }
+      return;
+    }
+
     if (isHoldEnabledRef.current) {
       latchedMidiNotesRef.current.add(note);
       return;
     }
 
-    const rec = phraseRecRef.current;
     if (rec.phraseMode && (midiSettingsRef.current.phraseStickyMidi || rec.isRecordingPhrase)) {
       return;
     }
 
     removeNote(note);
-  }, [removeNote]);
+  }, [removeNote, startFade]);
 
   const midiState = useMIDI({
     onNoteOn: handleMIDINoteOn,
@@ -1062,14 +1301,21 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       showPianoTriangles,
       showFingering,
       phraseMode,
+      loopPhrase,
+      guitarRightHandMode,
+      pianoComfortSpan,
       activeStepIndex,
       phraseOnsets: effectiveOnsets,
       tuningName: selectedTuning.name,
+      tuningNotes: selectedTuning.name === "Custom" ? selectedTuning.notes : undefined,
       layoutPresetId,
       customLayout: layoutPresetId === "custom" ? layoutRoot : undefined,
     };
   }, [
     phraseMode,
+    loopPhrase,
+    guitarRightHandMode,
+    pianoComfortSpan,
     phraseOnsets,
     activeNotes,
     selectedKey,
@@ -1084,6 +1330,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     showFingering,
     activeStepIndex,
     selectedTuning.name,
+    selectedTuning.notes,
     layoutPresetId,
     layoutRoot,
   ]);
@@ -1102,9 +1349,20 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     setStaffLayoutMode(snap.staffLayoutMode);
     setShowPianoTriangles(snap.showPianoTriangles);
     setShowFingering(snap.showFingering);
+    if (typeof snap.loopPhrase === "boolean") setLoopPhrase(snap.loopPhrase);
+    if (snap.guitarRightHandMode) setGuitarRightHandMode(snap.guitarRightHandMode);
+    if (snap.pianoComfortSpan) setPianoComfortSpan(snap.pianoComfortSpan);
 
     const foundTuning = GUITAR_TUNINGS.find(t => t.name === snap.tuningName);
-    if (foundTuning) setSelectedTuning(foundTuning);
+    if (foundTuning) {
+      setSelectedTuning(foundTuning);
+    } else if (snap.tuningNotes && snap.tuningNotes.length >= 4) {
+      setSelectedTuning({
+        name: snap.tuningName || "Custom",
+        notes: snap.tuningNotes,
+        category: "alternate",
+      });
+    }
 
     if (snap.customLayout) {
       setLayoutPresetId("custom");
@@ -1166,11 +1424,16 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       phraseMode,
       phraseOnsets,
       activeStepIndex,
+      nextStepIndex,
+      loopPhrase,
       isRecordingPhrase,
       isPlayingPhrase,
       nextOnsetNotes,
+      overlayNotes,
       showFingering,
       showNextPreview,
+      guitarRightHandMode,
+      pianoComfortSpan,
       layoutPresetId,
       layoutRoot,
       setLayoutPreset,
@@ -1197,6 +1460,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       isNoteInCurrentScale,
       setPhraseMode,
       setActiveStepIndex,
+      setLoopPhrase,
       stepPrev,
       stepNext,
       stepForwardOrAdd,
@@ -1209,8 +1473,17 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       stopPhrasePlayback,
       setShowFingering,
       setShowNextPreview,
+      setGuitarRightHandMode,
+      setPianoComfortSpan,
       setGuitarFingerOverride,
+      clearGuitarFingerOverride,
+      setGuitarPickOverride,
+      clearGuitarPickOverride,
       setPianoFingerOverride,
+      clearPianoFingerOverride,
+      setPhraseMidiMode,
+      setPhraseAutoAdvance,
+      setPhraseMatchPitchClassOnly,
       midiSettings,
       midiLearnAction,
       lastMidiActivity,

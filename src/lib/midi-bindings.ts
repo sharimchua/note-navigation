@@ -1,4 +1,5 @@
 import { Note } from "tonal";
+import type { PhraseMidiMode } from "@/lib/phrase-model";
 
 export type MidiBindingActionId =
   | "phraseStepForwardOrAdd"
@@ -18,6 +19,9 @@ export interface MidiBindingsConfig {
   selectedDeviceId: string; // "all" or MIDIInput.id / name
   phraseStickyMidi: boolean; // keep MIDI notes in current step; overwrite after pause
   phraseOverwritePauseMs: number; // default 350 (clamped 100..1500)
+  phraseMidiMode: PhraseMidiMode; // "capture" | "play-over" | "off"
+  phraseAutoAdvance: boolean; // auto-advance in play-over when target chord matched
+  phraseMatchPitchClassOnly: boolean; // ignore octave when matching target chord
   bindings: Record<MidiBindingActionId, MidiTrigger | null>;
 }
 
@@ -87,6 +91,9 @@ export const DEFAULT_MIDI_SETTINGS: MidiBindingsConfig = {
   selectedDeviceId: "all",
   phraseStickyMidi: true,
   phraseOverwritePauseMs: 350,
+  phraseMidiMode: "capture",
+  phraseAutoAdvance: false,
+  phraseMatchPitchClassOnly: false,
   bindings: {
     phraseStepForwardOrAdd: { type: "cc", cc: 67 },
     phraseStepPrev: null,
@@ -161,6 +168,15 @@ export function loadMidiSettings(): MidiBindingsConfig {
         ? parsed.phraseStickyMidi
         : DEFAULT_MIDI_SETTINGS.phraseStickyMidi,
       phraseOverwritePauseMs: clampPauseMs(parsed.phraseOverwritePauseMs),
+      phraseMidiMode: parsed.phraseMidiMode === "play-over" || parsed.phraseMidiMode === "off"
+        ? parsed.phraseMidiMode
+        : DEFAULT_MIDI_SETTINGS.phraseMidiMode,
+      phraseAutoAdvance: typeof parsed.phraseAutoAdvance === "boolean"
+        ? parsed.phraseAutoAdvance
+        : DEFAULT_MIDI_SETTINGS.phraseAutoAdvance,
+      phraseMatchPitchClassOnly: typeof parsed.phraseMatchPitchClassOnly === "boolean"
+        ? parsed.phraseMatchPitchClassOnly
+        : DEFAULT_MIDI_SETTINGS.phraseMatchPitchClassOnly,
       bindings: mergedBindings,
     };
   } catch {

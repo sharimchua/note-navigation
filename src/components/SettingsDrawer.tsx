@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sliders, Radio, X, RotateCcw, Keyboard, Footprints } from "lucide-react";
+import type { PhraseMidiMode, PianoComfortSpan } from "@/lib/phrase-model";
 
 interface SettingsDrawerProps {
   open: boolean;
@@ -41,6 +42,11 @@ export function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
     midiSettings,
     midiLearnAction,
     lastMidiActivity,
+    pianoComfortSpan,
+    setPianoComfortSpan,
+    setPhraseMidiMode,
+    setPhraseAutoAdvance,
+    setPhraseMatchPitchClassOnly,
     updateMidiSettings,
     setMidiBinding,
     resetMidiSettings,
@@ -137,14 +143,71 @@ export function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
             </div>
           </section>
 
-          {/* 2. Phrase MIDI Capture */}
+          {/* 2. Phrase MIDI Capture & Practice */}
           <section className="space-y-3">
             <div className="font-sans font-semibold text-[11px] uppercase tracking-wider text-foreground">
-              Phrase MIDI Capture
+              Phrase MIDI Capture &amp; Practice
             </div>
 
             <div className="bg-secondary/40 border border-border rounded-lg p-3 space-y-3">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  MIDI Input Mode in Phrase View
+                </label>
+                <Select
+                  value={midiSettings.phraseMidiMode}
+                  onValueChange={(val) => setPhraseMidiMode(val as PhraseMidiMode)}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs font-mono bg-card border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="capture" className="text-xs font-mono">
+                      Write (Capture notes into active step)
+                    </SelectItem>
+                    <SelectItem value="play-over" className="text-xs font-mono">
+                      Play Over / Demo (Highlight without editing phrase)
+                    </SelectItem>
+                    <SelectItem value="off" className="text-xs font-mono">
+                      Off (Ignore MIDI notes, keep pedal bindings)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-start justify-between gap-3 pt-2 border-t border-border/70">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-sans font-medium text-foreground">
+                    Auto-Advance on Chord Match
+                  </div>
+                  <p className="text-[11px] font-sans text-muted-foreground leading-snug">
+                    In Play Over mode, advance automatically when all target notes in the current step are hit.
+                  </p>
+                </div>
+                <Switch
+                  checked={midiSettings.phraseAutoAdvance}
+                  onCheckedChange={setPhraseAutoAdvance}
+                  aria-label="Toggle Auto-Advance on Chord Match"
+                />
+              </div>
+
               <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-sans font-medium text-foreground">
+                    Any-Octave Pitch Class Match
+                  </div>
+                  <p className="text-[11px] font-sans text-muted-foreground leading-snug">
+                    Match chord tones across any octave (helpful for compact MIDI keyboards).
+                  </p>
+                </div>
+                <Switch
+                  checked={midiSettings.phraseMatchPitchClassOnly}
+                  onCheckedChange={setPhraseMatchPitchClassOnly}
+                  aria-label="Toggle Any-Octave Pitch Class Match"
+                />
+              </div>
+
+              <div className="flex items-start justify-between gap-3 pt-2 border-t border-border/70">
                 <div className="space-y-1">
                   <div className="text-xs font-sans font-medium text-foreground">
                     Sticky Phrase Capture
@@ -186,6 +249,31 @@ export function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
                   <span>100 ms (snappy replace)</span>
                   <span>1500 ms (slow arpeggio)</span>
                 </div>
+              </div>
+
+              <div className="space-y-1.5 pt-2 border-t border-border/70">
+                <label className="block text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  Piano Hand Comfort Span
+                </label>
+                <Select
+                  value={String(pianoComfortSpan)}
+                  onValueChange={(val) => setPianoComfortSpan(Number(val) as PianoComfortSpan)}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs font-mono bg-card border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="9" className="text-xs font-mono">
+                      Small Reach (Major 6th · 9 semitones)
+                    </SelectItem>
+                    <SelectItem value="12" className="text-xs font-mono">
+                      Standard Reach (Octave · 12 semitones)
+                    </SelectItem>
+                    <SelectItem value="14" className="text-xs font-mono">
+                      Wide Reach (Major 9th · 14 semitones)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </section>

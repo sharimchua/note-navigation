@@ -68,6 +68,12 @@ function collectDistinctVoicingSignature(
   const dfs = (idx: number) => {
     if (voicingSigs.size >= 16) return;
     if (idx === ordered.length) {
+      const fretted = current.filter(p => p.f > 0);
+      if (fretted.length > 0) {
+        const minF = Math.min(...fretted.map(p => p.f));
+        const maxF = Math.max(...fretted.map(p => p.f));
+        if (maxF - minF > 4) return;
+      }
       const sorted = [...current].sort((a, b) => a.s - b.s || a.f - b.f);
       voicingSigs.add(sorted.map(p => `${p.s}:${p.f}`).join(","));
       for (const p of sorted) {

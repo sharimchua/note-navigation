@@ -21,13 +21,15 @@ const FADE_DURATION = 850;
 
 export function PianoKeyboard() {
   const {
-    activeNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked,
+    activeNotes, overlayNotes, toggleNote, playNote, isNoteInCurrentScale, isKeyLocked,
     selectedKey, labelMode, useFlats, trailMode, isNoteVisible, isNotePressed, isNoteFading,
     showPianoTriangles, setShowPianoTriangles,
-    phraseMode, phraseOnsets, activeStepIndex, nextOnsetNotes,
-    showFingering, showNextPreview, setPianoFingerOverride,
+    phraseMode, phraseOnsets, activeStepIndex, nextStepIndex, loopPhrase, nextOnsetNotes,
+    showFingering, showNextPreview, pianoComfortSpan,
+    setPianoFingerOverride, clearPianoFingerOverride,
   } = useHarmonic();
   const [rangeId, setRangeId] = useState<string>("49-key");
+  const [editingNote, setEditingNote] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const rangePreset = useMemo(
@@ -75,24 +77,30 @@ export function PianoKeyboard() {
   );
 
   const solvedFingerings = useMemo(
-    () => (showFingering ? solvePianoPhraseFingering(effectiveOnsets) : []),
-    [showFingering, effectiveOnsets]
+    () =>
+      showFingering
+        ? solvePianoPhraseFingering(effectiveOnsets, {
+            loop: loopPhrase,
+            maxComfortSpan: pianoComfortSpan,
+          })
+        : [],
+    [showFingering, effectiveOnsets, loopPhrase, pianoComfortSpan]
   );
 
   const activeFingerMap = useMemo(() => {
-    const map = new Map<string, { hand: "L" | "R"; finger: 1 | 2 | 3 | 4 | 5 }>();
+    const map = new Map<string, { hand: "L" | "R"; finger: 1 | 2 | 3 | 4 | 5; isAnchor?: boolean }>();
     const list = solvedFingerings[phraseMode ? activeStepIndex : 0] ?? [];
-    for (const f of list) map.set(f.note, { hand: f.hand, finger: f.finger });
+    for (const f of list) map.set(f.note, { hand: f.hand, finger: f.finger, isAnchor: f.isAnchor });
     return map;
   }, [solvedFingerings, phraseMode, activeStepIndex]);
 
   const nextFingerMap = useMemo(() => {
     const map = new Map<string, { hand: "L" | "R"; finger: 1 | 2 | 3 | 4 | 5 }>();
-    if (!phraseMode || !showFingering) return map;
-    const list = solvedFingerings[activeStepIndex + 1] ?? [];
+    if (!phraseMode || !showFingering || nextStepIndex === null) return map;
+    const list = solvedFingerings[nextStepIndex] ?? [];
     for (const f of list) map.set(f.note, { hand: f.hand, finger: f.finger });
     return map;
-  }, [solvedFingerings, phraseMode, showFingering, activeStepIndex]);
+  }, [solvedFingerings, phraseMode, showFingering, nextStepIndex]);
 
   const handleKeyClick = useCallback((note: string, e: MouseEvent) => {
     if (e.altKey && showFingering && phraseMode && activeNotes.has(note)) {
@@ -116,6 +124,23 @@ export function PianoKeyboard() {
     });
     return map;
   }, [visibleWhiteKeys]);
+
+  const keyCenterPctByMidi = useMemo(() => {
+    const map = new Map<number, number>();
+    visibleWhiteKeys.forEach((wk, idx) => {
+      map.set(wk.midi, (idx + 0.5) * whiteKeyPct);
+    });
+    visibleBlackKeys.forEach((bk) => {
+      const prevWhiteIdx = visibleWhiteKeys.findIndex(w => w.midi > bk.midi) - 1;
+      if (prevWhiteIdx >= 0) {
+        map.set(bk.midi, (prevWhiteIdx + 0.95) * whiteKeyPct);
+      }
+    });
+    return map;
+  }, [visibleWhiteKeys, visibleBlackKeys, whiteKeyPct]);
+
+  const showTopGutter = showFingering && phraseMode;
+  const showBottomGutter = phraseMode && showNextPreview;
 
   const triangleOverlays = useMemo(() => {
     if (!showPianoTriangles) return [];
@@ -249,9 +274,72 @@ export function PianoKeyboard() {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setShowPianoTriangles(!showPianoTriangles)}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {showFingering && phraseMode && editingNote && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/50 bg-secondary text-[10px] font-mono">
+              <span className="text-primary font-bold">{editingNote}:</span>
+              {(["L", "R"] as const).map(h => {
+                const cur = activeFingerMap.get(editingNote);
+                const isCur = cur?.hand === h;
+                return (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() =>
+                      setPianoFingerOverride(activeStepIndex, editingNote, {
+                        hand: h,
+                        finger: cur?.finger ?? 1,
+                      })
+                    }
+                    className={`px-1 rounded ${isCur ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {h}
+                  </button>
+                );
+              })}
+              {([1, 2, 3, 4, 5] as const).map(f => {
+                const cur = activeFingerMap.get(editingNote);
+                const isCur = cur?.finger === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() =>
+                      setPianoFingerOverride(activeStepIndex, editingNote, {
+                        hand: cur?.hand ?? ((Note.midi(editingNote) ?? 60) >= 60 ? "R" : "L"),
+                        finger: f,
+                      })
+                    }
+                    className={`px-1 rounded ${isCur ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {f}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => {
+                  clearPianoFingerOverride(activeStepIndex, editingNote);
+                  setEditingNote(null);
+                }}
+                className="px-1 rounded text-muted-foreground hover:text-foreground"
+                title="Reset to auto fingering"
+              >
+                Auto
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingNote(null)}
+                className="px-1 text-muted-foreground hover:text-foreground"
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowPianoTriangles(!showPianoTriangles)}
           className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
             showPianoTriangles
               ? "bg-primary/15 border-primary/50 text-primary font-semibold"
@@ -261,22 +349,61 @@ export function PianoKeyboard() {
         >
           {showPianoTriangles ? "△ Triangles ON" : "△ Piano Triangles"}
         </button>
+        </div>
       </div>
 
       <div ref={scrollRef} className="overflow-x-auto flex-1 min-h-0">
         <div
-          className="relative select-none w-full h-full"
+          className="flex flex-col select-none w-full h-full"
           style={{
             minWidth: numWhite > 42 ? `${numWhite * 16}px` : undefined,
             minHeight: "120px",
           }}
         >
+          {/* Top Gutter: Current Fingering (L/R 1–5) */}
+          {showTopGutter && (
+            <div className="relative h-6 shrink-0 border-b border-border/50 bg-secondary/20">
+              {visibleKeys.map(key => {
+                if (!isNoteVisible(key.note)) return null;
+                const fingerInfo = activeFingerMap.get(key.note);
+                if (!fingerInfo) return null;
+                const centerPct = keyCenterPctByMidi.get(key.midi);
+                if (centerPct === undefined) return null;
+                const isSharedAnchor = showNextPreview && nextOnsetNotes.has(key.note);
+
+                return (
+                  <button
+                    key={`top-f-${key.midi}`}
+                    type="button"
+                    onClick={() => setEditingNote(prev => (prev === key.note ? null : key.note))}
+                    style={{
+                      left: `${centerPct}%`,
+                      fontSize: isCompact ? "9px" : "10.5px",
+                    }}
+                    className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded font-mono font-bold leading-none whitespace-nowrap border shadow-sm transition-colors ${
+                      fingerInfo.isAnchor || isSharedAnchor
+                        ? "bg-emerald-950 border-emerald-400 text-emerald-300"
+                        : "bg-slate-950 border-white/50 text-white hover:border-primary"
+                    }`}
+                    title={`${key.note}: ${fingerInfo.hand}${fingerInfo.finger} (Click to edit)`}
+                  >
+                    {fingerInfo.hand}{fingerInfo.finger}{fingerInfo.isAnchor ? "⚓" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Keybed */}
+          <div className="relative flex-1 min-h-0">
           {/* White keys */}
           {visibleWhiteKeys.map((key, i) => {
             const pressed = isNotePressed(key.note);
             const fading = isNoteFading(key.note);
             const visible = isNoteVisible(key.note);
             const isNext = showNextPreview && phraseMode && !visible && nextOnsetNotes.has(key.note);
+            const isOverlayHit = overlayNotes.has(key.note) && activeNotes.has(key.note);
+            const isOverlayExtra = overlayNotes.has(key.note) && !activeNotes.has(key.note);
             const inScale = isNoteInCurrentScale(key.note);
             const pc = Note.pitchClass(key.note);
             const semitoneFromTonic = ((key.midi % 12) - tonicChroma + 12) % 12;
@@ -284,13 +411,17 @@ export function PianoKeyboard() {
             const contrastText = getSolfegeContrastText(semitoneFromTonic, { neonFi: true });
             const showScaleIndicator = isKeyLocked && inScale;
             const displayLabel = getDisplayNoteLabel(key.note, selectedKey, labelMode, useFlats, baseMidi);
-            const fingerInfo = visible ? activeFingerMap.get(key.note) : undefined;
-            const nextFingerInfo = isNext ? nextFingerMap.get(key.note) : undefined;
 
             return (
               <div
                 key={key.midi}
-                className={`absolute top-0 bottom-0 border border-slate-700/60 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? "note-active" : ""}`}
+                className={`absolute top-0 bottom-0 border cursor-pointer rounded-b-sm hover:opacity-90 ${
+                  isOverlayHit
+                    ? "border-emerald-400 ring-2 ring-inset ring-emerald-400"
+                    : isOverlayExtra
+                      ? "border-cyan-400 ring-2 ring-inset ring-cyan-400"
+                      : "border-slate-700/60"
+                } ${pressed ? "note-active" : ""}`}
                 style={{
                   left: `${i * whiteKeyPct}%`,
                   width: `${whiteKeyPct}%`,
@@ -302,8 +433,11 @@ export function PianoKeyboard() {
                     : undefined,
                 }}
                 onClick={(e) => handleKeyClick(key.note, e)}
-                title={showFingering && phraseMode && visible ? `${key.note} (Alt+Click to cycle finger)` : key.note}
+                title={showFingering && phraseMode && visible ? `${key.note} (Alt+Click or click top gutter badge to edit)` : key.note}
               >
+                {isNext && (
+                  <div className="absolute bottom-0 left-0 right-0 h-2 bg-emerald-400/75 border-t border-emerald-500/80 rounded-b-sm pointer-events-none" />
+                )}
                 {visible && trailMode && (
                   <div
                     className="absolute bottom-0 left-0 right-0 h-2 rounded-b-sm"
@@ -314,22 +448,6 @@ export function PianoKeyboard() {
                         : "trail-shimmer 1.5s ease-in-out infinite",
                     }}
                   />
-                )}
-                {isNext && (
-                  <div
-                    className="absolute bottom-5 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full border border-dashed border-emerald-500 bg-slate-900/80 text-emerald-300 font-mono font-bold leading-none"
-                    style={{ fontSize: isCompact ? "5.5px" : "7px" }}
-                  >
-                    {nextFingerInfo ? `→${nextFingerInfo.finger}` : "→"}
-                  </div>
-                )}
-                {fingerInfo && (
-                  <span
-                    className="absolute bottom-11 left-1/2 -translate-x-1/2 px-1 rounded bg-slate-950/85 text-white font-mono font-bold leading-tight"
-                    style={{ fontSize: isCompact ? "6px" : "7.5px" }}
-                  >
-                    {fingerInfo.hand}{fingerInfo.finger}
-                  </span>
                 )}
                 {showScaleIndicator && (
                   <div
@@ -386,14 +504,14 @@ export function PianoKeyboard() {
             const fading = isNoteFading(key.note);
             const visible = isNoteVisible(key.note);
             const isNext = showNextPreview && phraseMode && !visible && nextOnsetNotes.has(key.note);
+            const isOverlayHit = overlayNotes.has(key.note) && activeNotes.has(key.note);
+            const isOverlayExtra = overlayNotes.has(key.note) && !activeNotes.has(key.note);
             const inScale = isNoteInCurrentScale(key.note);
             const semitoneFromTonic = ((key.midi % 12) - tonicChroma + 12) % 12;
             const color = getSolfegeColor(key.midi % 12, tonicChroma, { neonFi: true });
             const contrastText = getSolfegeContrastText(semitoneFromTonic, { neonFi: true });
             const showScaleIndicator = isKeyLocked && inScale;
             const displayLabel = getDisplayNoteLabel(key.note, selectedKey, labelMode, useFlats, baseMidi);
-            const fingerInfo = visible ? activeFingerMap.get(key.note) : undefined;
-            const nextFingerInfo = isNext ? nextFingerMap.get(key.note) : undefined;
 
             const prevWhiteIdx = visibleWhiteKeys.findIndex(w => w.midi > key.midi) - 1;
             if (prevWhiteIdx < 0) return null;
@@ -402,7 +520,13 @@ export function PianoKeyboard() {
             return (
               <div
                 key={key.midi}
-                className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${pressed ? "note-active" : ""}`}
+                className={`absolute top-0 cursor-pointer rounded-b-sm hover:opacity-90 ${
+                  isOverlayHit
+                    ? "ring-2 ring-emerald-400"
+                    : isOverlayExtra
+                      ? "ring-2 ring-cyan-400"
+                      : ""
+                } ${pressed ? "note-active" : ""}`}
                 style={{
                   left: `${leftPos}%`,
                   width: `${whiteKeyPct * 0.8}%`,
@@ -416,23 +540,10 @@ export function PianoKeyboard() {
                     : undefined,
                 }}
                 onClick={(e) => handleKeyClick(key.note, e)}
-                title={showFingering && phraseMode && visible ? `${key.note} (Alt+Click to cycle finger)` : key.note}
+                title={showFingering && phraseMode && visible ? `${key.note} (Alt+Click or click top gutter badge to edit)` : key.note}
               >
                 {isNext && (
-                  <div
-                    className="absolute bottom-2 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full border border-dashed border-emerald-400 bg-slate-950/90 text-emerald-300 font-mono font-bold leading-none"
-                    style={{ fontSize: isCompact ? "5px" : "6.5px" }}
-                  >
-                    {nextFingerInfo ? `→${nextFingerInfo.finger}` : "→"}
-                  </div>
-                )}
-                {fingerInfo && (
-                  <span
-                    className="absolute top-1.5 left-1/2 -translate-x-1/2 px-1 rounded bg-slate-950/90 text-white font-mono font-bold leading-tight"
-                    style={{ fontSize: isCompact ? "5.5px" : "7px" }}
-                  >
-                    {fingerInfo.hand}{fingerInfo.finger}
-                  </span>
+                  <div className="absolute bottom-0 left-0 right-0 h-2 bg-emerald-400/80 border-t border-emerald-300/80 rounded-b-sm pointer-events-none" />
                 )}
                 {showScaleIndicator && (
                   <div
@@ -518,6 +629,33 @@ export function PianoKeyboard() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+          </div>
+
+          {/* Bottom Gutter: Next Step Prep Indicators */}
+          {showBottomGutter && (
+            <div className="relative h-6 shrink-0 border-t border-border/50 bg-secondary/20">
+              {visibleKeys.map(key => {
+                if (isNoteVisible(key.note) || !nextOnsetNotes.has(key.note)) return null;
+                const centerPct = keyCenterPctByMidi.get(key.midi);
+                if (centerPct === undefined) return null;
+                const nextFingerInfo = nextFingerMap.get(key.note);
+
+                return (
+                  <span
+                    key={`bot-n-${key.midi}`}
+                    style={{
+                      left: `${centerPct}%`,
+                      fontSize: isCompact ? "8.5px" : "10px",
+                    }}
+                    className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-slate-950 border border-emerald-400/80 text-emerald-300 font-mono font-bold leading-none whitespace-nowrap shadow-sm"
+                    title={`Next step: ${key.note}${nextFingerInfo ? ` (${nextFingerInfo.hand}${nextFingerInfo.finger})` : ""}`}
+                  >
+                    {nextFingerInfo ? `→${nextFingerInfo.hand}${nextFingerInfo.finger}` : "→"}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>
