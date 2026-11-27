@@ -1302,6 +1302,9 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
       showFingering,
       phraseMode,
       loopPhrase,
+      phraseMidiMode: midiSettings.phraseMidiMode,
+      phraseAutoAdvance: midiSettings.phraseAutoAdvance,
+      phraseMatchPitchClassOnly: midiSettings.phraseMatchPitchClassOnly,
       guitarRightHandMode,
       pianoComfortSpan,
       activeStepIndex,
@@ -1314,6 +1317,9 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
   }, [
     phraseMode,
     loopPhrase,
+    midiSettings.phraseMidiMode,
+    midiSettings.phraseAutoAdvance,
+    midiSettings.phraseMatchPitchClassOnly,
     guitarRightHandMode,
     pianoComfortSpan,
     phraseOnsets,
@@ -1350,6 +1356,15 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     setShowPianoTriangles(snap.showPianoTriangles);
     setShowFingering(snap.showFingering);
     if (typeof snap.loopPhrase === "boolean") setLoopPhrase(snap.loopPhrase);
+    if (snap.phraseMidiMode) {
+      setPhraseMidiMode(snap.phraseMidiMode);
+    }
+    if (typeof snap.phraseAutoAdvance === "boolean") {
+      setPhraseAutoAdvance(snap.phraseAutoAdvance);
+    }
+    if (typeof snap.phraseMatchPitchClassOnly === "boolean") {
+      setPhraseMatchPitchClassOnly(snap.phraseMatchPitchClassOnly);
+    }
     if (snap.guitarRightHandMode) setGuitarRightHandMode(snap.guitarRightHandMode);
     if (snap.pianoComfortSpan) setPianoComfortSpan(snap.pianoComfortSpan);
 
@@ -1379,7 +1394,7 @@ export function HarmonicProvider({ children }: { children: React.ReactNode }) {
     setPhraseOnsets(onsets);
     setActiveStepIndexState(clampedIdx);
     loadStepNotes(onsets[clampedIdx], false);
-  }, [loadStepNotes]);
+  }, [loadStepNotes, setPhraseMidiMode, setPhraseAutoAdvance, setPhraseMatchPitchClassOnly]);
 
   // Hydrate from URL ?p=<slug> on first mount if present
   const didHydrateRef = useRef(false);

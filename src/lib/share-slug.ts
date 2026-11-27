@@ -3,6 +3,7 @@ import type { StaffLayoutMode } from "@/lib/staff-clef-assignment";
 import type {
   PhraseOnset,
   GuitarRightHandMode,
+  PhraseMidiMode,
   PianoComfortSpan,
 } from "@/lib/phrase-model";
 import type { LayoutNode } from "@/lib/layout-models";
@@ -21,6 +22,9 @@ export interface NoteNavShareSnapshot {
   showFingering: boolean;
   phraseMode: boolean;
   loopPhrase?: boolean;
+  phraseMidiMode?: PhraseMidiMode;
+  phraseAutoAdvance?: boolean;
+  phraseMatchPitchClassOnly?: boolean;
   guitarRightHandMode?: GuitarRightHandMode;
   pianoComfortSpan?: PianoComfortSpan;
   activeStepIndex: number;
@@ -86,6 +90,18 @@ export function decodeShareSlug(slug: string): NoteNavShareSnapshot | null {
       showFingering: Boolean(parsed.showFingering),
       phraseMode: Boolean(parsed.phraseMode),
       loopPhrase: typeof parsed.loopPhrase === "boolean" ? parsed.loopPhrase : undefined,
+      phraseMidiMode:
+        parsed.phraseMidiMode === "capture" ||
+        parsed.phraseMidiMode === "play-over" ||
+        parsed.phraseMidiMode === "off"
+          ? parsed.phraseMidiMode
+          : undefined,
+      phraseAutoAdvance:
+        typeof parsed.phraseAutoAdvance === "boolean" ? parsed.phraseAutoAdvance : undefined,
+      phraseMatchPitchClassOnly:
+        typeof parsed.phraseMatchPitchClassOnly === "boolean"
+          ? parsed.phraseMatchPitchClassOnly
+          : undefined,
       guitarRightHandMode:
         parsed.guitarRightHandMode === "fingerstyle" ||
         parsed.guitarRightHandMode === "flatpick-alt" ||
